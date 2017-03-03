@@ -83,7 +83,6 @@ public class EmailReceiver {
             Store store = session.getStore();
             store.connect(Constants.host, Constants.email, Constants.password);
             Folder inbox = store.getFolder("INBOX");
-
             Message[] messages = receiveUnreadEmails(inbox);
             Arrays.stream(messages).forEach(message -> saveMessageAttachments(message));
 
