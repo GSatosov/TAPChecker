@@ -6,22 +6,26 @@ import java.util.ArrayList;
 /**
  * Created by GSatosov on 3/3/2017.
  */
-class Subject {
-    private String Name;
+public class Subject {
+    private String name;
 
     private ArrayList<Group> Groups;
+
     public String getName() {
-        return Name;
+        return name;
     }
 
     public ArrayList<Group> getGroups() {
         return Groups;
     }
 
-    Subject(String Name, Group group) {
-        this.Name = Name;
+    public Subject(String name, Group group) {
+        this.name = name;
         this.Groups.add(group);
-        new File(this.Name).mkdir();
+        new File(this.name).mkdir();
     }
 
+    public Subject(String name) {
+        this.name = name;
+    }
 }
