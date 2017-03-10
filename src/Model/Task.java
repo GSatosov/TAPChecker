@@ -1,18 +1,28 @@
 package Model;
 
-import java.io.File;
-import java.util.ArrayList;
-
 /**
  * Created by GSatosov on 3/3/2017.
  */
 public class Task {
-    private Subject subject;
+    private String subjectName;
     private String name;
-    private File source;
-    Task (String name,Subject subject, File source){
+    private String sourcePath;
+
+    public String getSubjectName() {
+        return subjectName;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getSourcePath() {
+        return sourcePath;
+    }
+
+    Task(String name, String subject, String source) {
         this.name = name;
-        this.subject = subject;
-        this.source = source;
+        this.subjectName = subject;
+        this.sourcePath = source;
     }
 }
