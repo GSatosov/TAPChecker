@@ -20,7 +20,7 @@ public class Task {
         return sourcePath;
     }
 
-    Task(String name, String subject, String source) {
+    public Task(String name, String subject, String source) {
         this.name = name;
         this.subjectName = subject;
         this.sourcePath = source;
