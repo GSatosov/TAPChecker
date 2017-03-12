@@ -141,5 +141,4 @@ public class EmailReceiver {
 
         return result;
     }
-
 }
