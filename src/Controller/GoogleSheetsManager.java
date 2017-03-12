@@ -109,7 +109,7 @@ public class GoogleSheetsManager {
 
     public static void main(String[] args) throws IOException {
         Task task = new Task("task 1", "subject 1","source");
-        getTests(task);
+        System.out.println(getTests(task));
     }
 
 }
