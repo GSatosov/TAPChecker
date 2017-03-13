@@ -46,20 +46,27 @@ class TestsApplier {
         }).start();
         int max = testContents.size();
         for (int i = 0; i < 6; i++) {
-            if (i == 5) return "TL";
+            if (i == 5) return "TL"; //Time Limit
             if (output.stream().anyMatch(a -> a.startsWith("Ok, modules loaded:")))
                 break;
             Thread.sleep(500);
         }
         long testingScore = testContents.entrySet().stream().filter(a -> {
+            int beforeCommand = output.size();
             String k = a.getKey();
             ArrayList<String> values = a.getValue();
             cmdInput.println(task.getName() + " " + k);
             cmdInput.flush();
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            int time = 0;
+            while (true) {
+                time ++;
+                if (output.size() > beforeCommand) break;
+                if (time == 200) return false; //Took too long to compile.
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
             String response = output.get(output.size() - 1).split(" ", 2)[1]; // *>TaskName> Output
             return values.contains(response);
