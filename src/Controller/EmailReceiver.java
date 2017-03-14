@@ -5,6 +5,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.mail.*;
 
 import Model.Attachment;
+import Model.Task;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,31 +49,36 @@ public class EmailReceiver {
     /*
     Save all message attachments in data folder
      */
-    private static void saveMessageAttachments(Message message) throws IOException, MessagingException {
+    private static ArrayList<Task> saveMessageAttachments(Message message) throws IOException, MessagingException {
         // name, group, subject
         String[] subject = message.getSubject().split(",");
-
+        for (int i = 0; i < subject.length; i++) {
+            subject[i] = subject[i].trim();
+        }
         if (subject.length != 3) {
-            return;
+            return new ArrayList<>();
         }
         ArrayList<Attachment> attachments = retrieveAttachments(message);
+        ArrayList<Task> tasks = new ArrayList<>();
         attachments.forEach(attachment -> {
-            File f = new File(Settings.getInstance().getDataFolder() + "/" + subject[2].trim() + "/" + subject[1].trim() + "/" + subject[0].trim() + "/" + attachment.getFileName());
+            File f = new File(Settings.getInstance().getDataFolder() + "/" + subject[2] + "/" + subject[1] + "/" + subject[0] + "/" + attachment.getFileName());
             f.mkdirs();
             try {
                 Files.copy(attachment.getStream(), f.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 attachment.getStream().close();
+                tasks.add(new Task(attachment.getFileName(), subject[2], f.getAbsolutePath()));
             }
             catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
         });
+        return tasks;
     }
 
     /*
     Retrieve messages data from inbox folder
      */
-    public static void retrieveMessagesData() throws IOException, MessagingException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+    public static ArrayList<Task> retrieveMessagesData() throws IOException, MessagingException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException {
         Properties props = new Properties();
         props.put("mail.store.protocol", "imaps");
         Session session = Session.getInstance(props);
@@ -84,10 +90,11 @@ public class EmailReceiver {
         Date lastDateEmailChecking = Settings.getInstance().getLastDateEmailChecked();
         System.out.println(lastDateEmailChecking.toString());
         Date newDateEmailChecking = new Date();
+        ArrayList<Task> tasks = new ArrayList<>();
         Arrays.stream(messages).forEach(message -> {
             try {
                 if (lastDateEmailChecking.compareTo(message.getReceivedDate()) < 0)
-                    saveMessageAttachments(message);
+                    tasks.addAll(saveMessageAttachments(message));
             }
             catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -100,6 +107,7 @@ public class EmailReceiver {
         Settings.getInstance().saveSettings();
 
         inbox.close(false);
+        return tasks;
     }
 
     /*
