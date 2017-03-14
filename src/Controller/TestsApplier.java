@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
- * Class for applying tests. As of 3/14 only Haskell support is impelmented.
+ * Class for applying tests. As of 3/14 only Haskell support is implemented.
  */
 class TestsApplier {
     private volatile boolean notInterrupted;
