@@ -76,7 +76,19 @@ public class Settings implements Serializable {
      */
     private Date lastDateEmailChecked = new Date(0L);
 
+    private transient static final String clientId = "917113484141-sbljoi0kv8bbto6hj120esjg6a5dv4ur.apps.googleusercontent.com";
+
+    private transient static final String clientSecret = "scbK-8lyW9fNT8SluhGLu8i6";
+
     private transient static final String settingsFileName = "settings.dat";
+
+    public static String getClientId() {
+        return clientId;
+    }
+
+    public static String getClientSecret() {
+        return clientSecret;
+    }
 
     public static String getSettingsFileName() {
         return settingsFileName;
