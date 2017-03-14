@@ -5,7 +5,6 @@ import Model.Tests;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 
 /**
@@ -16,11 +15,14 @@ class TestsApplier {
         ArrayList<String> output = new ArrayList<>();
         Task task = tests.getTask();
         HashMap<String, ArrayList<String>> testContents = tests.getTestContents();
-        Process p = Runtime.getRuntime().exec("ghci " + task.getSourcePath());
+        ProcessBuilder builder = new ProcessBuilder("ghci");
+        builder.redirectErrorStream(true);
+        Process p = builder.start();
         PrintStream cmdInput = new PrintStream(p.getOutputStream());
         InputStream cmdOutput = p.getInputStream();
-        InputStream cmdErrors = p.getErrorStream();
-        new Thread(() -> {
+        cmdInput.println(":l " + task.getSourcePath());
+        cmdInput.flush();
+        Thread thread = new Thread(() -> {
             try (BufferedReader r = new BufferedReader(new InputStreamReader(cmdOutput))) {
                 String ch;
                 while (true) {
@@ -31,20 +33,9 @@ class TestsApplier {
             } catch (IOException e) {
                 System.out.println(e.getMessage());
             }
-        }).start();
-        new Thread(() -> {
-            try (BufferedReader r = new BufferedReader(new InputStreamReader(cmdErrors))) {
-                String ch;
-                while (true) {
-                    ch = r.readLine();
-                    output.add(ch);
-                    if (ch == null) break;
-                }
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-            }
-        }).start();
-        int max = testContents.size();
+        });
+        thread.start();
+        int maxScore = testContents.size();
         for (int i = 0; i < 6; i++) {
             if (i == 5) return "TL"; //Time Limit
             if (output.stream().anyMatch(a -> a.startsWith("Ok, modules loaded:")))
@@ -53,13 +44,13 @@ class TestsApplier {
         }
         long testingScore = testContents.entrySet().stream().filter(a -> {
             int beforeCommand = output.size();
-            String k = a.getKey();
-            ArrayList<String> values = a.getValue();
-            cmdInput.println(task.getName() + " " + k);
+            String taskInput = a.getKey();
+            ArrayList<String> taskOutputs = a.getValue();
+            cmdInput.println(task.getName() + " " + taskInput);
             cmdInput.flush();
             int time = 0;
             while (true) {
-                time ++;
+                time++;
                 if (output.size() > beforeCommand) break;
                 if (time == 200) return false; //Took too long to compile.
                 try {
@@ -69,9 +60,11 @@ class TestsApplier {
                 }
             }
             String response = output.get(output.size() - 1).split(" ", 2)[1]; // *>TaskName> Output
-            return values.contains(response);
+            return taskOutputs.contains(response);
         }).count();
-        return testingScore + "/" + max;
+        thread.interrupt();
+        output.forEach(System.out::println);
+        return testingScore + "/" + maxScore;
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
