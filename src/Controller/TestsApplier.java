@@ -11,7 +11,9 @@ import java.util.HashMap;
  * Created by GSatosov on 3/4/2017.
  */
 class TestsApplier {
-    private static String applyTests(Tests tests) throws IOException, InterruptedException {
+    private volatile boolean notInterrupted;
+
+    private String applyTests(Tests tests) throws IOException, InterruptedException {
         ArrayList<String> output = new ArrayList<>();
         Task task = tests.getTask();
         HashMap<String, ArrayList<String>> testContents = tests.getTestContents();
@@ -22,10 +24,11 @@ class TestsApplier {
         InputStream cmdOutput = p.getInputStream();
         cmdInput.println(":l " + task.getSourcePath());
         cmdInput.flush();
+        notInterrupted = true;
         Thread thread = new Thread(() -> {
             try (BufferedReader r = new BufferedReader(new InputStreamReader(cmdOutput))) {
                 String ch;
-                while (true) {
+                while (notInterrupted) {
                     ch = r.readLine();
                     if (ch == null) continue;
                     output.add(ch);
@@ -52,7 +55,7 @@ class TestsApplier {
             while (true) {
                 time++;
                 if (output.size() > beforeCommand) break;
-                if (time == 200) return false; //Took too long to compile.
+                if (time == 200) return false; //Took too long to compute.
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
@@ -62,8 +65,9 @@ class TestsApplier {
             String response = output.get(output.size() - 1).split(" ", 2)[1]; // *>TaskName> Output
             return taskOutputs.contains(response);
         }).count();
+        notInterrupted = false;
         thread.interrupt();
-        output.forEach(System.out::println);
+        //       output.forEach(System.out::println);
         return testingScore + "/" + maxScore;
     }
 
@@ -76,6 +80,6 @@ class TestsApplier {
         notTruth.add("False");
         contents.put("1100", truth);
         contents.put("1212", notTruth);
-        System.out.print(applyTests(new Tests(task1, contents)));
+        System.out.print(new TestsApplier().applyTests(new Tests(task1, contents)));
     }
 }
