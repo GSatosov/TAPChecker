@@ -81,9 +81,8 @@ public class GoogleSheetsManager {
         return new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).setApplicationName(Settings.getInstance().getApplicationName()).build();
     }
 
-    private static Task getTests(Task task) throws IOException {
+     static HashMap<String,ArrayList<String>> getTests(Task task) throws IOException {
         Sheets service = getSheetsService();
-
         String spreadsheetId = "1ejxrYkoWLKMDsQ3xW0c7DTrezikwIQMMqFv5l-g3Deg";
         String range = task.getSubjectName() + ", " + task.getName();
         ValueRange response = service.spreadsheets().values().get(spreadsheetId, range).execute();
@@ -104,32 +103,7 @@ public class GoogleSheetsManager {
                 }
             }
             System.out.print(testContent.toString());
-            task.setTestContents(testContent);
-            return task;
+            return testContent;
         }
     }
-
-    public static void main(String[] args){
-        try {
-            ArrayList<Task> tasks = EmailReceiver.retrieveMessagesData();
-            TestsApplier applier = new TestsApplier();
-            tasks.stream().map(task -> {
-                try {
-                    return getTests(task);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    return task;
-                }
-            }).forEach(task -> {
-                try {
-                    System.out.println(applier.applyTests(task));
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
-                }
-            });
-        } catch (MessagingException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IOException e) {
-            e.printStackTrace();
-        }
-    }
-
 }
