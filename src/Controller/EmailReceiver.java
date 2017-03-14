@@ -86,7 +86,6 @@ public class EmailReceiver {
         store.connect(Settings.getInstance().getHost(), Settings.getInstance().getEmail(), Settings.getInstance().getPassword());
         Folder inbox = store.getFolder("INBOX");
         Message[] messages = receiveEmails(inbox);
-
         Date lastDateEmailChecking = Settings.getInstance().getLastDateEmailChecked();
         System.out.println(lastDateEmailChecking.toString());
         Date newDateEmailChecking = new Date();
@@ -103,7 +102,7 @@ public class EmailReceiver {
                 throw new RuntimeException(e);
             }
         });
-        Settings.getInstance().setLastDateEmailChecked(newDateEmailChecking);
+        Settings.getInstance().setLastDateEmailChecked(new Date(0L));
         Settings.getInstance().saveSettings();
 
         inbox.close(false);

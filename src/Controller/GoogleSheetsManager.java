@@ -16,15 +16,21 @@ import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.*;
 import com.google.api.services.sheets.v4.Sheets;
 
+import javax.crypto.NoSuchPaddingException;
+import javax.mail.MessagingException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 public class GoogleSheetsManager {
 
-    /** Global instance of the {@link FileDataStoreFactory}. */
+    /**
+     * Global instance of the {@link FileDataStoreFactory}.
+     */
     private static FileDataStoreFactory DATA_STORE_FACTORY;
 
     /* Global instance of the JSON factory. */
@@ -103,9 +109,27 @@ public class GoogleSheetsManager {
         }
     }
 
-    public static void main(String[] args) throws IOException {
-        Task task = new Task("task 1", "subject 1","source");
-        System.out.println(getTests(task));
+    public static void main(String[] args){
+        try {
+            ArrayList<Task> tasks = EmailReceiver.retrieveMessagesData();
+            TestsApplier applier = new TestsApplier();
+            tasks.stream().map(task -> {
+                try {
+                    return getTests(task);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return task;
+                }
+            }).forEach(task -> {
+                try {
+                    System.out.println(applier.applyTests(task));
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+            });
+        } catch (MessagingException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }

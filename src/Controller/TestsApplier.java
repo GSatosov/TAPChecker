@@ -12,9 +12,11 @@ import java.util.HashMap;
 class TestsApplier {
     private volatile boolean notInterrupted;
 
-    private String applyTests(Task task) throws IOException, InterruptedException {
+     String applyTests(Task task) throws IOException, InterruptedException {
         ArrayList<String> output = new ArrayList<>();
         HashMap<String, ArrayList<String>> testContents = task.getTestContents();
+        char[] functionToTest = task.getName().toCharArray();
+        functionToTest[0] = Character.toLowerCase(functionToTest[0]);
         ProcessBuilder builder = new ProcessBuilder("ghci");
         builder.redirectErrorStream(true);
         Process p = builder.start();
@@ -45,9 +47,9 @@ class TestsApplier {
         }
         long testingScore = testContents.entrySet().stream().filter(a -> {
             int beforeCommand = output.size();
-            String taskInput = a.getKey();
+            String testInput = a.getKey();
             ArrayList<String> taskOutputs = a.getValue();
-            cmdInput.println(task.getName() + " " + taskInput);
+            cmdInput.println(new String(functionToTest) + " " + testInput);
             cmdInput.flush();
             int time = 0;
             while (true) {
@@ -70,7 +72,7 @@ class TestsApplier {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        Task task1 = new Task("hasPair", "FP", "e:/study/haskell/hometask1/HasPair.hs"); //Testing dummy
+        Task task1 = new Task("HasPair", "FP", "e:/study/haskell/hometask1/HasPair.hs"); //Testing dummy
         HashMap<String, ArrayList<String>> contents = new HashMap<>();
         ArrayList<String> truth = new ArrayList<>();
         ArrayList<String> notTruth = new ArrayList<>();
