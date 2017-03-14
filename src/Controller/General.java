@@ -19,5 +19,4 @@ public class General {
             e.printStackTrace();
         }
     }
-
 }
