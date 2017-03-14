@@ -2,7 +2,6 @@ package Controller;
 
 import Model.Settings;
 import Model.Task;
-import Model.Tests;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
@@ -76,7 +75,7 @@ public class GoogleSheetsManager {
         return new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).setApplicationName(Settings.getInstance().getApplicationName()).build();
     }
 
-    private static Tests getTests(Task task) throws IOException {
+    private static Task getTests(Task task) throws IOException {
         Sheets service = getSheetsService();
 
         String spreadsheetId = "1ejxrYkoWLKMDsQ3xW0c7DTrezikwIQMMqFv5l-g3Deg";
@@ -99,7 +98,8 @@ public class GoogleSheetsManager {
                 }
             }
             System.out.print(testContent.toString());
-            return new Tests(task, testContent);
+            task.setTestContents(testContent);
+            return task;
         }
     }
 
