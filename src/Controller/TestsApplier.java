@@ -1,7 +1,6 @@
 package Controller;
 
 import Model.Task;
-import Model.Tests;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -13,10 +12,9 @@ import java.util.HashMap;
 class TestsApplier {
     private volatile boolean notInterrupted;
 
-    private String applyTests(Tests tests) throws IOException, InterruptedException {
+    private String applyTests(Task task) throws IOException, InterruptedException {
         ArrayList<String> output = new ArrayList<>();
-        Task task = tests.getTask();
-        HashMap<String, ArrayList<String>> testContents = tests.getTestContents();
+        HashMap<String, ArrayList<String>> testContents = task.getTestContents();
         ProcessBuilder builder = new ProcessBuilder("ghci");
         builder.redirectErrorStream(true);
         Process p = builder.start();
@@ -80,6 +78,7 @@ class TestsApplier {
         notTruth.add("False");
         contents.put("1100", truth);
         contents.put("1212", notTruth);
-        System.out.print(new TestsApplier().applyTests(new Tests(task1, contents)));
+        task1.setTestContents(contents);
+        System.out.print(new TestsApplier().applyTests(task1));
     }
 }
