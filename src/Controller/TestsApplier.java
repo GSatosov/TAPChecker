@@ -1,13 +1,10 @@
 package Controller;
 
 import Model.Task;
-
-import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
+import Model.Tests;
 
 /**
- * Created by GSatosov on 3/4/2017.
+ * Class for applying tests. As of 3/14 only Haskell support is impelmented.
  */
 class TestsApplier {
     private volatile boolean notInterrupted;

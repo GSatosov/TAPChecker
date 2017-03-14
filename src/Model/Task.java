@@ -38,4 +38,9 @@ public class Task {
         this.subjectName = subject;
         this.sourcePath = source;
     }
+
+    @Override
+    public String toString() {
+        return "{" + this.name + ", " + this.subjectName + ", " + this.sourcePath + "}";
+    }
 }
