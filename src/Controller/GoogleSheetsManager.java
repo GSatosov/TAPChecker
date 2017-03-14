@@ -1,6 +1,6 @@
 package Controller;
 
-import Model.Constants;
+import Model.Settings;
 import Model.Task;
 import Model.Tests;
 import com.google.api.client.auth.oauth2.Credential;
@@ -21,10 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class GoogleSheetsManager {
 
@@ -40,14 +37,14 @@ public class GoogleSheetsManager {
     /* Global instance of the scopes required by this manager.
      *
      * If modifying these scopes, delete your previously saved credentials
-     * at {@link Constants.credentialsStoreDir}
+     * at {@link Settings.credentialsStoreDir}
      */
-    private static final List<String> SCOPES = Arrays.asList(SheetsScopes.SPREADSHEETS);
+    private static final Set<String> SCOPES = SheetsScopes.all();
 
     static {
         try {
             HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-            DATA_STORE_FACTORY = new FileDataStoreFactory(Constants.CREDENTIALS_STORE_DIR);
+            DATA_STORE_FACTORY = new FileDataStoreFactory(Settings.getInstance().getCredentialsStoreDir());
         } catch (Throwable t) {
             t.printStackTrace();
             System.exit(1);
@@ -67,7 +64,7 @@ public class GoogleSheetsManager {
         // Build flow and trigger user authorization request.
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES).setDataStoreFactory(DATA_STORE_FACTORY).setAccessType("offline").build();
         Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
-        System.out.println("Credentials saved to " + Constants.CREDENTIALS_STORE_DIR.getAbsolutePath());
+        System.out.println("Credentials saved to " + Settings.getInstance().getCredentialsStoreDir().getAbsolutePath());
         return credential;
     }
 
@@ -76,7 +73,7 @@ public class GoogleSheetsManager {
      */
     private static Sheets getSheetsService() throws IOException {
         Credential credential = authorize();
-        return new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).setApplicationName(Constants.APPLICATION_NAME).build();
+        return new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).setApplicationName(Settings.getInstance().getApplicationName()).build();
     }
 
     private static Tests getTests(Task task) throws IOException {
@@ -95,7 +92,6 @@ public class GoogleSheetsManager {
                 if (row.size() > 0 && !row.get(0).toString().isEmpty()) {
                     String test = row.get(0).toString();
                     ArrayList<String> output = new ArrayList<>();
-                    int index = 1;
                     for (int i = 1; i < row.size(); i++) {
                         if (!row.get(i).toString().isEmpty()) output.add(row.get(i).toString());
                     }

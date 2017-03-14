@@ -1,7 +1,9 @@
 package Controller;
-import Model.Constants;
+import Model.Settings;
+
+import javax.crypto.NoSuchPaddingException;
 import javax.mail.*;
-import javax.mail.search.FlagTerm;
+
 import Model.Attachment;
 
 import java.io.File;
@@ -10,8 +12,11 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Properties;
 
 /**
@@ -35,9 +40,9 @@ public class EmailReceiver {
     /*
     Receive all unread emails from teacher email
      */
-    private static Message[] receiveUnreadEmails(Folder inbox) throws MessagingException {
+    private static Message[] receiveEmails(Folder inbox) throws MessagingException {
         inbox.open(Folder.READ_WRITE);
-        return inbox.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
+        return inbox.getMessages();
     }
 
     /*
@@ -47,14 +52,12 @@ public class EmailReceiver {
         // name, group, subject
         String[] subject = message.getSubject().split(",");
 
-        System.out.println(subject.length);
         if (subject.length != 3) {
             return;
-            //throw new Exception("There is an error in message subject!");
         }
         ArrayList<Attachment> attachments = retrieveAttachments(message);
         attachments.forEach(attachment -> {
-            File f = new File(Constants.DATA_FOLDER + "/" + subject[2].trim() + "/" + subject[1].trim() + "/" + subject[0].trim() + "/" + attachment.getFileName());
+            File f = new File(Settings.getInstance().getDataFolder() + "/" + subject[2].trim() + "/" + subject[1].trim() + "/" + subject[0].trim() + "/" + attachment.getFileName());
             f.mkdirs();
             try {
                 Files.copy(attachment.getStream(), f.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -69,17 +72,22 @@ public class EmailReceiver {
     /*
     Retrieve messages data from inbox folder
      */
-    public static void retrieveMessagesData() throws IOException, MessagingException {
+    public static void retrieveMessagesData() throws IOException, MessagingException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException {
         Properties props = new Properties();
         props.put("mail.store.protocol", "imaps");
         Session session = Session.getInstance(props);
         Store store = session.getStore();
-        store.connect(Constants.HOST, Constants.EMAIL, Constants.PASSWORD);
+        store.connect(Settings.getInstance().getHost(), Settings.getInstance().getEmail(), Settings.getInstance().getPassword());
         Folder inbox = store.getFolder("INBOX");
-        Message[] messages = receiveUnreadEmails(inbox);
+        Message[] messages = receiveEmails(inbox);
+
+        Date lastDateEmailChecking = Settings.getInstance().getLastDateEmailChecked();
+        System.out.println(lastDateEmailChecking.toString());
+        Date newDateEmailChecking = new Date();
         Arrays.stream(messages).forEach(message -> {
             try {
-                saveMessageAttachments(message);
+                if (lastDateEmailChecking.compareTo(message.getReceivedDate()) < 0)
+                    saveMessageAttachments(message);
             }
             catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -88,6 +96,8 @@ public class EmailReceiver {
                 throw new RuntimeException(e);
             }
         });
+        Settings.getInstance().setLastDateEmailChecked(newDateEmailChecking);
+        Settings.getInstance().saveSettings();
 
         inbox.close(false);
     }
