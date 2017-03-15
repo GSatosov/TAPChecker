@@ -66,6 +66,7 @@ class TestsApplier {
             String response = output.get(output.size() - 1).split(" ", 2)[1]; // *>TaskName> Output
             return taskOutputs.contains(response);
         }).count();
+        cmdInput.close();
         notInterrupted = false;
         thread.interrupt();
         output.forEach(System.out::println);
