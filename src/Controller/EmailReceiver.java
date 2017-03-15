@@ -64,7 +64,7 @@ public class EmailReceiver {
         {
             // edit group
             subject[1] = subject[1].toUpperCase();
-            subject[1] = subject[1].replaceAll("А", "A").replaceAll("В", "B").replaceAll("С", "C").replaceAll("Е", "E").replaceAll("Н", "H").replaceAll("К", "K").replaceAll("М", "M").replaceAll("О", "O").replaceAll("Р", "P").replaceAll("", "T").replaceAll("Х", "X").replaceAll("У", "Y");
+            subject[1] = subject[1].replaceAll("А", "A").replaceAll("В", "B").replaceAll("С", "C").replaceAll("Е", "E").replaceAll("Н", "H").replaceAll("К", "K").replaceAll("М", "M").replaceAll("О", "O").replaceAll("Р", "P").replaceAll("Т", "T").replaceAll("Х", "X").replaceAll("У", "Y");
         }
         {
             // edit subject
