@@ -55,6 +55,22 @@ public class EmailReceiver {
         for (int i = 0; i < subject.length; i++) {
             subject[i] = subject[i].trim();
         }
+        {
+            // edit name
+            String[] name = subject[0].toLowerCase().split(" ");
+            subject[0] = "";
+            subject[0] = name[0].substring(0, 1).toUpperCase() + name[0].substring(1) + "_" + name[1].substring(0, 1).toUpperCase() + name[1].substring(1);
+        }
+        {
+            // edit group
+            subject[1] = subject[1].toUpperCase();
+            subject[1] = subject[1].replaceAll("А", "A").replaceAll("В", "B").replaceAll("С", "C").replaceAll("Е", "E").replaceAll("Н", "H").replaceAll("К", "K").replaceAll("М", "M").replaceAll("О", "O").replaceAll("Р", "P").replaceAll("", "T").replaceAll("Х", "X").replaceAll("У", "Y");
+        }
+        {
+            // edit subject
+            subject[2] = subject[2].toLowerCase().replaceAll(" ", "_");
+            subject[2] = subject[2].substring(0, 1).toUpperCase() + subject[2].substring(1);
+        }
         if (subject.length != 3) {
             return new ArrayList<>();
         }
