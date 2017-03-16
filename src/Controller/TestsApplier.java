@@ -42,26 +42,22 @@ class TestsApplier {
         cmdOutputThread.start();
         List<String> results = tasks.stream().map(task -> {
             HashMap<String, ArrayList<String>> testContents = task.getTestContents();
-            char[] functionToTest = task.getName().split("\\.")[0].toCharArray();
+            char[] functionToTest = task.getName().split("\\.")[0].toCharArray(); //TaskName.hs -> taskName
             functionToTest[0] = Character.toLowerCase(functionToTest[0]);
             cmdInput.println(":l " + task.getSourcePath());
             cmdInput.flush();
             int maxScore = testContents.size();
             for (int i = 0; i < 6; i++) {
-                if (i == 5) return "TL"; //Time Limit
-                if (output.stream().anyMatch(a -> a.startsWith("Ok, modules loaded:"))) {
+                if (i == 5) return "TL"; //Took too long to compile
+                if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Ok, modules loaded:"))
                     break;
-                }
+                if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Failed, modules loaded: none."))
+                    return "CE"; //Compilation Error
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-            }
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
             long testingScore = testContents.entrySet().stream().filter(a -> {
                 int beforeTesting = output.size();
@@ -82,7 +78,7 @@ class TestsApplier {
                     }
                 }
                 String response = output.get(beforeTesting).split(" ", 2)[1]; // *>TaskName> Output
-                return testOutputVariants.contains("Error") && output.get(beforeTesting).split(" ", 2)[1].startsWith("*** Exception") // If exception is expected.
+                return testOutputVariants.contains("Error") && response.startsWith("*** Exception") // If exception is expected.
                         || testOutputVariants.contains(response);
             }).count();
             return testingScore + "/" + maxScore;
