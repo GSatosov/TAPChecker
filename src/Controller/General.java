@@ -8,11 +8,10 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 
 /**
- * Created by Alexander Baranov on 03.03.2017.
+ * Entry point for program.
  */
 public class General {
 
@@ -21,29 +20,20 @@ public class General {
             ArrayList<Task> tasks = EmailReceiver.retrieveMessagesData();
             TestsApplier applier = new TestsApplier();
             HashMap<String, HashMap<String, ArrayList<String>>> tests = new HashMap<>();
-            tasks.stream().map(task -> {
+            tasks.forEach(task -> {
                 if (tests.containsKey(task.getName())) {
                     task.setTestContents(tests.get(task.getName()));
-                    return task;
                 }
                 try {
                     HashMap<String, ArrayList<String>> curTests = GoogleSheetsManager.getTests(task);
                     tests.put(task.getName(), curTests);
                     task.setTestContents(curTests);
-                    return task;
                 } catch (IOException e) {
-                    e.printStackTrace();
-                    return task;
-                }
-            }).forEach(task -> {
-                try {
-                    System.out.println(applier.applyTests(task));
-                } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                 }
             });
-        } catch (MessagingException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException |
-                IOException e) {
+            applier.applyTests(tasks).forEach(System.out::println);
+        } catch (MessagingException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
