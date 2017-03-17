@@ -31,7 +31,7 @@ class TestsApplier {
         });
     }
 
-    private String failedTests(String response, String sourcePath) {
+    private String failResponse(String response, String sourcePath) {
         File f = new File(sourcePath);
         if (f.delete())
             System.out.println("File at " + sourcePath + " has been successfully deleted.");
@@ -55,12 +55,11 @@ class TestsApplier {
             cmdInput.flush();
             int maxScore = testContents.size();
             for (int i = 0; i < 6; i++) {
-                if (i == 5) return failedTests("TL", task.getSourcePath()); //Took too long to compile
+                if (i == 5) return failResponse("TL", task.getSourcePath()); //Took too long to compile
                 if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Ok, modules loaded:"))
                     break;
                 if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Failed, modules loaded: none."))
-                    return failedTests("CE", task.getSourcePath()); //Compilation Error
-
+                    return failResponse("CE", task.getSourcePath()); //Compilation Error
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
@@ -91,7 +90,7 @@ class TestsApplier {
             }).count();
             String result = testingScore + "/" + maxScore;
             if (testingScore < maxScore)
-                return failedTests(result, task.getSourcePath());
+                return failResponse(result, task.getSourcePath());
             return result;
         }).collect(Collectors.toList());
         cmdInput.close();

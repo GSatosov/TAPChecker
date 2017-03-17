@@ -20,10 +20,10 @@ public class General {
         File parentFolder = new File(parentFolderPath);
         String[] subFolders = parentFolder.list((dir, name) -> new File(dir, name).isDirectory());
         if (subFolders != null)
-            Arrays.stream(subFolders).forEach(a -> folderCleaner(parentFolderPath + "/" + a));
+            Arrays.stream(subFolders).forEach(subFolderPath -> folderCleaner(parentFolderPath + "/" + subFolderPath));
         if (parentFolder.list() != null && parentFolder.list().length == 0)
             if (parentFolder.delete())
-                System.out.println("Folder at" + parentFolderPath + " has been successfully deleted.");
+                System.out.println("Folder at " + parentFolderPath + " has been successfully deleted.");
     }
 
     public static void main(String[] args) {

@@ -29,7 +29,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
-public class GoogleSheetsManager {
+class GoogleSheetsManager {
+    static private Sheets service;
+
+    private static void setSheetsService() throws IOException {
+        service = getSheetsService();
+    }
 
     /**
      * Global instance of the {@link FileDataStoreFactory}.
@@ -53,6 +58,7 @@ public class GoogleSheetsManager {
         try {
             HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
             DATA_STORE_FACTORY = new FileDataStoreFactory(Settings.getCredentialsStoreDir());
+            setSheetsService();
         } catch (Throwable t) {
             t.printStackTrace();
             System.exit(1);
@@ -78,8 +84,7 @@ public class GoogleSheetsManager {
         return new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).setApplicationName(Settings.getApplicationName()).build();
     }
 
-    public static HashMap<String,ArrayList<String>> getTests(Task task) throws IOException {
-        Sheets service = getSheetsService();
+    static HashMap<String, ArrayList<String>> getTests(Task task) throws IOException {
         String spreadsheetId = "1ejxrYkoWLKMDsQ3xW0c7DTrezikwIQMMqFv5l-g3Deg";
         String range = task.getSubjectName() + ", " + task.getName();
         ValueRange response = service.spreadsheets().values().get(spreadsheetId, range).execute();
@@ -99,8 +104,9 @@ public class GoogleSheetsManager {
                     testContent.put(test, output);
                 }
             }
-            System.out.print(testContent.toString());
+            System.out.println(testContent.toString());
             return testContent;
         }
     }
+
 }
