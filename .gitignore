@@ -1,4 +1,3 @@
-*.class
 .idea/workspace.xml
 .idea/tasks.xml
 # Mobile Tools for Java (J2ME)
@@ -13,3 +12,4 @@ data/
 hs_err_pid*
 out/
 TestData/
+/.idea/inspectionProfiles/Project_Default.xml

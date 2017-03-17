@@ -31,6 +31,13 @@ class TestsApplier {
         });
     }
 
+    private String failedTests(String response, String sourcePath) {
+        File f = new File(sourcePath);
+        if (f.delete())
+            System.out.println("File at " + sourcePath + " has been successfully deleted.");
+        return response;
+    }
+
     List<String> applyTests(ArrayList<Task> tasks) throws IOException, InterruptedException {
         notInterrupted = true;
         ProcessBuilder builder = new ProcessBuilder("ghci");
@@ -48,11 +55,12 @@ class TestsApplier {
             cmdInput.flush();
             int maxScore = testContents.size();
             for (int i = 0; i < 6; i++) {
-                if (i == 5) return "TL"; //Took too long to compile
+                if (i == 5) return failedTests("TL", task.getSourcePath()); //Took too long to compile
                 if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Ok, modules loaded:"))
                     break;
                 if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Failed, modules loaded: none."))
-                    return "CE"; //Compilation Error
+                    return failedTests("CE", task.getSourcePath()); //Compilation Error
+
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
@@ -81,7 +89,10 @@ class TestsApplier {
                 return testOutputVariants.contains("Error") && response.startsWith("*** Exception") // If exception is expected.
                         || testOutputVariants.contains(response);
             }).count();
-            return testingScore + "/" + maxScore;
+            String result = testingScore + "/" + maxScore;
+            if (testingScore < maxScore)
+                return failedTests(result, task.getSourcePath());
+            return result;
         }).collect(Collectors.toList());
         cmdInput.close();
         notInterrupted = false;
