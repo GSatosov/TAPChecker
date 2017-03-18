@@ -47,11 +47,21 @@ class TestsApplier {
         InputStream cmdOutputStream = p.getInputStream();
         Thread cmdOutputThread = cmdOutput(cmdOutputStream);
         cmdOutputThread.start();
+        while (true) { //On first launch ProcessBuilder takes a lot of time to execute first command.
+            if (!output.isEmpty())
+                break;
+            Thread.sleep(10);
+        }
+        if (output.get(0).startsWith("'ghci' is not recognized as an internal or external command")){
+            System.out.print("Add ghci to your PATH before proceeding.");
+            return new ArrayList<>(); //TODO Think of a better way.
+        }
         List<String> results = tasks.stream().map(task -> {
             ArrayList<Test> testContents = task.getTestContents();
             char[] functionToTest = task.getName().split("\\.")[0].toCharArray(); //TaskName.hs -> taskName
             functionToTest[0] = Character.toLowerCase(functionToTest[0]);
             cmdInput.println(":l " + task.getSourcePath());
+            System.out.println(":l " + task.getSourcePath());
             cmdInput.flush();
             int maxScore = testContents.size();
             int compilationTime = 0;
