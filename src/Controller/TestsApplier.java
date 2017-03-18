@@ -62,7 +62,7 @@ class TestsApplier {
                 if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Failed, modules loaded: none."))
                     return failResponse("CE", task.getSourcePath()); //Compilation Error
                 if (compilationTime == 200) {
-                    return failResponse("TL",task.getSourcePath());
+                    return failResponse("TL", task.getSourcePath()); // Took too long to compile.
                 }
                 try {
                     Thread.sleep(10);
