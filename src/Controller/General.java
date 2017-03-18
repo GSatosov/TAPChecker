@@ -1,6 +1,7 @@
 package Controller;
 
 import Model.Task;
+import Model.Test;
 
 import javax.crypto.NoSuchPaddingException;
 import javax.mail.MessagingException;
@@ -30,14 +31,14 @@ public class General {
         try {
             ArrayList<Task> tasks = EmailReceiver.retrieveMessagesData();
             TestsApplier applier = new TestsApplier();
-            HashMap<String, HashMap<String, ArrayList<String>>> tests = new HashMap<>();
+            HashMap<String, ArrayList<Test>> localTests = new HashMap<>();
             tasks.forEach(task -> {
-                if (tests.containsKey(task.getName())) {
-                    task.setTestContents(tests.get(task.getName()));
+                if (localTests.containsKey(task.getName())) {
+                    task.setTestContents(localTests.get(task.getName()));
                 }
                 try {
-                    HashMap<String, ArrayList<String>> curTests = GoogleSheetsManager.getTests(task);
-                    tests.put(task.getName(), curTests);
+                    ArrayList<Test> curTests = GoogleSheetsManager.getTests(task);
+                    localTests.put(task.getName(), curTests);
                     task.setTestContents(curTests);
                 } catch (IOException e) {
                     e.printStackTrace();

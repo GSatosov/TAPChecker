@@ -1,10 +1,10 @@
 package Controller;
 
 import Model.Task;
+import Model.Test;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,7 +48,7 @@ class TestsApplier {
         Thread cmdOutputThread = cmdOutput(cmdOutputStream);
         cmdOutputThread.start();
         List<String> results = tasks.stream().map(task -> {
-            HashMap<String, ArrayList<String>> testContents = task.getTestContents();
+            ArrayList<Test> testContents = task.getTestContents();
             char[] functionToTest = task.getName().split("\\.")[0].toCharArray(); //TaskName.hs -> taskName
             functionToTest[0] = Character.toLowerCase(functionToTest[0]);
             cmdInput.println(":l " + task.getSourcePath());
@@ -70,10 +70,10 @@ class TestsApplier {
                     e.printStackTrace();
                 }
             }
-            long testingScore = testContents.entrySet().stream().filter(a -> {
+            long testingScore = testContents.stream().filter(test -> {
                 int beforeTesting = output.size();
-                String testInput = a.getKey();
-                ArrayList<String> testOutputVariants = a.getValue();
+                String testInput = test.getInput();
+                ArrayList<String> testOutputVariants = test.getOutputVariants();
                 System.out.println(new String(functionToTest) + " " + testInput);
                 cmdInput.println(new String(functionToTest) + " " + testInput);
                 cmdInput.flush();
