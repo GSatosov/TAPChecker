@@ -54,14 +54,18 @@ class TestsApplier {
             cmdInput.println(":l " + task.getSourcePath());
             cmdInput.flush();
             int maxScore = testContents.size();
-            for (int i = 0; i < 6; i++) {
-                if (i == 5) return failResponse("TL", task.getSourcePath()); //Took too long to compile
+            int compilationTime = 0;
+            while (true) {
+                compilationTime++;
                 if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Ok, modules loaded:"))
                     break;
                 if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Failed, modules loaded: none."))
                     return failResponse("CE", task.getSourcePath()); //Compilation Error
+                if (compilationTime == 200) {
+                    return failResponse("TL",task.getSourcePath());
+                }
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep(10);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -73,11 +77,11 @@ class TestsApplier {
                 System.out.println(new String(functionToTest) + " " + testInput);
                 cmdInput.println(new String(functionToTest) + " " + testInput);
                 cmdInput.flush();
-                int time = 0;
+                int computationTime = 0;
                 while (true) {
-                    time++;
+                    computationTime++;
                     if (output.size() > beforeTesting) break;
-                    if (time == 200) return false; //Took too long to compute.
+                    if (computationTime == 150) return false; //Took too long to compute.
                     try {
                         Thread.sleep(10);
                     } catch (InterruptedException e) {
