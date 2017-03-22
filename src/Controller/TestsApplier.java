@@ -1,5 +1,6 @@
 package Controller;
 
+import Model.Result;
 import Model.Task;
 import Model.Test;
 
@@ -31,14 +32,14 @@ class TestsApplier {
         });
     }
 
-    private String failResponse(String response, String sourcePath) {
-        File f = new File(sourcePath);
+    private Result failResponse(String response, Task task) {
+        File f = new File(task.getSourcePath());
         if (f.delete())
-            System.out.println("File at " + sourcePath + " has been successfully deleted.");
-        return response;
+            System.out.println("File at " + task.getSourcePath() + " has been successfully deleted.");
+        return new Result(response, task);
     }
 
-    List<String> applyTests(ArrayList<Task> tasks) throws IOException, InterruptedException {
+    List<Result> applyTests(ArrayList<Task> tasks) throws IOException, InterruptedException {
         notInterrupted = true;
         ProcessBuilder builder = new ProcessBuilder("ghci");
         builder.redirectErrorStream(true);
@@ -52,11 +53,11 @@ class TestsApplier {
                 break;
             Thread.sleep(10);
         }
-        if (output.get(0).startsWith("'ghci' is not recognized as an internal or external command")){
+        if (output.get(0).startsWith("'ghci' is not recognized as an internal or external command")) {
             System.out.print("Add ghci to your PATH before proceeding.");
             return new ArrayList<>(); //TODO Think of a better way.
         }
-        List<String> results = tasks.stream().map(task -> {
+        List<Result> results = tasks.stream().map(task -> {
             ArrayList<Test> testContents = task.getTestContents();
             char[] functionToTest = task.getName().split("\\.")[0].toCharArray(); //TaskName.hs -> taskName
             functionToTest[0] = Character.toLowerCase(functionToTest[0]);
@@ -70,9 +71,9 @@ class TestsApplier {
                 if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Ok, modules loaded:"))
                     break;
                 if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Failed, modules loaded: none."))
-                    return failResponse("CE", task.getSourcePath()); //Compilation Error
+                    return failResponse("CE", task); //Compilation Error
                 if (compilationTime == 200) {
-                    return failResponse("TL", task.getSourcePath()); // Took too long to compile.
+                    return failResponse("TL", task); // Took too long to compile.
                 }
                 try {
                     Thread.sleep(10);
@@ -102,14 +103,15 @@ class TestsApplier {
                 return testOutputVariants.contains("Error") && response.startsWith("*** Exception") // If exception is expected.
                         || testOutputVariants.contains(response);
             }).count();
-            String result = testingScore + "/" + maxScore;
+            String taskResult = testingScore + "/" + maxScore;
             if (testingScore < maxScore)
-                return failResponse(result, task.getSourcePath());
-            return result;
+                return failResponse(taskResult, task);
+            return new Result(taskResult,task);
         }).collect(Collectors.toList());
         cmdInput.close();
         notInterrupted = false;
         cmdOutputThread.interrupt();
+        output.clear();
         return results;
     }
 }

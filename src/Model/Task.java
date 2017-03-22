@@ -1,6 +1,7 @@
 package Model;
 
 import java.util.ArrayList;
+
 /**
  * Created by GSatosov on 3/3/2017.
  */
@@ -9,6 +10,15 @@ public class Task {
     private String name;
     private String sourcePath;
     private ArrayList<Test> testContents;
+    private Student author;
+
+    public void setAuthor(Student author) {
+        this.author = author;
+    }
+
+    Student getAuthor() {
+        return author;
+    }
 
     public ArrayList<Test> getTestContents() {
         return testContents;
