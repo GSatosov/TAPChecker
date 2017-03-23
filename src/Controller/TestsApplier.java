@@ -41,9 +41,7 @@ class TestsApplier {
 
     List<Result> applyTests(ArrayList<Task> tasks) throws IOException, InterruptedException {
         notInterrupted = true;
-        ProcessBuilder builder = new ProcessBuilder("ghci");
-        builder.redirectErrorStream(true);
-        Process p = builder.start();
+        Process p = new ProcessBuilder("ghci").redirectErrorStream(true).start();
         PrintStream cmdInput = new PrintStream(p.getOutputStream());
         InputStream cmdOutputStream = p.getInputStream();
         Thread cmdOutputThread = cmdOutput(cmdOutputStream);

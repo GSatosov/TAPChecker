@@ -1,10 +1,12 @@
 package Controller;
+
 import Model.Settings;
 
 import javax.crypto.NoSuchPaddingException;
 import javax.mail.*;
 
 import Model.Attachment;
+import Model.Student;
 import Model.Task;
 
 import java.io.File;
@@ -22,19 +24,19 @@ import java.util.Properties;
 
 /**
  * Created by Alexander Baranov on 03.03.2017.
- *
+ * <p>
  * Receive messages from e-mail, retrieve and save all messages attachments by the next hierarchy:
- *     - subject 1/
- *          - group 1/
- *              - student name 1/
- *                  - task 1
- *                  ...
- *              - student name 2/
- *                  ...
- *          - group 2/
- *              ...
- *      - subject 2/
- *          ...
+ * - subject 1/
+ * - group 1/
+ * - student name 1/
+ * - task 1
+ * ...
+ * - student name 2/
+ * ...
+ * - group 2/
+ * ...
+ * - subject 2/
+ * ...
  */
 public class EmailReceiver {
 
@@ -52,9 +54,11 @@ public class EmailReceiver {
     private static ArrayList<Task> saveMessageAttachments(Message message) throws IOException, MessagingException {
         // name, group, subject
         String[] subject = message.getSubject().split(",");
-        for (int i = 0; i < subject.length; i++) {
+        for (int i = 0; i < subject.length; i++)
             subject[i] = subject[i].trim();
-        }
+        if (subject.length != 3)
+            return new ArrayList<>();
+        String fullName = subject[0];
         {
             // edit name
             String[] name = subject[0].toLowerCase().split(" ");
@@ -71,9 +75,6 @@ public class EmailReceiver {
             subject[2] = subject[2].toLowerCase().replaceAll(" ", "_");
             subject[2] = subject[2].substring(0, 1).toUpperCase() + subject[2].substring(1);
         }
-        if (subject.length != 3) {
-            return new ArrayList<>();
-        }
         ArrayList<Attachment> attachments = retrieveAttachments(message);
         ArrayList<Task> tasks = new ArrayList<>();
         attachments.forEach(attachment -> {
@@ -83,18 +84,18 @@ public class EmailReceiver {
                 Files.copy(attachment.getStream(), f.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 attachment.getStream().close();
                 tasks.add(new Task(attachment.getFileName(), subject[2], f.getAbsolutePath()));
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
         });
+        tasks.forEach(task -> task.setAuthor(new Student(fullName, subject[1])));
         return tasks;
     }
 
     /*
     Retrieve messages data from inbox folder
      */
-     static ArrayList<Task> retrieveMessagesData() throws IOException, MessagingException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+    static ArrayList<Task> retrieveMessagesData() throws IOException, MessagingException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException {
         Properties props = new Properties();
         props.put("mail.store.protocol", "imaps");
         Session session = Session.getInstance(props);
@@ -110,15 +111,13 @@ public class EmailReceiver {
             try {
                 if (lastDateEmailChecking.compareTo(message.getReceivedDate()) < 0)
                     tasks.addAll(saveMessageAttachments(message));
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 throw new UncheckedIOException(e);
-            }
-            catch (MessagingException e) {
+            } catch (MessagingException e) {
                 throw new RuntimeException(e);
             }
         });
-        Settings.getInstance().setLastDateEmailChecked(new Date(0L));
+        Settings.getInstance().setLastDateEmailChecked(new Date(0L));  // Left this way for testing purposes.
         Settings.getInstance().saveSettings();
 
         inbox.close(false);
