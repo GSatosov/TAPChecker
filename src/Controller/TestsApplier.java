@@ -32,7 +32,7 @@ class TestsApplier {
         });
     }
 
-    private Result failResponse(String response, Task task) {
+    private Result failResult(String response, Task task) {
         File f = new File(task.getSourcePath());
         if (f.delete())
             System.out.println("File at " + task.getSourcePath() + " has been successfully deleted.");
@@ -71,9 +71,9 @@ class TestsApplier {
                 if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Ok, modules loaded:"))
                     break;
                 if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Failed, modules loaded: none."))
-                    return failResponse("CE", task); //Compilation Error
+                    return failResult("CE", task); //Compilation Error
                 if (compilationTime == 200) {
-                    return failResponse("TL", task); // Took too long to compile.
+                    return failResult("TL", task); // Took too long to compile.
                 }
                 try {
                     Thread.sleep(10);
@@ -105,7 +105,7 @@ class TestsApplier {
             }).count();
             String taskResult = testingScore + "/" + maxScore;
             if (testingScore < maxScore)
-                return failResponse(taskResult, task);
+                return failResult(taskResult, task);
             return new Result(taskResult,task);
         }).collect(Collectors.toList());
         cmdInput.close();

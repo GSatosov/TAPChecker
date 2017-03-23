@@ -10,6 +10,6 @@ class Student {
 
     @Override
     public String toString() {
-        return this.name + " from group " + this.groupName;
+        return this.name + " from group " + this.groupName + " ";
     }
 }
