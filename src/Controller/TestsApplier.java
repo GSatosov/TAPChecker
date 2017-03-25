@@ -56,6 +56,7 @@ class TestsApplier {
             return new ArrayList<>(); //TODO Think of a better way.
         }
         List<Result> results = tasks.stream().map(task -> {
+            output.clear();
             ArrayList<Test> testContents = task.getTestContents();
             char[] functionToTest = task.getName().split("\\.")[0].toCharArray(); //TaskName.hs -> taskName
             functionToTest[0] = Character.toLowerCase(functionToTest[0]);
@@ -68,10 +69,8 @@ class TestsApplier {
                 compilationTime++;
                 if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Ok, modules loaded:"))
                     break;
-                if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Failed, modules loaded: none.")) {
-                    output.remove(output.get(output.size() - 1));
+                if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Failed, modules loaded: none."))
                     return failResult("CE", task); //Compilation Error
-                }
                 if (compilationTime == 200) {
                     return failResult("TL", task); // Took too long to compile.
                 }
