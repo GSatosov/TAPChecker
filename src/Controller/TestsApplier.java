@@ -39,7 +39,7 @@ class TestsApplier {
         return new Result(response, task);
     }
 
-    List<Result> applyTests(ArrayList<Task> tasks) throws IOException, InterruptedException {
+    List<Result> applyHaskellTests(ArrayList<Task> tasks) throws IOException, InterruptedException {
         notInterrupted = true;
         Process p = new ProcessBuilder("ghci").redirectErrorStream(true).start();
         PrintStream cmdInput = new PrintStream(p.getOutputStream());
@@ -68,8 +68,10 @@ class TestsApplier {
                 compilationTime++;
                 if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Ok, modules loaded:"))
                     break;
-                if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Failed, modules loaded: none."))
+                if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Failed, modules loaded: none.")) {
+                    output.remove(output.get(output.size() - 1));
                     return failResult("CE", task); //Compilation Error
+                }
                 if (compilationTime == 200) {
                     return failResult("TL", task); // Took too long to compile.
                 }
@@ -81,10 +83,10 @@ class TestsApplier {
             }
             long testingScore = testContents.stream().filter(test -> {
                 int beforeTesting = output.size();
-                String testInput = test.getInput();
+                String testCommand = String.valueOf(functionToTest) + " " + test.getInput();
                 ArrayList<String> testOutputVariants = test.getOutputVariants();
-                System.out.println(new String(functionToTest) + " " + testInput);
-                cmdInput.println(new String(functionToTest) + " " + testInput);
+                System.out.println(testCommand);
+                cmdInput.println(testCommand);
                 cmdInput.flush();
                 int computationTime = 0;
                 while (true) {
@@ -104,7 +106,7 @@ class TestsApplier {
             String taskResult = testingScore + "/" + maxScore;
             if (testingScore < maxScore)
                 return failResult(taskResult, task);
-            return new Result(taskResult,task);
+            return new Result(taskResult, task);
         }).collect(Collectors.toList());
         cmdInput.close();
         notInterrupted = false;

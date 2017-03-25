@@ -44,7 +44,7 @@ public class General {
                     e.printStackTrace();
                 }
             });
-            applier.applyTests(tasks).forEach(System.out::println);
+            applier.applyHaskellTests(tasks).forEach(System.out::println);
         } catch (MessagingException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IOException | InterruptedException e) {
             e.printStackTrace();
         }
