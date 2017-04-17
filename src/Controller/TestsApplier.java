@@ -7,18 +7,16 @@ import Model.Test;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Class for applying tests. As of 3/14 only Haskell support is implemented.
+ * Class for applying tests. As of 3/14 only Haskell support is implemented. As of 4/18 Java support is implemented as well.
  */
 class TestsApplier {
     private volatile boolean notInterrupted;
-    private ArrayList<String> haskellOutput = new ArrayList<>();
+    private ArrayList<String> output = new ArrayList<>();
 
     private Thread cmdOutput(InputStream stream) {
         return new Thread(() -> {
@@ -27,7 +25,7 @@ class TestsApplier {
                 while (notInterrupted) {
                     ch = r.readLine();
                     if (ch == null) continue;
-                    haskellOutput.add(ch);
+                    output.add(ch);
                     System.out.println(ch);
                 }
             } catch (IOException e) {
@@ -37,8 +35,7 @@ class TestsApplier {
     }
 
     private Result failResult(String response, Task task) {
-        File f = new File(task.getSourcePath());
-        if (f.delete())
+        if (new File(task.getSourcePath()).delete())
             System.out.println("File at " + task.getSourcePath() + " has been successfully deleted.");
         return new Result(response, task);
     }
@@ -51,16 +48,16 @@ class TestsApplier {
         Thread cmdOutputThread = cmdOutput(cmdOutputStream);
         cmdOutputThread.start();
         while (true) { //On first launch ProcessBuilder takes a lot of time to execute first command.
-            if (!haskellOutput.isEmpty())
+            if (!output.isEmpty())
                 break;
             Thread.sleep(10);
         }
-        if (haskellOutput.get(0).startsWith("'ghci' is not recognized as an internal or external command")) {
+        if (output.get(0).startsWith("'ghci' is not recognized as an internal or external command")) {
             System.out.print("Add ghci to your PATH before proceeding.");
             return new ArrayList<>(); //TODO Think of a better way.
         }
         List<Result> results = tasks.stream().map(task -> {
-            haskellOutput.clear();
+            output.clear();
             ArrayList<Test> testContents = task.getTestContents();
             char[] functionToTest = task.getName().split("\\.")[0].toCharArray(); //TaskName.hs -> taskName
             functionToTest[0] = Character.toLowerCase(functionToTest[0]);
@@ -71,9 +68,9 @@ class TestsApplier {
             int compilationTime = 0;
             while (true) {
                 compilationTime++;
-                if (!haskellOutput.isEmpty() && haskellOutput.get(haskellOutput.size() - 1).startsWith("Ok, modules loaded:"))
+                if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Ok, modules loaded:"))
                     break;
-                if (!haskellOutput.isEmpty() && haskellOutput.get(haskellOutput.size() - 1).startsWith("Failed, modules loaded: none."))
+                if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Failed, modules loaded: none."))
                     return failResult("CE", task); //Compilation Error
                 if (compilationTime == 200) {
                     return failResult("TL", task); // Took too long to compile.
@@ -85,7 +82,7 @@ class TestsApplier {
                 }
             }
             long testingScore = testContents.stream().filter(test -> {
-                int beforeTesting = haskellOutput.size();
+                int beforeTesting = output.size();
                 String testCommand = String.valueOf(functionToTest) + " " + test.getInput();
                 ArrayList<String> testOutputVariants = test.getOutputVariants();
                 System.out.println(testCommand);
@@ -94,7 +91,7 @@ class TestsApplier {
                 int computationTime = 0;
                 while (true) {
                     computationTime++;
-                    if (haskellOutput.size() > beforeTesting) break;
+                    if (output.size() > beforeTesting) break;
                     if (computationTime == 150) return false; //Took too long to compute.
                     try {
                         Thread.sleep(10);
@@ -102,7 +99,7 @@ class TestsApplier {
                         e.printStackTrace();
                     }
                 }
-                String response = haskellOutput.get(beforeTesting).split(" ", 2)[1]; // *>TaskName> Output
+                String response = output.get(beforeTesting).split(" ", 2)[1]; // *>TaskName> Output
                 return testOutputVariants.contains("Error") && response.startsWith("*** Exception") // If exception is expected.
                         || testOutputVariants.contains(response);
             }).count();
@@ -114,70 +111,105 @@ class TestsApplier {
         cmdInput.close();
         notInterrupted = false;
         cmdOutputThread.interrupt();
-        haskellOutput.clear();
-        p.destroy();
+        output.clear();
         return results;
     }
 
-    private Result applyJavaTests(Task task) throws IOException, URISyntaxException, ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException, InterruptedException {
+    List<Result> applyJavaTests(ArrayList<Task> tasks) throws IOException, InterruptedException {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        compiler.run(null, System.out, System.out, task.getSourcePath());
-        List<String> compileCommands = new ArrayList<>();
-        String parentFolder = new File(task.getSourcePath()).getParent();
-        compileCommands.add("java");
-        compileCommands.add("-cp");
-        compileCommands.add(parentFolder);
-        compileCommands.add(task.getName());
-        ProcessBuilder pb = new ProcessBuilder(compileCommands);
-        pb.redirectErrorStream(true);
-        File inputFile = new File(parentFolder + "\\input.txt");
-        if (inputFile.createNewFile())
-            System.out.println("File at " + inputFile.getAbsolutePath() + " was successfully created.");
-        File outputFile = new File(parentFolder + "\\output.txt");
-        if (outputFile.createNewFile())
-            System.out.println("File at " + outputFile.getAbsolutePath() + " was successfully created.");
-        pb.redirectInput(inputFile);
-        pb.redirectOutput(outputFile);
-        FileWriter writer = new FileWriter(inputFile);
-        BufferedReader reader = new BufferedReader(new FileReader(outputFile));
-        ArrayList<Test> testContents = task.getTestContents();
-        int maxScore = testContents.size();
-        long curScore = testContents.stream().filter(test -> {
-            try {
-                int computationTime = 0;
-                writer.write(test.getInput());
-                writer.flush();
-                pb.start();
-                String testOutput;
-                while (true) {
-                    testOutput = reader.readLine();
-                    if (testOutput != null)
-                        break;
-                    if (computationTime == 200)
-                        return false;
-                    Thread.sleep(10);
-                    computationTime++;
-                }
-                return test.getOutputVariants().contains(testOutput);
-            } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
-                return false;
+        List<Result> results = new ArrayList<>();
+        for (Task task : tasks) {
+            char[] functionToTest = task.getName().split("\\.")[0].toCharArray(); //TaskName.hs -> taskName
+            functionToTest[0] = Character.toLowerCase(functionToTest[0]);
+            String parentFolder = new File(task.getSourcePath()).getParent();
+            File errorFile = new File(parentFolder + "\\error.txt");
+            FileOutputStream errorStream = new FileOutputStream(errorFile);
+            compiler.run(null, System.out, errorStream, task.getSourcePath());
+            errorStream.close();
+            BufferedReader br = new BufferedReader(new FileReader(errorFile));
+            if (br.readLine() != null) {
+                results.add(failResult("CE", task));
+                br.close();
+                if (errorFile.delete())
+                    System.out.println("Error file for " + task.getSourcePath() + " has been successfully deleted.");
+                continue;
             }
-        }).count();
-        if (inputFile.delete())
-            System.out.println("File at " + inputFile.getAbsolutePath() + " was successfully deleted.");
-        if (outputFile.delete())
-            System.out.println("File at " + outputFile.getAbsolutePath() + " was successfully deleted.");
-        return new Result(curScore + "/" + maxScore, task);
-    }
-
-    public static void main(String[] args) throws ClassNotFoundException, URISyntaxException, IOException, InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException, InterruptedException {
-        Task task = new Task("testingDummy", "123", "data\\Функциональное_программирование\\A3401\\Назаров_Арсений\\testingDummy.java");
-        ArrayList<Test> tests = new ArrayList<>();
-        ArrayList<String> outputVariants = new ArrayList<>();
-        outputVariants.add("6");
-        tests.add(new Test("3 3", outputVariants));
-        task.setTestContents(tests);
-        System.out.println(new TestsApplier().applyJavaTests(task));
+            br.close();
+            List<String> compilationCommands = new ArrayList<>();
+            compilationCommands.add("java");
+            compilationCommands.add("-cp");
+            compilationCommands.add(parentFolder);
+            compilationCommands.add(String.valueOf(functionToTest));
+            ProcessBuilder pb = new ProcessBuilder(compilationCommands);
+            pb.redirectError(errorFile);
+            File inputFile = new File(parentFolder + "\\input.txt");
+            File outputFile = new File(parentFolder + "\\output.txt");
+            try {
+                if (inputFile.createNewFile())
+                    System.out.println("File at " + inputFile.getAbsolutePath() + " was successfully created.");
+                if (outputFile.createNewFile())
+                    System.out.println("File at " + outputFile.getAbsolutePath() + " was successfully created.");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            pb.redirectInput(inputFile);
+            pb.redirectOutput(outputFile);
+            ArrayList<Test> testContents = task.getTestContents();
+            int maxScore = testContents.size();
+            int curScore = 0;
+            boolean encounteredIH = false;
+            for (Test test : testContents) {
+                try {
+                    int computationTime = 0;
+                    FileWriter writer = new FileWriter(inputFile); //To clear input.
+                    FileWriter outputCleaner = new FileWriter(outputFile);
+                    outputCleaner.close(); //To clear output
+                    BufferedReader reader = new BufferedReader(new FileReader(outputFile));
+                    writer.write(test.getInput());
+                    writer.close();
+                    pb.start();
+                    String testOutput;
+                    while (true) {
+                        testOutput = reader.readLine();
+                        if (testOutput != null)
+                            break;
+                        if (computationTime == 200)
+                            continue;
+                        if (errorFile.length() != 0) {
+                            FileWriter errorCleaner = new FileWriter(errorFile);
+                            errorCleaner.close(); //Clean errorFile.
+                            results.add(failResult("IH", task)); //Input Handling Error
+                            encounteredIH = true;
+                            break;
+                        }
+                        Thread.sleep(10);
+                        computationTime++;
+                    }
+                    reader.close();
+                    if (encounteredIH)
+                        break; //Encountered IH error earlier.
+                    if (test.getOutputVariants().contains(testOutput))
+                        curScore++;
+                } catch (IOException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (inputFile.delete())
+                System.out.println("File at " + inputFile.getAbsolutePath() + " was successfully deleted.");
+            if (outputFile.delete())
+                System.out.println("File at " + outputFile.getAbsolutePath() + " was successfully deleted.");
+            if (errorFile.delete())
+                System.out.println("Error file for " + task.getSourcePath() + " has been successfully deleted.");
+            if (new File(task.getSourcePath().substring(0, task.getSourcePath().length() - 4) + "class").delete())
+                System.out.println("Class file for " + task.getSourcePath() + " has been successfully deleted.");
+            if (encounteredIH)
+                continue; //Encountered IH error earlier.
+            String taskResult = curScore + "/" + maxScore;
+            if (curScore < maxScore)
+                results.add(failResult(taskResult, task));
+            else
+                results.add(new Result(curScore + "/" + maxScore, task));
+        }
+        return results;
     }
 }

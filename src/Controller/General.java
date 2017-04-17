@@ -32,6 +32,8 @@ public class General {
             ArrayList<Task> tasks = EmailReceiver.retrieveMessagesData();
             TestsApplier applier = new TestsApplier();
             HashMap<String, ArrayList<Test>> localTests = new HashMap<>();
+            ArrayList<Task> javaTasks = new ArrayList<>();
+            ArrayList<Task> haskellTasks = new ArrayList<>();
             tasks.forEach(task -> {
                 if (localTests.containsKey(task.getName())) {
                     task.setTestContents(localTests.get(task.getName()));
@@ -43,8 +45,13 @@ public class General {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+                if (task.getName().endsWith("hs"))
+                    haskellTasks.add(task);
+                else
+                    javaTasks.add(task);
             });
-            applier.applyHaskellTests(tasks).forEach(System.out::println);
+            applier.applyHaskellTests(haskellTasks).forEach(System.out::println);
+            applier.applyJavaTests(javaTasks).forEach(System.out::println);
         } catch (MessagingException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IOException | InterruptedException e) {
             e.printStackTrace();
         }
