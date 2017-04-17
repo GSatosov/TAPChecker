@@ -52,7 +52,7 @@ public class General {
             });
             applier.applyHaskellTests(haskellTasks).forEach(System.out::println);
             applier.applyJavaTests(javaTasks).forEach(System.out::println);
-        } catch (MessagingException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IOException | InterruptedException | IllegalAccessException e) {
+        } catch (MessagingException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IOException | InterruptedException  e) {
             e.printStackTrace();
         }
         folderCleaner("data");
