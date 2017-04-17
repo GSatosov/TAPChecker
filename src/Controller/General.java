@@ -45,14 +45,14 @@ public class General {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                if (task.getName().endsWith("hs"))
+                if (task.getSubjectName().equals("Функциональное_программирование"))
                     haskellTasks.add(task);
                 else
                     javaTasks.add(task);
             });
             applier.applyHaskellTests(haskellTasks).forEach(System.out::println);
             applier.applyJavaTests(javaTasks).forEach(System.out::println);
-        } catch (MessagingException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IOException | InterruptedException e) {
+        } catch (MessagingException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IOException | InterruptedException | IllegalAccessException e) {
             e.printStackTrace();
         }
         folderCleaner("data");
