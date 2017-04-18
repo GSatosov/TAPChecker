@@ -7,6 +7,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.mail.MessagingException;
 import java.io.File;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -39,7 +40,8 @@ public class General {
                     task.setTestContents(localTests.get(task.getName()));
                 }
                 try {
-                    ArrayList<Test> curTests = GoogleSheetsManager.getTests(task);
+                    ArrayList<Test> curTests = GoogleDriveManager.getTests(task);
+                    if (curTests != null) System.out.println(curTests);
                     localTests.put(task.getName(), curTests);
                     task.setTestContents(curTests);
                 } catch (IOException e) {
@@ -52,7 +54,7 @@ public class General {
             });
             applier.applyHaskellTests(haskellTasks).forEach(System.out::println);
             applier.applyJavaTests(javaTasks).forEach(System.out::println);
-        } catch (MessagingException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IOException | InterruptedException  e) {
+        } catch (MessagingException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IOException | InterruptedException e) {
             e.printStackTrace();
         }
         folderCleaner("data");

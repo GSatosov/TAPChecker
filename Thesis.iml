@@ -11,6 +11,7 @@
     <orderEntry type="library" name="com.google.apis:google-api-services-sheets:v4-rev463-1.22.0" level="project" />
     <orderEntry type="library" name="com.google.api-client:google-api-client:1.22.0" level="project" />
     <orderEntry type="library" name="com.google.oauth-client:google-oauth-client-jetty:1.22.0" level="project" />
-    <orderEntry type="library" name="com.google.apis:google-api-services-drive:v3-rev62-1.22.0" level="project" />
+    <orderEntry type="library" name="com.google.apis:google-api-services-drive:v3-rev69-1.22.0" level="project" />
+    <orderEntry type="library" name="org.json:json:20160810" level="project" />
   </component>
 </module>
