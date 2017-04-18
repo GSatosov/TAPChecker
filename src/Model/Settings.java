@@ -69,7 +69,7 @@ public class Settings implements Serializable {
     /*
     Directory to store user credentials for this application.
      */
-    private transient static final File credentialsStoreDir = new File(System.getProperty("user.home"), ".credentials/thesis");
+    private transient static final File credentialsStoreDir = new File(System.getProperty("user.home"), ".credentials/thesis/googledrive");
 
     /*
     Last date when email was checked.
