@@ -90,20 +90,35 @@ public class GoogleDriveManager {
         if (parentId == null) throw new IOException("There is no subject folder!");
         else {
             result = service.files().list()
-                    .setQ("'" + parentId + "' in parents and mimeType != 'application/vnd.google-apps.folder'")
+                    .setQ("'" + parentId + "' in parents and " +
+                            "mimeType != 'application/vnd.google-apps.folder' and " +
+                            "mimeType != 'application/vnd.google-apps.audio' and " +
+                            "mimeType != 'application/vnd.google-apps.drawing' and " +
+                            "mimeType != 'application/vnd.google-apps.file' and " +
+                            "mimeType != 'application/vnd.google-apps.folder' and " +
+                            "mimeType != 'application/vnd.google-apps.form' and " +
+                            "mimeType != 'application/vnd.google-apps.fusiontable' and " +
+                            "mimeType != 'application/vnd.google-apps.map' and " +
+                            "mimeType != 'application/vnd.google-apps.photo' and " +
+                            "mimeType != 'application/vnd.google-apps.presentation' and " +
+                            "mimeType != 'application/vnd.google-apps.script' and " +
+                            "mimeType != 'application/vnd.google-apps.sites' and " +
+                            "mimeType != 'application/vnd.google-apps.spreadsheet' and " +
+                            "mimeType != 'application/vnd.google-apps.unknown' and " +
+                            "mimeType != 'application/vnd.google-apps.video' and " +
+                            "mimeType != 'application/vnd.google-apps.drive-sdk' and " +
+                            "mimeType != 'application/vnd.google-apps.document' and trashed = false")
                     .setFields("nextPageToken, files(id, name)")
                     .execute();
             String taskName = task.getName().split("\\.")[0];
 
             Optional<File> oTests = result.getFiles().stream().filter(file -> file.getName().split("\\.")[0].equals(taskName)).findFirst();
             if (!oTests.isPresent()) {
-                //throw new IOException("There is no tests file for: " + taskName + "/" + taskSubject);
-                return null;
+                throw new IOException("There is no tests file for: " + taskName + "/" + taskSubject);
             } else {
                 String fileId = oTests.get().getId();
                 OutputStream outputStream = new ByteArrayOutputStream();
                 service.files().get(fileId).executeMediaAndDownloadTo(outputStream);
-
                 ArrayList<Test> testsResult = new ArrayList<>();
 
                 JSONObject tests = new JSONObject(outputStream.toString());
