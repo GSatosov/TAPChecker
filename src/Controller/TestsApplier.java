@@ -83,7 +83,12 @@ class TestsApplier {
             }
             long testingScore = testContents.stream().filter(test -> {
                 int beforeTesting = output.size();
-                String testCommand = String.valueOf(functionToTest) + " " + test.getInput();
+                String testCommand;
+                if (test.getInput().contains(";")) {
+                    String[] testParts = test.getInput().split(";");
+                    testCommand = testParts[0] + " (" + String.valueOf(functionToTest) + testParts[1] + " )";
+                } else
+                    testCommand = String.valueOf(functionToTest) + " " + test.getInput();
                 ArrayList<String> testOutputVariants = test.getOutputVariants();
                 System.out.println(testCommand);
                 cmdInput.println(testCommand);
