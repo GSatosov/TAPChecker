@@ -29,9 +29,11 @@ public class General {
                 System.out.println("Folder at " + parentFolderPath + " has been successfully deleted.");
     }
 
-    private static ArrayList<Task> getTasks() throws MessagingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
+    private static List<Result> getResults() throws MessagingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException, InterruptedException {
         ArrayList<Task> tasks = EmailReceiver.retrieveMessagesData();
         HashMap<String, ArrayList<Test>> localTests = new HashMap<>();
+        ArrayList<Task> javaTasks = new ArrayList<>();
+        ArrayList<Task> haskellTasks = new ArrayList<>();
         tasks.forEach(task -> {
             if (localTests.containsKey(task.getName())) {
                 task.setTestContents(localTests.get(task.getName()));
@@ -41,31 +43,22 @@ public class General {
                 if (curTests != null) System.out.println(curTests);
                 localTests.put(task.getName(), curTests);
                 task.setTestContents(curTests);
+                if (task.getName().endsWith("hs"))
+                    haskellTasks.add(task);
+                else
+                    javaTasks.add(task);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         });
-        return tasks;
-    }
-
-    private static List<Result> applyTests(ArrayList<Task> tasks) throws IOException, InterruptedException {
         TestsApplier applier = new TestsApplier();
-        ArrayList<Task> javaTasks = new ArrayList<>();
-        ArrayList<Task> haskellTasks = new ArrayList<>();
-        tasks.forEach(task -> {
-            if (task.getName().endsWith("hs"))
-                haskellTasks.add(task);
-            else
-                javaTasks.add(task);
-        });
         List<Result> results = applier.applyHaskellTests(haskellTasks);
         results.addAll((applier.applyJavaTests(javaTasks)));
         return results;
     }
-
     public static void main(String[] args) {
         try {
-            applyTests(getTasks()).forEach(System.out::println);
+            getResults().forEach(System.out::println);
         } catch (MessagingException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IOException | InterruptedException e) {
             e.printStackTrace();
         }
