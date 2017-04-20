@@ -15,7 +15,7 @@ import java.util.HashMap;
  */
 public class General {
 
-    public static void main(String[] args) {
+    public static void main() {
         try {
             ArrayList<Task> tasks = EmailReceiver.retrieveMessagesData();
             TestsApplier applier = new TestsApplier();
