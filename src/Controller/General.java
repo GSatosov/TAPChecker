@@ -29,7 +29,7 @@ public class General {
                 System.out.println("Folder at " + parentFolderPath + " has been successfully deleted.");
     }
 
-    private static List<Result> getResults() throws MessagingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException, InterruptedException {
+    public static List<Result> getResults() throws MessagingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException, InterruptedException {
         ArrayList<Task> tasks = EmailReceiver.retrieveMessagesData();
         HashMap<String, ArrayList<Test>> localTests = new HashMap<>();
         ArrayList<Task> javaTasks = new ArrayList<>();
@@ -54,14 +54,15 @@ public class General {
         TestsApplier applier = new TestsApplier();
         List<Result> results = applier.applyHaskellTests(haskellTasks);
         results.addAll((applier.applyJavaTests(javaTasks)));
+        folderCleaner("data");
         return results;
     }
+
     public static void main(String[] args) {
         try {
             getResults().forEach(System.out::println);
         } catch (MessagingException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IOException | InterruptedException e) {
             e.printStackTrace();
         }
-        folderCleaner("data");
     }
 }
