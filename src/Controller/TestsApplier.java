@@ -21,14 +21,10 @@ class TestsApplier {
     private PrintStream cmdInput;
 
     private void clearFolder(Task task, File inputFile, File outputFile, File errorFile) {
-        if (inputFile.delete())
-            System.out.println("File at " + inputFile.getAbsolutePath() + " was successfully deleted.");
-        if (outputFile.delete())
-            System.out.println("File at " + outputFile.getAbsolutePath() + " was successfully deleted.");
-        if (errorFile.delete())
-            System.out.println("Error file for " + task.getSourcePath() + " has been successfully deleted.");
-        if (new File(task.getSourcePath().substring(0, task.getSourcePath().length() - 4) + "class").delete())
-            System.out.println("Class file for " + task.getSourcePath() + " has been successfully deleted.");
+        inputFile.delete();
+        outputFile.delete();
+        errorFile.delete();
+        new File(task.getSourcePath().substring(0, task.getSourcePath().length() - 4) + "class").delete();
     }
 
     private Thread cmdOutput(InputStream stream) {
@@ -39,7 +35,6 @@ class TestsApplier {
                     ch = r.readLine();
                     if (ch == null) continue;
                     output.add(ch);
-                    System.out.println(ch);
                 }
             } catch (IOException e) {
                 System.out.println(e.getMessage());
@@ -74,7 +69,6 @@ class TestsApplier {
         char[] functionToTest = task.getName().split("\\.")[0].toCharArray(); //TaskName.hs -> taskName
         functionToTest[0] = Character.toLowerCase(functionToTest[0]);
         cmdInput.println(":l " + task.getSourcePath());
-        System.out.println(":l " + task.getSourcePath());
         cmdInput.flush();
         int compilationTime = 0;
         while (true) {
@@ -106,7 +100,6 @@ class TestsApplier {
             } else
                 testCommand = String.valueOf(functionToTest) + " " + test.getInput();
             ArrayList<String> testOutputVariants = test.getOutputVariants();
-            System.out.println(testCommand);
             cmdInput.println(testCommand);
             cmdInput.flush();
             int computationTime = 0;
@@ -136,7 +129,7 @@ class TestsApplier {
 
     List<Result> applyHaskellTests(ArrayList<Task> tasks) throws IOException, InterruptedException {
         startHaskellProcess();
-        List<Result> results =  tasks.stream().map(this::handleHaskellTask).collect(Collectors.toList());
+        List<Result> results = tasks.stream().map(this::handleHaskellTask).collect(Collectors.toList());
         notInterrupted = false;
         haskellProcess.destroy();
         cmdInput.close();
@@ -154,10 +147,10 @@ class TestsApplier {
         BufferedReader br = new BufferedReader(new FileReader(errorFile));
         if (br.readLine() != null) {
             br.close();
-            if (errorFile.delete())
-                System.out.println("Error file for " + task.getSourcePath() + " has been successfully deleted.");
+            errorFile.delete();
             return new Result("CE", task);
         }
+        br.close();
         List<String> compilationCommands = new ArrayList<>();
         compilationCommands.add("java");
         compilationCommands.add("-cp");
@@ -168,10 +161,8 @@ class TestsApplier {
         File inputFile = new File(parentFolder + "\\input.txt");
         File outputFile = new File(parentFolder + "\\output.txt");
         try {
-            if (inputFile.createNewFile())
-                System.out.println("File at " + inputFile.getAbsolutePath() + " was successfully created.");
-            if (outputFile.createNewFile())
-                System.out.println("File at " + outputFile.getAbsolutePath() + " was successfully created.");
+            inputFile.createNewFile();
+            outputFile.createNewFile();
         } catch (IOException e) {
             e.printStackTrace();
         }
