@@ -13,12 +13,12 @@ public class Test {
     private boolean antiPlagiarism;
     private String deadline;
 
-    public String getInput() {
-        return this.input.get(0);
+    public ArrayList<String> getInput() {
+        return this.input;
     }
 
-    public ArrayList<String> getOutputVariants() {
-        return this.outputVariants.stream().map(v -> v.get(0)).collect(Collectors.toCollection(ArrayList::new));
+    public ArrayList<ArrayList<String>> getOutputVariants() {
+        return this.outputVariants;
     }
 
     public long getTime() {

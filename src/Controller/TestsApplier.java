@@ -63,7 +63,7 @@ class TestsApplier {
         }
     }
 
-    private Result handleHaskellTask(Task task){
+    private Result handleHaskellTask(Task task) {
         output.clear();
         ArrayList<Test> testContents = task.getTestContents();
         char[] functionToTest = task.getName().split("\\.")[0].toCharArray(); //TaskName.hs -> taskName
@@ -93,14 +93,15 @@ class TestsApplier {
         int testingScore = 0;
         int maxScore = testContents.size();
         for (Test test : testContents) {
+            String testInput = test.getInput().get(0);
             int beforeTesting = output.size();
             String testCommand;
-            if (test.getInput().contains(";")) {
-                String[] testParts = test.getInput().split(";");
+            if (testInput.contains(";")) {
+                String[] testParts = testInput.split(";");
                 testCommand = testParts[0] + " (" + String.valueOf(functionToTest) + testParts[1] + " )";
             } else
-                testCommand = String.valueOf(functionToTest) + " " + test.getInput();
-            ArrayList<String> testOutputVariants = test.getOutputVariants();
+                testCommand = String.valueOf(functionToTest) + " " + testInput; //For haskell there is only one-line input.
+            ArrayList<String> testOutputVariants = test.getOutputVariants().stream().map(v -> v.get(0)).collect(Collectors.toCollection(ArrayList::new));
             cmdInput.println(testCommand);
             cmdInput.flush();
             int computationTime = 0;
@@ -111,8 +112,7 @@ class TestsApplier {
                     cmdInput.close();
                     try {
                         Runtime.getRuntime().exec("taskkill /F /IM ghc.exe");
-                    }
-                    catch (IOException e){
+                    } catch (IOException e) {
                         e.printStackTrace();
                     }
                     startHaskellProcess(); //Restart ghci if we encountered infinite input/ long computation.
@@ -143,8 +143,6 @@ class TestsApplier {
     }
 
     private Result handleJavaTask(Task task, JavaCompiler compiler) throws IOException {
-        char[] functionToTest = task.getName().split("\\.")[0].toCharArray(); //TaskName.hs -> taskName
-        functionToTest[0] = Character.toLowerCase(functionToTest[0]);
         String parentFolder = new File(task.getSourcePath()).getParent();
         File errorFile = new File(parentFolder + "\\error.txt");
         FileOutputStream errorStream = new FileOutputStream(errorFile);
@@ -152,8 +150,6 @@ class TestsApplier {
         errorStream.close();
         BufferedReader br = new BufferedReader(new FileReader(errorFile));
         if (br.readLine() != null) {
-            br.close();
-            errorFile.delete();
             return new Result("CE", task);
         }
         br.close();
@@ -161,7 +157,7 @@ class TestsApplier {
         compilationCommands.add("java");
         compilationCommands.add("-cp");
         compilationCommands.add(parentFolder);
-        compilationCommands.add(String.valueOf(functionToTest));
+        compilationCommands.add(String.valueOf(task.getName().split("\\.")[0])); //Sum.java -> Sum
         ProcessBuilder pb = new ProcessBuilder(compilationCommands);
         pb.redirectError(errorFile);
         File inputFile = new File(parentFolder + "\\input.txt");
@@ -184,27 +180,33 @@ class TestsApplier {
                 FileWriter outputCleaner = new FileWriter(outputFile);
                 outputCleaner.close(); //To clear output
                 BufferedReader reader = new BufferedReader(new FileReader(outputFile));
-                writer.write(test.getInput());
-                writer.close();
-                pb.start();
-                String testOutput;
-                boolean tlCheck;
-                while (true) {
-                    testOutput = reader.readLine();
-                    if (testOutput != null)
-                        break;
-                    tlCheck = computationTime == test.getTime() * 100;
-                    if (errorFile.length() != 0 || tlCheck) {
-                        FileWriter errorCleaner = new FileWriter(errorFile);
-                        errorCleaner.close(); //Clean errorFile.
-                        reader.close(); //Close inputFile
-                        clearFolder(task, inputFile, outputFile, errorFile);
-                        if (tlCheck)
-                            return new Result("TL", task); //Time Limit.
-                        return new Result("IH", task); //Input Handling Error
+                test.getInput().forEach(testInput -> {
+                    try {
+                        writer.write(testInput);
+                        writer.write("\n");
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
+                });
+                writer.close();
+                Process javaProcess = pb.start();
+                while (javaProcess.isAlive()) {
+                    if (computationTime == test.getTime() * 100)
+                        return new Result("TL", task); //Time Limit.
                     Thread.sleep(10);
                     computationTime++;
+                }
+                if (errorFile.length() != 0) {
+                    reader.close(); //Close inputFile
+                    inputFile.delete();
+                    outputFile.delete();
+                    return new Result("IH", task); //Input Handling Error
+                }
+                ArrayList<String> testOutput = new ArrayList<>();
+                String curString = reader.readLine();
+                while (curString != null) {
+                    testOutput.add(curString);
+                    curString = reader.readLine();
                 }
                 reader.close();
                 if (test.getOutputVariants().contains(testOutput))
@@ -213,7 +215,7 @@ class TestsApplier {
                 e.printStackTrace();
             }
         }
-        clearFolder(task, inputFile, outputFile, errorFile);
+              clearFolder(task, inputFile, outputFile, errorFile);
         String taskResult = curScore + "/" + maxScore;
         if (curScore < maxScore)
             return new Result(taskResult, task);
