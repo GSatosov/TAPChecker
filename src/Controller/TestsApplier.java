@@ -66,8 +66,6 @@ class TestsApplier {
     private Result handleHaskellTask(Task task) {
         output.clear();
         ArrayList<Test> testContents = task.getTestContents();
-        char[] functionToTest = task.getName().split("\\.")[0].toCharArray(); //TaskName.hs -> taskName
-        functionToTest[0] = Character.toLowerCase(functionToTest[0]);
         cmdInput.println(":l " + task.getSourcePath());
         cmdInput.flush();
         int compilationTime = 0;
@@ -93,14 +91,8 @@ class TestsApplier {
         int testingScore = 0;
         int maxScore = testContents.size();
         for (Test test : testContents) {
-            String testInput = test.getInput().get(0);
             int beforeTesting = output.size();
-            String testCommand;
-            if (testInput.contains(";")) {
-                String[] testParts = testInput.split(";");
-                testCommand = testParts[0] + " (" + String.valueOf(functionToTest) + testParts[1] + " )";
-            } else
-                testCommand = String.valueOf(functionToTest) + " " + testInput; //For haskell there is only one-line input.
+            String testCommand = test.getInput().get(0); //Haskell tasks do not support multi-line inputs.
             ArrayList<String> testOutputVariants = test.getOutputVariants().stream().map(v -> v.get(0)).collect(Collectors.toCollection(ArrayList::new));
             cmdInput.println(testCommand);
             cmdInput.flush();
@@ -215,7 +207,7 @@ class TestsApplier {
                 e.printStackTrace();
             }
         }
-              clearFolder(task, inputFile, outputFile, errorFile);
+        clearFolder(task, inputFile, outputFile, errorFile);
         String taskResult = curScore + "/" + maxScore;
         if (curScore < maxScore)
             return new Result(taskResult, task);
