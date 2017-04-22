@@ -63,7 +63,7 @@ class TestsApplier {
         }
     }
 
-    private Result handleHaskellTask(Task task) {
+    private Result handleHaskellTask(Task task){
         output.clear();
         ArrayList<Test> testContents = task.getTestContents();
         char[] functionToTest = task.getName().split("\\.")[0].toCharArray(); //TaskName.hs -> taskName
@@ -79,6 +79,7 @@ class TestsApplier {
                 return new Result("CE", task); //Compilation Error
             if (compilationTime == 100) {
                 notInterrupted = false;
+                cmdInput.close();
                 haskellProcess.destroy();
                 startHaskellProcess();
                 return new Result("TL", task); // Took too long to compile.
@@ -107,9 +108,14 @@ class TestsApplier {
                 computationTime++;
                 if (output.size() > beforeTesting) break;
                 if (computationTime == test.getTime() * 100) {
-                    notInterrupted = false;
-                    haskellProcess.destroy();
-                    startHaskellProcess();
+                    cmdInput.close();
+                    try {
+                        Runtime.getRuntime().exec("taskkill /F /IM ghc.exe");
+                    }
+                    catch (IOException e){
+                        e.printStackTrace();
+                    }
+                    startHaskellProcess(); //Restart ghci if we encountered infinite input/ long computation.
                     return new Result("TL", task); //Took too long to compute.
                 }
                 try {
