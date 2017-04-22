@@ -20,10 +20,9 @@ class TestsApplier {
     private Process haskellProcess;
     private PrintStream cmdInput;
 
-    private void clearFolder(Task task, File inputFile, File outputFile, File errorFile) {
+    private void clearFolder(Task task, File inputFile, File outputFile) {
         inputFile.delete();
         outputFile.delete();
-        errorFile.delete();
         new File(task.getSourcePath().substring(0, task.getSourcePath().length() - 4) + "class").delete();
     }
 
@@ -190,8 +189,7 @@ class TestsApplier {
                 }
                 if (errorFile.length() != 0) {
                     reader.close(); //Close inputFile
-                    inputFile.delete();
-                    outputFile.delete();
+                    clearFolder(task, inputFile, outputFile);
                     return new Result("IH", task); //Input Handling Error
                 }
                 ArrayList<String> testOutput = new ArrayList<>();
@@ -207,7 +205,8 @@ class TestsApplier {
                 e.printStackTrace();
             }
         }
-        clearFolder(task, inputFile, outputFile, errorFile);
+        clearFolder(task, inputFile, outputFile);
+        errorFile.delete();
         String taskResult = curScore + "/" + maxScore;
         if (curScore < maxScore)
             return new Result(taskResult, task);
