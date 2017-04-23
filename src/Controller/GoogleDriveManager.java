@@ -27,18 +27,25 @@ import java.util.*;
 
 public class GoogleDriveManager {
 
-    /** Global instance of the {@link FileDataStoreFactory}. */
+    /**
+     * Global instance of the {@link FileDataStoreFactory}.
+     */
     private static FileDataStoreFactory DATA_STORE_FACTORY;
 
-    /** Global instance of the JSON factory. */
+    /**
+     * Global instance of the JSON factory.
+     */
     private static final JsonFactory JSON_FACTORY =
             JacksonFactory.getDefaultInstance();
 
-    /** Global instance of the HTTP transport. */
+    /**
+     * Global instance of the HTTP transport.
+     */
     private static HttpTransport HTTP_TRANSPORT;
 
-    /** Global instance of the scopes required by this quickstart.
-     *
+    /**
+     * Global instance of the scopes required by this quickstart.
+     * <p>
      * If modifying these scopes, delete your previously saved credentials
      * at ~/.credentials/drive-java-quickstart
      */
@@ -56,6 +63,7 @@ public class GoogleDriveManager {
 
     /**
      * Creates an authorized Credential object.
+     *
      * @return an authorized Credential object.
      * @throws IOException
      */
@@ -68,6 +76,7 @@ public class GoogleDriveManager {
 
     /**
      * Build and return an authorized Drive client service.
+     *
      * @return an authorized Drive client service
      * @throws IOException
      */
@@ -125,6 +134,7 @@ public class GoogleDriveManager {
                 String deadline = tests.getString("deadline");
                 boolean antiPlagiarism = tests.getBoolean("antiPlagiarism");
                 long time = tests.getLong("maximumOperatingTime");
+                boolean hardDeadline = tests.getBoolean("hardDeadline");
                 JSONArray aTests = tests.getJSONArray("tests");
                 aTests.forEach(t -> {
                     ArrayList<String> input = new ArrayList<>();
@@ -136,10 +146,10 @@ public class GoogleDriveManager {
                     jOutput.forEach(jO -> {
                         JSONArray aJO = (JSONArray) jO;
                         ArrayList<String> outputVar = new ArrayList<>();
-                        aJO.forEach(jAJO -> outputVar.add((String)jAJO));
+                        aJO.forEach(jAJO -> outputVar.add((String) jAJO));
                         output.add(outputVar);
                     });
-                    testsResult.add(new Test(input, output, time, deadline, antiPlagiarism));
+                    testsResult.add(new Test(input, output, time, deadline, antiPlagiarism, hardDeadline));
                 });
                 return testsResult;
             }

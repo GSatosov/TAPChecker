@@ -1,6 +1,7 @@
 package Model;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * Created by GSatosov on 3/3/2017.
@@ -11,17 +12,22 @@ public class Task {
     private String sourcePath;
     private ArrayList<Test> testContents;
     private Student author;
+    private Date sentDate;
 
     public void setAuthor(Student author) {
         this.author = author;
     }
 
     Student getAuthor() {
-        return author;
+        return this.author;
+    }
+
+    public Date getSentDate() {
+        return this.sentDate;
     }
 
     public ArrayList<Test> getTestContents() {
-        return testContents;
+        return this.testContents;
     }
 
     public void setTestContents(ArrayList<Test> testContents) {
@@ -29,15 +35,15 @@ public class Task {
     }
 
     public String getSubjectName() {
-        return subjectName;
+        return this.subjectName;
     }
 
     public String getName() {
-        return name;
+        return this.name;
     }
 
     public String getSourcePath() {
-        return sourcePath;
+        return this.sourcePath;
     }
 
     public Task(String name, String subject, String source) {

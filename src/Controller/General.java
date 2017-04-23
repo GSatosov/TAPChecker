@@ -27,10 +27,10 @@ public class General {
     }
 
     public static List<Result> getResults() throws MessagingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
-        Date oldDate = new Date();
+        Date startDate = new Date();
         ArrayList<Task> tasks = EmailReceiver.retrieveMessagesData();
         Date taskDate = new Date();
-        System.out.println((taskDate.getTime() - oldDate.getTime()) + " ms to get the tasks.");
+        System.out.println((taskDate.getTime() - startDate.getTime()) + " ms to get the tasks.");
         HashMap<String, ArrayList<Test>> localTests = new HashMap<>();
         ArrayList<Task> javaTasks = new ArrayList<>();
         ArrayList<Task> haskellTasks = new ArrayList<>();
@@ -51,13 +51,13 @@ public class General {
                 e.printStackTrace();
             }
         });
-        Date curDate = new Date();
-        System.out.println((curDate.getTime() - taskDate.getTime())  + " ms to get the tests.");
+        Date testDate = new Date();
+        System.out.println((testDate.getTime() - taskDate.getTime()) + " ms to get the tests.");
         TestsApplier applier = new TestsApplier();
         ArrayList<Result> results = applier.applyHaskellTests(haskellTasks);
         results.addAll((applier.applyJavaTests(javaTasks)));
-        System.out.println((new Date().getTime() - curDate.getTime()) + " ms to run the tests.");
-        folderCleaner("data");
+        System.out.println((new Date().getTime() - testDate.getTime()) + " ms to run the tests.");
+        //  folderCleaner("data");
         return results;
     }
 
