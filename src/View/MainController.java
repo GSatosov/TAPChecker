@@ -16,7 +16,7 @@ import java.util.ResourceBundle;
 /**
  * Created by Arseniy Nazarov on 20.04.17.
  */
-public class MainController implements Initializable{
+public class MainController implements Initializable {
     @FXML
     Button tests;
 
@@ -25,7 +25,7 @@ public class MainController implements Initializable{
         tests.setOnAction(event -> {
             try {
                 General.getResults();
-            } catch (MessagingException | InvalidKeyException | NoSuchPaddingException | NoSuchAlgorithmException | IOException | InterruptedException e) {
+            } catch (MessagingException | InvalidKeyException | NoSuchPaddingException | NoSuchAlgorithmException | IOException e) {
                 e.printStackTrace();
             }
         });

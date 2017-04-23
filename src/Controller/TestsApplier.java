@@ -7,6 +7,8 @@ import Model.Test;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,7 +18,7 @@ import java.util.stream.Collectors;
  */
 class TestsApplier {
     private volatile boolean notInterrupted;
-    private ArrayList<String> output = new ArrayList<>();
+    private ArrayList<String> output;
     private Process haskellProcess;
     private PrintStream cmdInput;
     private JavaCompiler compiler;
@@ -27,7 +29,27 @@ class TestsApplier {
         new File(task.getSourcePath().substring(0, task.getSourcePath().length() - 4) + "class").delete();
     }
 
+    private void removePackageStatementInJavaTasks(Task task) {
+        try {
+            List<String> lines = Files.readAllLines(Paths.get(task.getSourcePath()));
+            lines = lines.stream().filter(line -> !line.trim().startsWith("package")).collect(Collectors.toList());
+            File sourceFile = new File(task.getSourcePath());
+            FileWriter writer = new FileWriter(sourceFile);
+            lines.forEach(line -> {
+                try {
+                    writer.write(line + "\n");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private Thread cmdOutput(InputStream stream) {
+        output = new ArrayList<>();
         return new Thread(() -> {
             try (BufferedReader r = new BufferedReader(new InputStreamReader(stream))) {
                 String ch;
@@ -137,9 +159,9 @@ class TestsApplier {
     private Result handleJavaTask(Task task) {
         String parentFolder = new File(task.getSourcePath()).getParent();
         File errorFile = new File(parentFolder + "\\error.txt");
-        FileOutputStream errorStream = null;
+        removePackageStatementInJavaTasks(task);
         try {
-            errorStream = new FileOutputStream(errorFile);
+            FileOutputStream errorStream = new FileOutputStream(errorFile);
             compiler.run(null, System.out, errorStream, task.getSourcePath());
             errorStream.close();
             BufferedReader br = new BufferedReader(new FileReader(errorFile));
@@ -156,7 +178,6 @@ class TestsApplier {
         compilationCommands.add(parentFolder);
         compilationCommands.add(String.valueOf(task.getName().split("\\.")[0])); //Sum.java -> Sum
         ProcessBuilder pb = new ProcessBuilder(compilationCommands);
-        pb.redirectError(errorFile);
         File inputFile = new File(parentFolder + "\\input.txt");
         File outputFile = new File(parentFolder + "\\output.txt");
         try {
@@ -167,6 +188,7 @@ class TestsApplier {
         }
         pb.redirectInput(inputFile);
         pb.redirectOutput(outputFile);
+        pb.redirectError(errorFile);
         ArrayList<Test> testContents = task.getTestContents();
         int maxScore = testContents.size();
         int curScore = 0;
