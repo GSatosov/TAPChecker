@@ -125,9 +125,9 @@ class TestsApplier {
         return new Result(taskResult, task);
     }
 
-    List<Result> applyHaskellTests(ArrayList<Task> tasks) throws IOException, InterruptedException {
+    ArrayList<Result> applyHaskellTests(ArrayList<Task> tasks) {
         startHaskellProcess();
-        List<Result> results = tasks.stream().map(this::handleHaskellTask).collect(Collectors.toList());
+        ArrayList<Result> results = tasks.stream().map(this::handleHaskellTask).collect(Collectors.toCollection(ArrayList::new));
         notInterrupted = false;
         haskellProcess.destroy();
         cmdInput.close();
@@ -219,8 +219,8 @@ class TestsApplier {
         return new Result(curScore + "/" + maxScore, task);
     }
 
-    List<Result> applyJavaTests(ArrayList<Task> tasks) throws IOException, InterruptedException {
+    ArrayList<Result> applyJavaTests(ArrayList<Task> tasks) {
         compiler = ToolProvider.getSystemJavaCompiler();
-        return tasks.stream().map(this::handleJavaTask).collect(Collectors.toList());
+        return tasks.stream().map(this::handleJavaTask).collect(Collectors.toCollection(ArrayList::new));
     }
 }

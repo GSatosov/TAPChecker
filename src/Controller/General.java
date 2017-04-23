@@ -26,7 +26,7 @@ public class General {
                 System.out.println("Folder at " + parentFolderPath + " has been successfully deleted.");
     }
 
-    public static List<Result> getResults() throws MessagingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException, InterruptedException {
+    public static List<Result> getResults() throws MessagingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
         Date oldDate = new Date();
         ArrayList<Task> tasks = EmailReceiver.retrieveMessagesData();
         Date taskDate = new Date();
@@ -54,7 +54,7 @@ public class General {
         Date curDate = new Date();
         System.out.println((curDate.getTime() - taskDate.getTime())  + " ms to get the tests.");
         TestsApplier applier = new TestsApplier();
-        List<Result> results = applier.applyHaskellTests(haskellTasks);
+        ArrayList<Result> results = applier.applyHaskellTests(haskellTasks);
         results.addAll((applier.applyJavaTests(javaTasks)));
         System.out.println((new Date().getTime() - curDate.getTime()) + " ms to run the tests.");
         folderCleaner("data");
@@ -64,7 +64,7 @@ public class General {
     public static void main(String[] args) {
         try {
             getResults().forEach(System.out::println);
-        } catch (MessagingException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IOException | InterruptedException e) {
+        } catch (MessagingException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IOException e) {
             e.printStackTrace();
         }
     }
