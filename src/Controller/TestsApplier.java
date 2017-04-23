@@ -19,6 +19,7 @@ class TestsApplier {
     private ArrayList<String> output = new ArrayList<>();
     private Process haskellProcess;
     private PrintStream cmdInput;
+    private JavaCompiler compiler;
 
     private void clearFolder(Task task, File inputFile, File outputFile) {
         inputFile.delete();
@@ -133,17 +134,22 @@ class TestsApplier {
         return results;
     }
 
-    private Result handleJavaTask(Task task, JavaCompiler compiler) throws IOException {
+    private Result handleJavaTask(Task task) {
         String parentFolder = new File(task.getSourcePath()).getParent();
         File errorFile = new File(parentFolder + "\\error.txt");
-        FileOutputStream errorStream = new FileOutputStream(errorFile);
-        compiler.run(null, System.out, errorStream, task.getSourcePath());
-        errorStream.close();
-        BufferedReader br = new BufferedReader(new FileReader(errorFile));
-        if (br.readLine() != null) {
-            return new Result("CE", task);
+        FileOutputStream errorStream = null;
+        try {
+            errorStream = new FileOutputStream(errorFile);
+            compiler.run(null, System.out, errorStream, task.getSourcePath());
+            errorStream.close();
+            BufferedReader br = new BufferedReader(new FileReader(errorFile));
+            if (br.readLine() != null) {
+                return new Result("CE", task);
+            }
+            br.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        br.close();
         List<String> compilationCommands = new ArrayList<>();
         compilationCommands.add("java");
         compilationCommands.add("-cp");
@@ -214,14 +220,7 @@ class TestsApplier {
     }
 
     List<Result> applyJavaTests(ArrayList<Task> tasks) throws IOException, InterruptedException {
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        return tasks.stream().map(task -> {
-            try {
-                return handleJavaTask(task, compiler);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return new Result("asd", task);
-        }).collect(Collectors.toList());
+        compiler = ToolProvider.getSystemJavaCompiler();
+        return tasks.stream().map(this::handleJavaTask).collect(Collectors.toList());
     }
 }
