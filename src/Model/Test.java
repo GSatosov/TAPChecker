@@ -51,7 +51,7 @@ public class Test {
     @Override
     public String toString() {
         return "{input: " + this.input + ", output: " + this.outputVariants + ", maximumOperatingTime: " + this.time +
-                ", deadline: " + deadline + ", hardDeadline: " + hardDeadline + ", antiPlagiarism: " + antiPlagiarism + "}";
+                ", deadline: " + deadline + ", hasHardDeadline: " + hardDeadline + ", antiPlagiarism: " + antiPlagiarism + "}";
     }
 }
 
