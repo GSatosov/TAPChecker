@@ -9,10 +9,7 @@ import javax.tools.ToolProvider;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -161,7 +158,8 @@ class TestsApplier {
 
     private Result handleJavaTask(Task task) {
         String parentFolder = new File(task.getSourcePath()).getParent();
-        File errorFile = new File(parentFolder + "\\error.txt");
+        String taskName = task.getName().split("\\.")[0]; //Sum.java -> Sum
+        File errorFile = new File(parentFolder + "\\" + taskName + "Error.txt");
         removePackageStatementInJavaTasks(task);
         try {
             FileOutputStream errorStream = new FileOutputStream(errorFile);
@@ -179,13 +177,15 @@ class TestsApplier {
         compilationCommands.add("java");
         compilationCommands.add("-cp");
         compilationCommands.add(parentFolder);
-        compilationCommands.add(String.valueOf(task.getName().split("\\.")[0])); //Sum.java -> Sum
+        compilationCommands.add(taskName);
         ProcessBuilder pb = new ProcessBuilder(compilationCommands);
         File inputFile = new File(parentFolder + "\\input.txt");
         File outputFile = new File(parentFolder + "\\output.txt");
         try {
             inputFile.createNewFile();
+            inputFile.deleteOnExit();
             outputFile.createNewFile();
+            outputFile.deleteOnExit();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -197,7 +197,6 @@ class TestsApplier {
         int curScore = 0;
         for (Test test : testContents) {
             try {
-                int computationTime = 0;
                 FileWriter writer = new FileWriter(inputFile); //To clear input.
                 FileWriter outputCleaner = new FileWriter(outputFile);
                 outputCleaner.close(); //To clear output
@@ -212,15 +211,41 @@ class TestsApplier {
                 });
                 writer.close();
                 Process javaProcess = pb.start();
+                int computationTime = 0;
                 while (javaProcess.isAlive()) {
-                    if (computationTime == test.getTime() * 100)
+                    if (computationTime >= test.getTime() * 100) {
+                        reader.close();
+                        File jpsFile = new File(parentFolder + "\\" + taskName + "Jps.txt");
+                        jpsFile.createNewFile();
+                        BufferedReader jpsReader = new BufferedReader(new FileReader(jpsFile));
+                        ProcessBuilder jpsProcess = new ProcessBuilder("jps");
+                        jpsProcess.redirectOutput(jpsFile).redirectError(jpsFile);
+                        jpsProcess.start();
+                        while (jpsFile.length() == 0) {
+                            Thread.sleep(10);
+                        }
+                        Thread.sleep(100);
+                        String jpsLine = jpsReader.readLine();
+                        System.out.println(jpsLine);
+                        while (jpsLine != null) {
+                            if (jpsLine.contains(taskName)) {
+                                break;
+                            }
+                            jpsLine = jpsReader.readLine();
+                        }
+                        jpsReader.close();
+                        System.out.println(jpsLine);
+                        String pid = jpsLine.split(" ")[0];
+                        Runtime.getRuntime().exec("taskkill /F /PID " + pid);
+                        jpsFile.delete();
+                        clearFolder(task,inputFile,outputFile);
                         return new Result("TL", task); //Time Limit.
+                    }
                     Thread.sleep(10);
                     computationTime++;
                 }
                 if (errorFile.length() != 0) {
                     reader.close(); //Close inputFile
-                    clearFolder(task, inputFile, outputFile);
                     return new Result("IH", task); //Input Handling Error
                 }
                 ArrayList<String> testOutput = new ArrayList<>();
@@ -236,7 +261,6 @@ class TestsApplier {
                 e.printStackTrace();
             }
         }
-        clearFolder(task, inputFile, outputFile);
         errorFile.delete();
         String taskResult = curScore + "/" + maxScore;
         if (curScore < maxScore)
