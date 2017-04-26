@@ -122,7 +122,7 @@ class TestsApplier {
             while (true) {
                 computationTime++;
                 if (output.size() > beforeTesting) break;
-                if (computationTime >= test.getTime()) {
+                if (computationTime >= test.getTime() / 10) {
                     cmdInput.close();
                     try {
                         if (System.getProperty("os.name").startsWith("Windows"))
@@ -214,7 +214,7 @@ class TestsApplier {
                 Process javaProcess = pb.start();
                 int computationTime = 0;
                 while (javaProcess.isAlive()) {
-                    if (computationTime >= test.getTime()) {
+                    if (computationTime >= test.getTime() / 10) {
                         reader.close();
                         File jpsFile = new File(parentFolder + File.separator + taskName + "Jps.txt");
                         jpsFile.createNewFile();
