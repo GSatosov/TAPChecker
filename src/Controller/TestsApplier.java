@@ -125,7 +125,10 @@ class TestsApplier {
                 if (computationTime == test.getTime() * 100) {
                     cmdInput.close();
                     try {
-                        Runtime.getRuntime().exec("taskkill /F /IM ghc.exe");
+                        if (System.getProperty("os.name").startsWith("Windows"))
+                            Runtime.getRuntime().exec("taskkill /F /IM ghc.exe");
+                        else
+                            Runtime.getRuntime().exec("kill -9 ghc");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -159,7 +162,7 @@ class TestsApplier {
     private Result handleJavaTask(Task task) {
         String parentFolder = new File(task.getSourcePath()).getParent();
         String taskName = task.getName().split("\\.")[0]; //Sum.java -> Sum
-        File errorFile = new File(parentFolder + "\\" + taskName + "Error.txt");
+        File errorFile = new File(parentFolder + File.separator + taskName + "Error.txt");
         removePackageStatementInJavaTasks(task);
         try {
             FileOutputStream errorStream = new FileOutputStream(errorFile);
@@ -179,13 +182,11 @@ class TestsApplier {
         compilationCommands.add(parentFolder);
         compilationCommands.add(taskName);
         ProcessBuilder pb = new ProcessBuilder(compilationCommands);
-        File inputFile = new File(parentFolder + "\\input.txt");
-        File outputFile = new File(parentFolder + "\\output.txt");
+        File inputFile = new File(parentFolder + File.separator + "input.txt");
+        File outputFile = new File(parentFolder + File.separator + "output.txt");
         try {
             inputFile.createNewFile();
-            inputFile.deleteOnExit();
             outputFile.createNewFile();
-            outputFile.deleteOnExit();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -215,7 +216,7 @@ class TestsApplier {
                 while (javaProcess.isAlive()) {
                     if (computationTime >= test.getTime() * 100) {
                         reader.close();
-                        File jpsFile = new File(parentFolder + "\\" + taskName + "Jps.txt");
+                        File jpsFile = new File(parentFolder + File.separator + taskName + "Jps.txt");
                         jpsFile.createNewFile();
                         BufferedReader jpsReader = new BufferedReader(new FileReader(jpsFile));
                         ProcessBuilder jpsProcess = new ProcessBuilder("jps");
@@ -236,9 +237,12 @@ class TestsApplier {
                         jpsReader.close();
                         System.out.println(jpsLine);
                         String pid = jpsLine.split(" ")[0];
-                        Runtime.getRuntime().exec("taskkill /F /PID " + pid);
+                        if (System.getProperty("os.name").startsWith("Windows"))
+                            Runtime.getRuntime().exec("taskkill /F /PID " + pid);
+                        else
+                            Runtime.getRuntime().exec("kill -9 " + pid);
                         jpsFile.delete();
-                        clearFolder(task,inputFile,outputFile);
+                        clearFolder(task, inputFile, outputFile);
                         return new Result("TL", task); //Time Limit.
                     }
                     Thread.sleep(10);
@@ -246,7 +250,8 @@ class TestsApplier {
                 }
                 if (errorFile.length() != 0) {
                     reader.close(); //Close inputFile
-                    return new Result("RE", task); //Input Handling Error
+                    clearFolder(task, inputFile, outputFile);
+                    return new Result("RE", task); //Runtime Error
                 }
                 ArrayList<String> testOutput = new ArrayList<>();
                 String curString = reader.readLine();
@@ -262,6 +267,7 @@ class TestsApplier {
             }
         }
         errorFile.delete();
+        clearFolder(task, inputFile, outputFile);
         String taskResult = curScore + "/" + maxScore;
         if (curScore < maxScore)
             return new Result(taskResult, task);
