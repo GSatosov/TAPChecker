@@ -1,5 +1,6 @@
 package View;
 
+import Model.Settings;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -18,6 +19,8 @@ public class MainFrame extends Application{
 
     private static Scene mainScene;
 
+    private static Scene loginScene;
+
     public static Stage getPrimaryStage() {
         return primaryStage;
     }
@@ -34,14 +37,26 @@ public class MainFrame extends Application{
         MainFrame.mainScene = mainScene;
     }
 
+    public static Scene getLoginScene() {
+        return loginScene;
+    }
+
+    public static void setLoginScene(Scene loginScene) {
+        MainFrame.loginScene = loginScene;
+    }
+
     @Override
     public void start(Stage primaryStage) throws Exception {
         setPrimaryStage(primaryStage);
 
-        Scene loginScene = new Scene(FXMLLoader.load(getClass().getResource("Login.fxml")), 640, 480);
+        setLoginScene(new Scene(FXMLLoader.load(getClass().getResource("Login.fxml")), 640, 480));
         setMainScene(new Scene(FXMLLoader.load(getClass().getResource("Main.fxml")), 640, 480));
 
-        primaryStage.setScene(loginScene);
+        if (Settings.getInstance().getEmail().isEmpty()) {
+            primaryStage.setScene(loginScene);
+        } else {
+            primaryStage.setScene(mainScene);
+        }
 
         primaryStage.show();
     }

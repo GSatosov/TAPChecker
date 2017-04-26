@@ -50,11 +50,11 @@ public class Settings implements Serializable {
     /*
     E-mail address
      */
-    private String email = "kubenskiythesis@gmail.com";
+    private String email = ""; //kubenskiythesis@gmail.com
     /*
     Password
      */
-    private String password = "sansanich";
+    private String password = ""; //sansanich
 
     /*
     Folder path for all attachments which we receive from e-mail
@@ -137,11 +137,11 @@ public class Settings implements Serializable {
     /*
     Encrypt and save settings file to data folder.
      */
-    public void saveSettings() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Cryptographer.encrypt(getInstance(), baos);
-        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        IOUtils.copy(bais, new FileOutputStream(getDataFolder() + "/" + getSettingsFileName()));
-    }
+        public void saveSettings() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            Cryptographer.encrypt(getInstance(), baos);
+            ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+            IOUtils.copy(bais, new FileOutputStream(getDataFolder() + "/" + getSettingsFileName()));
+        }
 
 }
