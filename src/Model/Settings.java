@@ -138,6 +138,8 @@ public class Settings implements Serializable {
     Encrypt and save settings file to data folder.
      */
         public void saveSettings() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
+            File f = new File(Settings.getInstance().getDataFolder());
+            f.mkdirs();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Cryptographer.encrypt(getInstance(), baos);
             ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
