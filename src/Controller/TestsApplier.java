@@ -246,7 +246,7 @@ class TestsApplier {
                 }
                 if (errorFile.length() != 0) {
                     reader.close(); //Close inputFile
-                    return new Result("IH", task); //Input Handling Error
+                    return new Result("RE", task); //Input Handling Error
                 }
                 ArrayList<String> testOutput = new ArrayList<>();
                 String curString = reader.readLine();
