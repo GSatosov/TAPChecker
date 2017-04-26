@@ -133,7 +133,7 @@ public class GoogleDriveManager {
                 JSONObject tests = new JSONObject(outputStream.toString());
                 String deadline = tests.getString("deadline");
                 boolean antiPlagiarism = tests.getBoolean("antiPlagiarism");
-                long time = tests.getLong("maximumOperatingTime");
+                long time = tests.getLong("maximumOperatingTimeInMS");
                 boolean hardDeadline = tests.getBoolean("hasHardDeadline");
                 JSONArray aTests = tests.getJSONArray("tests");
                 aTests.forEach(t -> {

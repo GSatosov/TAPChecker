@@ -122,7 +122,7 @@ class TestsApplier {
             while (true) {
                 computationTime++;
                 if (output.size() > beforeTesting) break;
-                if (computationTime == test.getTime() * 100) {
+                if (computationTime >= test.getTime()) {
                     cmdInput.close();
                     try {
                         if (System.getProperty("os.name").startsWith("Windows"))
@@ -214,7 +214,7 @@ class TestsApplier {
                 Process javaProcess = pb.start();
                 int computationTime = 0;
                 while (javaProcess.isAlive()) {
-                    if (computationTime >= test.getTime() * 100) {
+                    if (computationTime >= test.getTime()) {
                         reader.close();
                         File jpsFile = new File(parentFolder + File.separator + taskName + "Jps.txt");
                         jpsFile.createNewFile();
@@ -227,7 +227,6 @@ class TestsApplier {
                         }
                         Thread.sleep(100);
                         String jpsLine = jpsReader.readLine();
-                        System.out.println(jpsLine);
                         while (jpsLine != null) {
                             if (jpsLine.contains(taskName)) {
                                 break;
@@ -235,7 +234,6 @@ class TestsApplier {
                             jpsLine = jpsReader.readLine();
                         }
                         jpsReader.close();
-                        System.out.println(jpsLine);
                         String pid = jpsLine.split(" ")[0];
                         if (System.getProperty("os.name").startsWith("Windows"))
                             Runtime.getRuntime().exec("taskkill /F /PID " + pid);
