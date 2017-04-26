@@ -40,7 +40,6 @@ public class General {
             }
             try {
                 ArrayList<Test> curTests = GoogleDriveManager.getTests(task);
-                if (curTests != null) System.out.println(curTests);
                 localTests.put(task.getName(), curTests);
                 task.setTestContents(curTests);
                 if (task.getName().endsWith("hs"))

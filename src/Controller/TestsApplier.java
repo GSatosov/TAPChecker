@@ -22,6 +22,7 @@ class TestsApplier {
     private Process haskellProcess;
     private PrintStream cmdInput;
     private JavaCompiler compiler;
+    private BufferedWriter haskellOutputWriter;
 
     private void clearFolder(Task task, File inputFile, File outputFile) {
         inputFile.delete();
@@ -51,12 +52,14 @@ class TestsApplier {
     private Thread cmdOutput(InputStream stream) {
         output = new ArrayList<>();
         return new Thread(() -> {
-            try (BufferedReader r = new BufferedReader(new InputStreamReader(stream))) {
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(stream,"Cp866"))) {
                 String ch;
                 while (notInterrupted) {
                     ch = r.readLine();
                     if (ch == null) continue;
                     output.add(ch);
+                    haskellOutputWriter.write(ch);
+                    haskellOutputWriter.newLine();
                 }
             } catch (IOException e) {
                 System.out.println(e.getMessage());
@@ -89,6 +92,12 @@ class TestsApplier {
         output.clear();
         ArrayList<Test> testContents = task.getTestContents();
         cmdInput.println(":l " + task.getSourcePath());
+        try {
+            haskellOutputWriter.write(":l " + task.getSourcePath());
+            haskellOutputWriter.newLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         cmdInput.flush();
         int compilationTime = 0;
         while (true) {
@@ -98,6 +107,7 @@ class TestsApplier {
             if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Failed, modules loaded: none."))
                 return new Result("CE", task); //Compilation Error
             if (compilationTime == 100) {
+                System.out.println("1");
                 notInterrupted = false;
                 cmdInput.close();
                 haskellProcess.destroy();
@@ -117,6 +127,12 @@ class TestsApplier {
             String testCommand = test.getInput().get(0); //Haskell tasks do not support multi-line inputs.
             ArrayList<String> testOutputVariants = test.getOutputVariants().stream().map(v -> v.get(0)).collect(Collectors.toCollection(ArrayList::new));
             cmdInput.println(testCommand);
+            try {
+                haskellOutputWriter.write(testCommand);
+                haskellOutputWriter.newLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             cmdInput.flush();
             int computationTime = 0;
             while (true) {
@@ -151,11 +167,23 @@ class TestsApplier {
     }
 
     ArrayList<Result> applyHaskellTests(ArrayList<Task> tasks) {
+        File haskellOutput = new File("haskellOutput.txt");
+        try {
+            haskellOutput.createNewFile();
+            haskellOutputWriter = new BufferedWriter(new FileWriter(haskellOutput));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         startHaskellProcess();
         ArrayList<Result> results = tasks.stream().map(this::handleHaskellTask).collect(Collectors.toCollection(ArrayList::new));
         notInterrupted = false;
         haskellProcess.destroy();
         cmdInput.close();
+        try {
+            haskellOutputWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return results;
     }
 
