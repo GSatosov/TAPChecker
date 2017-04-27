@@ -1,8 +1,6 @@
 package Controller;
 
-import Model.Result;
 import Model.Task;
-import Model.Test;
 
 import javax.crypto.NoSuchPaddingException;
 import javax.mail.MessagingException;
@@ -54,7 +52,7 @@ public class General {
         (new Thread(() -> {
             while (tGroup.activeCount() > 0 || !getTasksQueue().isEmpty()) {
                 if (!getTasksQueue().isEmpty()) {
-                    Task task = getTasksQueue().peek();
+                    Task task = getTasksQueue().poll();
                     if (task.getName().endsWith("hs")) {
                         if (!applier.sentHaskellTasks())
                             applier.startHaskellProcess();
@@ -64,7 +62,6 @@ public class General {
                             applier.startJavaTesting();
                         System.out.println(applier.handleJavaTask(task));
                     }
-                    getTasksQueue().remove();
                 } else {
                     try {
                         //if (tGroup != null) System.out.println(tGroup.activeCount());
@@ -75,7 +72,7 @@ public class General {
                 }
             }
             if (applier.sentHaskellTasks())
-                applier.finish();
+                applier.finishHaskellTesting();
             System.out.println(new Date().getTime() - startDate.getTime() + " ms.");
             System.out.println("Task applier closed.");
         })).start();

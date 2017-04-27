@@ -35,31 +35,6 @@ class TestsApplier {
         return sentJavaTasks;
     }
 
-    private void clearFolder(Task task, File inputFile, File outputFile) {
-        inputFile.delete();
-        outputFile.delete();
-        new File(task.getSourcePath().substring(0, task.getSourcePath().length() - 4) + "class").delete();
-    }
-
-    private void removePackageStatementInJavaTasks(Task task) {
-        try {
-            List<String> lines = Files.readAllLines(Paths.get(task.getSourcePath()));
-            lines = lines.stream().filter(line -> !line.trim().startsWith("package")).collect(Collectors.toList());
-            File sourceFile = new File(task.getSourcePath());
-            FileWriter writer = new FileWriter(sourceFile);
-            lines.forEach(line -> {
-                try {
-                    writer.write(line + "\n");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     private Thread cmdOutput(InputStream stream) {
         output = new ArrayList<>();
         return new Thread(() -> {
@@ -170,9 +145,8 @@ class TestsApplier {
             cmdInput.flush();
             int computationTime = 0;
             while (true) {
-                computationTime++;
                 if (output.size() > beforeTesting) break;
-                if (computationTime >= test.getTime() / 10) {
+                if (computationTime >= test.getTime()) {
                     cmdInput.close();
                     try {
                         if (System.getProperty("os.name").startsWith("Windows"))
@@ -196,6 +170,7 @@ class TestsApplier {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+                computationTime += 10;
             }
             String response = output.get(beforeTesting).split(" ", 2)[1]; // *>TaskName> Output
             if (testOutputVariants.contains("Error") && response.startsWith("*** Exception") // If exception is expected.
@@ -211,13 +186,34 @@ class TestsApplier {
         return new Result(taskResult, task);
     }
 
-    ArrayList<Result> applyHaskellTests(ArrayList<Task> tasks) {
-        startHaskellProcess();
-        ArrayList<Result> results = tasks.stream().map(this::handleHaskellTask).collect(Collectors.toCollection(ArrayList::new));
+    void finishHaskellTesting() {
         notInterrupted = false;
         haskellProcess.destroy();
         cmdInput.close();
-        return results;
+    }
+
+    void startJavaTesting() {
+        compiler = ToolProvider.getSystemJavaCompiler();
+        sentJavaTasks = true;
+    }
+
+    private void removePackageStatementInJavaTasks(Task task) {
+        try {
+            List<String> lines = Files.readAllLines(Paths.get(task.getSourcePath()));
+            lines = lines.stream().filter(line -> !line.trim().startsWith("package")).collect(Collectors.toList());
+            File sourceFile = new File(task.getSourcePath());
+            FileWriter writer = new FileWriter(sourceFile);
+            lines.forEach(line -> {
+                try {
+                    writer.write(line + "\n");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     Result handleJavaTask(Task task) {
@@ -275,7 +271,7 @@ class TestsApplier {
                 Process javaProcess = pb.start();
                 int computationTime = 0;
                 while (javaProcess.isAlive()) {
-                    if (computationTime >= test.getTime() / 10) {
+                    if (computationTime >= test.getTime()) {
                         reader.close();
                         File jpsFile = new File(parentFolder + File.separator + taskName + "Jps.txt");
                         jpsFile.createNewFile();
@@ -301,15 +297,15 @@ class TestsApplier {
                         else
                             Runtime.getRuntime().exec("kill -9 " + pid);
                         jpsFile.delete();
-                        clearFolder(task, inputFile, outputFile);
+                        clearFolderFromJavaFiles(task, inputFile, outputFile);
                         return new Result("TL", task); //Time Limit.
                     }
                     Thread.sleep(10);
-                    computationTime++;
+                    computationTime += 10;
                 }
                 if (errorFile.length() != 0) {
                     reader.close(); //Close inputFile
-                    clearFolder(task, inputFile, outputFile);
+                    clearFolderFromJavaFiles(task, inputFile, outputFile);
                     return new Result("RE", task); //Runtime Error
                 }
                 ArrayList<String> testOutput = new ArrayList<>();
@@ -326,26 +322,16 @@ class TestsApplier {
             }
         }
         errorFile.delete();
-        clearFolder(task, inputFile, outputFile);
+        clearFolderFromJavaFiles(task, inputFile, outputFile);
         String taskResult = curScore + "/" + maxScore;
         if (curScore < maxScore)
             return new Result(taskResult, task);
         return new Result(curScore + "/" + maxScore, task);
     }
 
-    void finish() {
-        notInterrupted = false;
-        haskellProcess.destroy();
-        cmdInput.close();
-    }
-
-    void startJavaTesting() {
-        compiler = ToolProvider.getSystemJavaCompiler();
-        sentJavaTasks = true;
-    }
-
-    ArrayList<Result> applyJavaTests(ArrayList<Task> tasks) {
-
-        return tasks.stream().map(this::handleJavaTask).collect(Collectors.toCollection(ArrayList::new));
+    private void clearFolderFromJavaFiles(Task task, File inputFile, File outputFile) {
+        inputFile.delete();
+        outputFile.delete();
+        new File(task.getSourcePath().substring(0, task.getSourcePath().length() - 4) + "class").delete();
     }
 }
