@@ -1,13 +1,9 @@
 package Controller;
 
-import Model.Settings;
+import Model.*;
 
 import javax.crypto.NoSuchPaddingException;
 import javax.mail.*;
-
-import Model.Attachment;
-import Model.Student;
-import Model.Task;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,10 +13,9 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Properties;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by Alexander Baranov on 03.03.2017.
@@ -81,7 +76,9 @@ public class EmailReceiver {
             File f = new File(Settings.getInstance().getDataFolder() + "/" + subject[2] + "/" + subject[1] + "/" + subject[0] + "/" + attachment.getFileName());
             f.mkdirs();
             try {
-                Files.copy(attachment.getStream(), f.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                synchronized (fileSystemSemaphore) {
+                    ExponentialBackOff.execute(() -> Files.copy(attachment.getStream(), f.toPath(), StandardCopyOption.REPLACE_EXISTING), 5);
+                }
                 attachment.getStream().close();
                 tasks.add(new Task(attachment.getFileName(), subject[2], f.getAbsolutePath()));
             } catch (IOException e) {
@@ -91,6 +88,8 @@ public class EmailReceiver {
         tasks.forEach(task -> task.setAuthor(new Student(fullName, subject[1])));
         return tasks;
     }
+
+    private static Object fileSystemSemaphore;
 
     /*
     Retrieve messages data from inbox folder
@@ -107,23 +106,54 @@ public class EmailReceiver {
         System.out.println(lastDateEmailChecking.toString());
         Date newDateEmailChecking = new Date();
         ArrayList<Task> tasks = new ArrayList<>();
+        downloadedMessagesCount = new AtomicInteger();
+        localTests = new ConcurrentHashMap<>();
+        fileSystemSemaphore = new Object();
         Arrays.stream(messages).forEach(message -> {
             try {
-                if (lastDateEmailChecking.compareTo(message.getReceivedDate()) < 0)
-                    tasks.addAll(saveMessageAttachments(message));
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
+                if (lastDateEmailChecking.compareTo(message.getReceivedDate()) < 0) {
+                    (new Thread(Thread.currentThread().getThreadGroup(), () -> {
+                        try {
+                            ArrayList<Task> attachments = saveMessageAttachments(message);
+                            attachments.forEach(att -> {
+                                (new Thread(Thread.currentThread().getThreadGroup(), () -> {
+                                    if (localTests.containsKey(att.getName())) {
+                                        att.setTestContents(localTests.get(att.getName()));
+                                        General.getTasksQueue().add(att);
+                                        System.out.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " s).");
+                                    }
+                                    else {
+                                            ExponentialBackOff.execute(() -> {
+                                                ArrayList<Test> cTests = GoogleDriveManager.getTests(att);
+                                                localTests.put(att.getName(), cTests);
+                                                att.setTestContents(cTests);
+                                                System.out.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " s).");
+                                                General.getTasksQueue().add(att);
+                                                return null;
+                                            });
+                                    }
+                                })).start();
+                            });
+                            if (downloadedMessagesCount.incrementAndGet() == messages.length) {
+                                Settings.getInstance().setLastDateEmailChecked(new Date(0L));  // Left this way for testing purposes.
+                                Settings.getInstance().saveSettings();
+                                inbox.close(false);
+                            }
+                        } catch (IOException | MessagingException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException e) {
+                            e.printStackTrace();
+                        }
+                    })).start();
+                }
             } catch (MessagingException e) {
                 throw new RuntimeException(e);
             }
         });
-        Settings.getInstance().setLastDateEmailChecked(new Date(0L));  // Left this way for testing purposes.
-        Settings.getInstance().saveSettings();
 
-        inbox.close(false);
         return tasks;
     }
 
+    private static AtomicInteger downloadedMessagesCount;
+    private static ConcurrentHashMap<String, ArrayList<Test>> localTests;
     /*
     Retrieve attachments from message
      */

@@ -18,6 +18,7 @@ import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.*;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
+import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -42,6 +43,10 @@ public class GoogleDriveManager {
      * Global instance of the HTTP transport.
      */
     private static HttpTransport HTTP_TRANSPORT;
+
+    private static void setDriveService() throws IOException {
+        service = getDriveService();
+    }
 
     /**
      * Global instance of the scopes required by this quickstart.
@@ -87,6 +92,7 @@ public class GoogleDriveManager {
                 .setApplicationName(Settings.getApplicationName())
                 .build();
     }
+    static private Drive service;
 
     static ArrayList<Test> getTests(Task task) throws IOException {
         Drive service = getDriveService();

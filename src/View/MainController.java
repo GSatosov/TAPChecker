@@ -23,11 +23,7 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         tests.setOnAction(event -> {
-            try {
-                General.getResults();
-            } catch (MessagingException | InvalidKeyException | NoSuchPaddingException | NoSuchAlgorithmException | IOException e) {
-                e.printStackTrace();
-            }
+            General.getResults();
         });
     }
 }

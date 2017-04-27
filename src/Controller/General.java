@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Entry point for program.
@@ -26,46 +27,54 @@ public class General {
                 System.out.println("Folder at " + parentFolderPath + " has been successfully deleted.");
     }
 
-    public static List<Result> getResults() throws MessagingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
-        Date startDate = new Date();
-        ArrayList<Task> tasks = EmailReceiver.retrieveMessagesData();
-        Date taskDate = new Date();
-        System.out.println((taskDate.getTime() - startDate.getTime()) + " ms to get the tasks.");
-        HashMap<String, ArrayList<Test>> localTests = new HashMap<>();
-        ArrayList<Task> javaTasks = new ArrayList<>();
-        ArrayList<Task> haskellTasks = new ArrayList<>();
-        tasks.forEach(task -> {
-            if (localTests.containsKey(task.getName())) {
-                task.setTestContents(localTests.get(task.getName()));
-            } else
-                try {
-                    ArrayList<Test> curTests = GoogleDriveManager.getTests(task);
-                    localTests.put(task.getName(), curTests);
-                    task.setTestContents(curTests);
+    private static ConcurrentLinkedQueue<Task> tasksQueue;
+    public static ConcurrentLinkedQueue<Task> getTasksQueue() {
+        return tasksQueue;
+    }
+    private static Date startDate = new Date();
+    public static Date getStartDate() {
+        return startDate;
+    }
 
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            if (task.getName().endsWith("hs"))
-                haskellTasks.add(task);
-            else
-                javaTasks.add(task);
-        });
-        Date testDate = new Date();
-        System.out.println((testDate.getTime() - taskDate.getTime()) + " ms to get the tests.");
+    public static void getResults() {
+        tasksQueue = new ConcurrentLinkedQueue<Task>();
         TestsApplier applier = new TestsApplier();
-        ArrayList<Result> results = applier.applyHaskellTests(haskellTasks);
-        results.addAll((applier.applyJavaTests(javaTasks)));
-        System.out.println((new Date().getTime() - testDate.getTime()) + " ms to run the tests.");
-        //  folderCleaner("data");
-        return results;
+        ThreadGroup tGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), "Tasks Receivers");
+        Thread taskReceiver = new Thread(tGroup, () -> {
+            try {
+                EmailReceiver.retrieveMessagesData();
+            } catch (IOException | MessagingException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException e) {
+                e.printStackTrace();
+            }
+        });
+        taskReceiver.start();
+        (new Thread(() -> {
+            while (tGroup.activeCount() > 0 || !getTasksQueue().isEmpty()) {
+                if (!getTasksQueue().isEmpty()) {
+                    ArrayList<Task> task = new ArrayList<>();
+                    task.add(getTasksQueue().peek());
+                    if (task.get(0).getName().endsWith("hs")) {
+                        System.out.println(applier.applyHaskellTests(task) + " (" + ((new Date()).getTime() - getStartDate().getTime()) + " s.)");
+                    }
+                    else {
+                        System.out.println(applier.applyJavaTests(task) + " (" + ((new Date()).getTime() - getStartDate().getTime()) + " s.)");
+                    }
+                    getTasksQueue().remove();
+                }
+                else {
+                    try {
+                        //if (tGroup != null) System.out.println(tGroup.activeCount());
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            System.out.println("Task applier closed.");
+        })).start();
     }
 
     public static void main(String[] args) {
-        try {
-            getResults().forEach(System.out::println);
-        } catch (MessagingException | NoSuchPaddingException | InvalidKeyException | NoSuchAlgorithmException | IOException e) {
-            e.printStackTrace();
-        }
+        getResults();
     }
 }
