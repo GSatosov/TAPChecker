@@ -37,18 +37,19 @@ public class General {
         tasks.forEach(task -> {
             if (localTests.containsKey(task.getName())) {
                 task.setTestContents(localTests.get(task.getName()));
-            }
-            try {
-                ArrayList<Test> curTests = GoogleDriveManager.getTests(task);
-                localTests.put(task.getName(), curTests);
-                task.setTestContents(curTests);
-                if (task.getName().endsWith("hs"))
-                    haskellTasks.add(task);
-                else
-                    javaTasks.add(task);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            } else
+                try {
+                    ArrayList<Test> curTests = GoogleDriveManager.getTests(task);
+                    localTests.put(task.getName(), curTests);
+                    task.setTestContents(curTests);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            if (task.getName().endsWith("hs"))
+                haskellTasks.add(task);
+            else
+                javaTasks.add(task);
         });
         Date testDate = new Date();
         System.out.println((testDate.getTime() - taskDate.getTime()) + " ms to get the tests.");

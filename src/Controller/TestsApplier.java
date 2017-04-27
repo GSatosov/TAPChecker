@@ -20,6 +20,7 @@ class TestsApplier {
     private volatile boolean notInterrupted;
     private ArrayList<String> output;
     private Process haskellProcess;
+    private volatile boolean startedGhci;
     private PrintStream cmdInput;
     private JavaCompiler compiler;
     private BufferedWriter haskellOutputWriter;
@@ -52,14 +53,16 @@ class TestsApplier {
     private Thread cmdOutput(InputStream stream) {
         output = new ArrayList<>();
         return new Thread(() -> {
-            try (BufferedReader r = new BufferedReader(new InputStreamReader(stream,"Cp866"))) {
+            try (BufferedReader r = new BufferedReader(new InputStreamReader(stream, "Cp866"))) {
                 String ch;
                 while (notInterrupted) {
                     ch = r.readLine();
                     if (ch == null) continue;
                     output.add(ch);
-                    haskellOutputWriter.write(ch);
-                    haskellOutputWriter.newLine();
+                    if (startedGhci) {
+                        haskellOutputWriter.write(ch);
+                        haskellOutputWriter.newLine();
+                    }
                 }
             } catch (IOException e) {
                 System.out.println(e.getMessage());
@@ -89,6 +92,15 @@ class TestsApplier {
     }
 
     private Result handleHaskellTask(Task task) {
+        startedGhci = true;
+        String parentFolder = new File(task.getSourcePath()).getParent();
+        File haskellOutput = new File(parentFolder + File.separator + task.getName().split("\\.")[0] + "Output.txt");
+        try {
+            haskellOutput.createNewFile();
+            haskellOutputWriter = new BufferedWriter(new FileWriter(haskellOutput));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         output.clear();
         ArrayList<Test> testContents = task.getTestContents();
         cmdInput.println(":l " + task.getSourcePath());
@@ -104,14 +116,24 @@ class TestsApplier {
             compilationTime++;
             if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Ok, modules loaded:"))
                 break;
-            if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Failed, modules loaded: none."))
+            if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Failed, modules loaded: none.")) {
+                try {
+                    haskellOutputWriter.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 return new Result("CE", task); //Compilation Error
+            }
             if (compilationTime == 100) {
-                System.out.println("1");
                 notInterrupted = false;
                 cmdInput.close();
                 haskellProcess.destroy();
                 startHaskellProcess();
+                try {
+                    haskellOutputWriter.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 return new Result("TL", task); // Took too long to compile.
             }
             try {
@@ -148,6 +170,11 @@ class TestsApplier {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                    try {
+                        haskellOutputWriter.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     startHaskellProcess(); //Restart ghci if we encountered infinite input/ long computation.
                     return new Result("TL", task); //Took too long to compute.
                 }
@@ -162,28 +189,21 @@ class TestsApplier {
                     || testOutputVariants.contains(response))
                 testingScore++;
         }
-        String taskResult = testingScore + "/" + maxScore;
-        return new Result(taskResult, task);
-    }
-
-    ArrayList<Result> applyHaskellTests(ArrayList<Task> tasks) {
-        File haskellOutput = new File("haskellOutput.txt");
-        try {
-            haskellOutput.createNewFile();
-            haskellOutputWriter = new BufferedWriter(new FileWriter(haskellOutput));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        startHaskellProcess();
-        ArrayList<Result> results = tasks.stream().map(this::handleHaskellTask).collect(Collectors.toCollection(ArrayList::new));
-        notInterrupted = false;
-        haskellProcess.destroy();
-        cmdInput.close();
         try {
             haskellOutputWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+        String taskResult = testingScore + "/" + maxScore;
+        return new Result(taskResult, task);
+    }
+
+    ArrayList<Result> applyHaskellTests(ArrayList<Task> tasks) {
+        startHaskellProcess();
+        ArrayList<Result> results = tasks.stream().map(this::handleHaskellTask).collect(Collectors.toCollection(ArrayList::new));
+        notInterrupted = false;
+        haskellProcess.destroy();
+        cmdInput.close();
         return results;
     }
 

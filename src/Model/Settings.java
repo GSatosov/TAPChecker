@@ -50,11 +50,11 @@ public class Settings implements Serializable {
     /*
     E-mail address
      */
-    private String email = ""; //kubenskiythesis@gmail.com
+    private String email = "kubenskiythesis@gmail.com"; //kubenskiythesis@gmail.com
     /*
     Password
      */
-    private String password = ""; //sansanich
+    private String password = "sansanich"; //sansanich
 
     /*
     Folder path for all attachments which we receive from e-mail
