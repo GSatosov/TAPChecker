@@ -21,9 +21,19 @@ class TestsApplier {
     private ArrayList<String> output;
     private Process haskellProcess;
     private volatile boolean startedGhci;
+    private boolean sentHaskellTasks;
+    private boolean sentJavaTasks;
     private PrintStream cmdInput;
     private JavaCompiler compiler;
     private BufferedWriter haskellOutputWriter;
+
+    boolean sentHaskellTasks() {
+        return sentHaskellTasks;
+    }
+
+    boolean sentJavaTasks() {
+        return sentJavaTasks;
+    }
 
     private void clearFolder(Task task, File inputFile, File outputFile) {
         inputFile.delete();
@@ -70,8 +80,9 @@ class TestsApplier {
         });
     }
 
-    private void startHaskellProcess() {
+    void startHaskellProcess() {
         notInterrupted = true;
+        sentHaskellTasks = true;
         try {
             haskellProcess = new ProcessBuilder("ghci").redirectErrorStream(true).start();
             cmdInput = new PrintStream(haskellProcess.getOutputStream());
@@ -91,7 +102,7 @@ class TestsApplier {
         }
     }
 
-    private Result handleHaskellTask(Task task) {
+    Result handleHaskellTask(Task task) {
         String parentFolder = new File(task.getSourcePath()).getParent();
         File haskellOutput = new File(parentFolder + File.separator + task.getName().split("\\.")[0] + "Output.txt");
         try {
@@ -209,7 +220,7 @@ class TestsApplier {
         return results;
     }
 
-    private Result handleJavaTask(Task task) {
+    Result handleJavaTask(Task task) {
         String parentFolder = new File(task.getSourcePath()).getParent();
         String taskName = task.getName().split("\\.")[0]; //Sum.java -> Sum
         File errorFile = new File(parentFolder + File.separator + taskName + "Error.txt");
@@ -322,8 +333,19 @@ class TestsApplier {
         return new Result(curScore + "/" + maxScore, task);
     }
 
-    ArrayList<Result> applyJavaTests(ArrayList<Task> tasks) {
+    void finish() {
+        notInterrupted = false;
+        haskellProcess.destroy();
+        cmdInput.close();
+    }
+
+    void startJavaTesting() {
         compiler = ToolProvider.getSystemJavaCompiler();
+        sentJavaTasks = true;
+    }
+
+    ArrayList<Result> applyJavaTests(ArrayList<Task> tasks) {
+
         return tasks.stream().map(this::handleJavaTask).collect(Collectors.toCollection(ArrayList::new));
     }
 }

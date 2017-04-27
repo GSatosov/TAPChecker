@@ -28,16 +28,19 @@ public class General {
     }
 
     private static ConcurrentLinkedQueue<Task> tasksQueue;
-    public static ConcurrentLinkedQueue<Task> getTasksQueue() {
+
+    static ConcurrentLinkedQueue<Task> getTasksQueue() {
         return tasksQueue;
     }
+
     private static Date startDate = new Date();
-    public static Date getStartDate() {
+
+    static Date getStartDate() {
         return startDate;
     }
 
     public static void getResults() {
-        tasksQueue = new ConcurrentLinkedQueue<Task>();
+        tasksQueue = new ConcurrentLinkedQueue<>();
         TestsApplier applier = new TestsApplier();
         ThreadGroup tGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), "Tasks Receivers");
         Thread taskReceiver = new Thread(tGroup, () -> {
@@ -51,17 +54,18 @@ public class General {
         (new Thread(() -> {
             while (tGroup.activeCount() > 0 || !getTasksQueue().isEmpty()) {
                 if (!getTasksQueue().isEmpty()) {
-                    ArrayList<Task> task = new ArrayList<>();
-                    task.add(getTasksQueue().peek());
-                    if (task.get(0).getName().endsWith("hs")) {
-                        System.out.println(applier.applyHaskellTests(task) + " (" + ((new Date()).getTime() - getStartDate().getTime()) + " s.)");
-                    }
-                    else {
-                        System.out.println(applier.applyJavaTests(task) + " (" + ((new Date()).getTime() - getStartDate().getTime()) + " s.)");
+                    Task task = getTasksQueue().peek();
+                    if (task.getName().endsWith("hs")) {
+                        if (!applier.sentHaskellTasks())
+                            applier.startHaskellProcess();
+                        System.out.println(applier.handleHaskellTask(task));
+                    } else {
+                        if (!applier.sentJavaTasks())
+                            applier.startJavaTesting();
+                        System.out.println(applier.handleJavaTask(task));
                     }
                     getTasksQueue().remove();
-                }
-                else {
+                } else {
                     try {
                         //if (tGroup != null) System.out.println(tGroup.activeCount());
                         Thread.sleep(500);
@@ -70,8 +74,12 @@ public class General {
                     }
                 }
             }
+            if (applier.sentHaskellTasks())
+                applier.finish();
+            System.out.println(new Date().getTime() - startDate.getTime() + " ms.");
             System.out.println("Task applier closed.");
         })).start();
+
     }
 
     public static void main(String[] args) {
