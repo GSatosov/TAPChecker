@@ -27,14 +27,12 @@ public class Settings implements Serializable {
                     if (settingsFile.exists()) {
                         try {
                             FileInputStream inputStream = new FileInputStream(settingsFile);
-                            instance = (Settings)Cryptographer.decrypt(inputStream);
-                        }
-                        catch (IOException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException e) {
+                            instance = (Settings) Cryptographer.decrypt(inputStream);
+                        } catch (IOException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException e) {
                             instance = new Settings();
                             e.printStackTrace();
                         }
-                    }
-                    else {
+                    } else {
                         instance = new Settings();
                     }
                 }
@@ -137,13 +135,13 @@ public class Settings implements Serializable {
     /*
     Encrypt and save settings file to data folder.
      */
-        public void saveSettings() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
-            File f = new File(Settings.getInstance().getDataFolder());
-            f.mkdirs();
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            Cryptographer.encrypt(getInstance(), baos);
-            ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-            IOUtils.copy(bais, new FileOutputStream(getDataFolder() + "/" + getSettingsFileName()));
-        }
+    public void saveSettings() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
+        File f = new File(Settings.getInstance().getDataFolder());
+        f.mkdirs();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Cryptographer.encrypt(getInstance(), baos);
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        IOUtils.copy(bais, new FileOutputStream(getDataFolder() + "/" + getSettingsFileName()));
+    }
 
 }

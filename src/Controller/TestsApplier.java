@@ -92,7 +92,6 @@ class TestsApplier {
     }
 
     private Result handleHaskellTask(Task task) {
-        startedGhci = true;
         String parentFolder = new File(task.getSourcePath()).getParent();
         File haskellOutput = new File(parentFolder + File.separator + task.getName().split("\\.")[0] + "Output.txt");
         try {
@@ -101,6 +100,7 @@ class TestsApplier {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        startedGhci = true;
         output.clear();
         ArrayList<Test> testContents = task.getTestContents();
         cmdInput.println(":l " + task.getSourcePath());
@@ -128,6 +128,7 @@ class TestsApplier {
                 notInterrupted = false;
                 cmdInput.close();
                 haskellProcess.destroy();
+                startedGhci = false;
                 startHaskellProcess();
                 try {
                     haskellOutputWriter.close();
@@ -175,6 +176,7 @@ class TestsApplier {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                    startedGhci = false;
                     startHaskellProcess(); //Restart ghci if we encountered infinite input/ long computation.
                     return new Result("TL", task); //Took too long to compute.
                 }
