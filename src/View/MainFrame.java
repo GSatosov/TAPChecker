@@ -10,7 +10,7 @@ import javafx.stage.Stage;
 /**
  * Created by Arseniy Nazarov on 16.03.17.
  */
-public class MainFrame extends Application{
+public class MainFrame extends Application {
     public static void main(String[] args) {
         launch(args);
     }
@@ -21,7 +21,7 @@ public class MainFrame extends Application{
 
     private static Scene loginScene;
 
-    public static Stage getPrimaryStage() {
+    static Stage getPrimaryStage() {
         return primaryStage;
     }
 
@@ -29,19 +29,19 @@ public class MainFrame extends Application{
         MainFrame.primaryStage = primaryStage;
     }
 
-    public static Scene getMainScene() {
+    static Scene getMainScene() {
         return mainScene;
     }
 
-    public static void setMainScene(Scene mainScene) {
+    private static void setMainScene(Scene mainScene) {
         MainFrame.mainScene = mainScene;
     }
 
-    public static Scene getLoginScene() {
+    static Scene getLoginScene() {
         return loginScene;
     }
 
-    public static void setLoginScene(Scene loginScene) {
+    private static void setLoginScene(Scene loginScene) {
         MainFrame.loginScene = loginScene;
     }
 

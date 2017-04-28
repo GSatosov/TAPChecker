@@ -11,18 +11,18 @@
           prefHeight="120" prefWidth="320">
 
     <Label text="Email:"
-           GridPane.columnIndex="0" GridPane.rowIndex="1" />
+           GridPane.columnIndex="0" GridPane.rowIndex="1"/>
     <HBox GridPane.columnIndex="1" GridPane.rowIndex="1" spacing="5">
         <TextField fx:id="emailField"
-               GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                   GridPane.columnIndex="1" GridPane.rowIndex="1"/>
         <ChoiceBox fx:id="mailServer"
-               GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                   GridPane.columnIndex="2" GridPane.rowIndex="1"/>
     </HBox>
     <Label text="Password:"
-           GridPane.columnIndex="0" GridPane.rowIndex="2" />
+           GridPane.columnIndex="0" GridPane.rowIndex="2"/>
     <PasswordField fx:id="pwField"
-               GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                   GridPane.columnIndex="1" GridPane.rowIndex="2"/>
     <Button fx:id="login" text="Log in"
-            GridPane.columnIndex="1" GridPane.rowIndex="3" />
+            GridPane.columnIndex="1" GridPane.rowIndex="3"/>
 
 </GridPane>

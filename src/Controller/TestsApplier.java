@@ -278,11 +278,10 @@ class TestsApplier {
                         BufferedReader jpsReader = new BufferedReader(new FileReader(jpsFile));
                         ProcessBuilder jpsProcess = new ProcessBuilder("jps");
                         jpsProcess.redirectOutput(jpsFile).redirectError(jpsFile);
-                        jpsProcess.start();
-                        while (jpsFile.length() == 0) {
+                        Process p = jpsProcess.start();
+                        while (p.isAlive()) {
                             Thread.sleep(10);
                         }
-                        Thread.sleep(100);
                         String jpsLine = jpsReader.readLine();
                         while (jpsLine != null) {
                             if (jpsLine.contains(taskName)) {

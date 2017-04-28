@@ -5,7 +5,6 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
 
 import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
@@ -33,7 +32,7 @@ public class LoginController implements Initializable {
         mailServer.setItems(FXCollections.observableArrayList("@gmail.com", "@mail.ru"));
         mailServer.setValue(mailServer.getItems().get(0));
 
-        login.setOnAction(event ->  {
+        login.setOnAction(event -> {
             Settings.getInstance().setEmail(emailField.getText() + mailServer.getValue());
             Settings.getInstance().setPassword(pwField.getText());
             try {

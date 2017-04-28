@@ -58,7 +58,7 @@ public class MainController implements Initializable {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Settings.fxml"));
             loader.setController(new SettingsСontroller());
             try {
-                settingsFrame.setScene(new Scene((Parent) loader.load(), 640, 480));
+                settingsFrame.setScene(new Scene(loader.load(), 640, 480));
             } catch (IOException e) {
                 e.printStackTrace();
             }

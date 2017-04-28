@@ -76,7 +76,6 @@ public class General {
             System.out.println(new Date().getTime() - startDate.getTime() + " ms.");
             System.out.println("Task applier closed.");
         })).start();
-
     }
 
     public static void main(String[] args) {
