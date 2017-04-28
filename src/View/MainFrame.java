@@ -49,7 +49,7 @@ public class MainFrame extends Application{
     public void start(Stage primaryStage) throws Exception {
         setPrimaryStage(primaryStage);
 
-        setLoginScene(new Scene(FXMLLoader.load(getClass().getResource("Login.fxml")), 640, 480));
+        setLoginScene(new Scene(FXMLLoader.load(getClass().getResource("Login.fxml")), 430, 180));
         setMainScene(new Scene(FXMLLoader.load(getClass().getResource("Main.fxml")), 640, 480));
 
         if (Settings.getInstance().getEmail().isEmpty()) {
