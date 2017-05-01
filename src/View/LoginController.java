@@ -34,9 +34,13 @@ public class LoginController implements Initializable {
         mailServer.setValue(mailServer.getItems().get(0));
 
         login.setOnAction(event -> {
+            login.setDisable(true);
             String email = emailField.getText() + mailServer.getValue();
             String password = pwField.getText();
-            if (!EmailReceiver.validate(email, password)) return;
+            if (!EmailReceiver.validate(email, password)) {
+                login.setDisable(false);
+                return;
+            }
             Settings.getInstance().setEmail(email);
             Settings.getInstance().setPassword(password);
             try {
@@ -45,6 +49,7 @@ public class LoginController implements Initializable {
                 e.printStackTrace();
             }
             pwField.clear();
+            login.setDisable(false);
             MainFrame.getPrimaryStage().setScene(MainFrame.getMainScene());
         });
     }

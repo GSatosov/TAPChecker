@@ -41,14 +41,12 @@ public class MainController implements Initializable {
         });
 
         logout.setOnAction(event -> {
-            Settings.getInstance().setEmail("");
             Settings.getInstance().setPassword("");
             try {
                 Settings.getInstance().saveSettings();
             } catch (InvalidKeyException | IOException | NoSuchPaddingException | NoSuchAlgorithmException e) {
                 e.printStackTrace();
             }
-
             MainFrame.getPrimaryStage().setScene(MainFrame.getLoginScene());
         });
 
