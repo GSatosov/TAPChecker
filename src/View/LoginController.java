@@ -1,5 +1,6 @@
 package View;
 
+import Controller.EmailReceiver;
 import Model.Settings;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -33,8 +34,11 @@ public class LoginController implements Initializable {
         mailServer.setValue(mailServer.getItems().get(0));
 
         login.setOnAction(event -> {
-            Settings.getInstance().setEmail(emailField.getText() + mailServer.getValue());
-            Settings.getInstance().setPassword(pwField.getText());
+            String email = emailField.getText() + mailServer.getValue();
+            String password = pwField.getText();
+            if (!EmailReceiver.validate(email, password)) return;
+            Settings.getInstance().setEmail(email);
+            Settings.getInstance().setPassword(password);
             try {
                 Settings.getInstance().saveSettings();
             } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IOException e) {

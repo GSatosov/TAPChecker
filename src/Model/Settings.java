@@ -2,6 +2,7 @@ package Model;
 
 import Controller.Cryptographer;
 import com.google.api.client.util.IOUtils;
+import org.mindrot.jbcrypt.BCrypt;
 
 import javax.crypto.NoSuchPaddingException;
 import java.io.*;
@@ -43,10 +44,16 @@ public class Settings implements Serializable {
         return instance;
     }
 
+    private String resultsTableURL = "1cIg4hbegIKJfiy7-CM0lzXqRss8AgyxYlWFGT3hxZE8";
+
+    public String getResultsTableURL() {
+        return resultsTableURL;
+    }
+
     /*
     Host address
      */
-    private String host = "imap.gmail.com";
+    private transient static final String host = "imap.";
     /*
     E-mail address
      */
@@ -95,6 +102,7 @@ public class Settings implements Serializable {
     }
 
     public void setPassword(String password) {
+        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
         this.password = password;
     }
 
@@ -103,8 +111,12 @@ public class Settings implements Serializable {
     }
 
     public String getHost() {
-        return this.host;
+        return host + this.getEmail().split("@")[1];
     }
+    public static String getHostByEmail(String email) {
+        return host + email.split("@")[1];
+    }
+
 
     public String getEmail() {
         return this.email;

@@ -43,6 +43,23 @@ public class EmailReceiver {
         return inbox.getMessages();
     }
 
+    public static boolean validate(String email, String password) {
+        System.out.println("Credentials validation: Start...");
+        Properties props = new Properties();
+        props.put("mail.store.protocol", "imaps");
+        Session session = Session.getInstance(props);
+        try {
+            Store store = session.getStore();
+            System.out.println("Credentials validation: Trying to connect...");
+            store.connect(Settings.getInstance().getHostByEmail(email), email, password);
+        } catch (MessagingException e) {
+            System.out.println("Credentials validation: Failed!");
+            return false;
+        }
+        System.out.println("Credentials validation: Ok!");
+        return true;
+    }
+
     /*
     Save all message attachments in data folder
      */

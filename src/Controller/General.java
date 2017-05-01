@@ -1,5 +1,6 @@
 package Controller;
 
+import Model.Result;
 import Model.Task;
 
 import javax.crypto.NoSuchPaddingException;
@@ -31,24 +32,26 @@ public class General {
         return tasksQueue;
     }
 
-    private static Date startDate = new Date();
+    private static Date startDate;
 
     static Date getStartDate() {
+        if (startDate == null) startDate = new Date();
         return startDate;
     }
 
     public static void getResults() {
+        startDate = new Date();
+        ArrayList<Result> results = new ArrayList<>();
         tasksQueue = new ConcurrentLinkedQueue<>();
         TestsApplier applier = new TestsApplier();
         ThreadGroup tGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), "Tasks Receivers");
-        Thread taskReceiver = new Thread(tGroup, () -> {
+        (new Thread(tGroup, () -> {
             try {
                 EmailReceiver.retrieveMessagesData();
             } catch (IOException | MessagingException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException e) {
                 e.printStackTrace();
             }
-        });
-        taskReceiver.start();
+        })).start();
         (new Thread(() -> {
             while (tGroup.activeCount() > 0 || !getTasksQueue().isEmpty()) {
                 if (!getTasksQueue().isEmpty()) {
@@ -56,16 +59,20 @@ public class General {
                     if (task.getName().endsWith("hs")) {
                         if (!applier.sentHaskellTasks())
                             applier.startHaskellProcess();
-                        System.out.println(applier.handleHaskellTask(task));
+                        Result resultHaskell = applier.handleHaskellTask(task);
+                        results.add(resultHaskell);
+                        System.out.println(resultHaskell);
                     } else {
                         if (!applier.sentJavaTasks())
                             applier.startJavaTesting();
-                        System.out.println(applier.handleJavaTask(task));
+                        Result resultJava = applier.handleHaskellTask(task);
+                        results.add(resultJava);
+                        System.out.println(resultJava);
                     }
                 } else {
                     try {
                         //if (tGroup != null) System.out.println(tGroup.activeCount());
-                        Thread.sleep(500);
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -75,6 +82,8 @@ public class General {
                 applier.finishHaskellTesting();
             System.out.println(new Date().getTime() - startDate.getTime() + " ms.");
             System.out.println("Task applier closed.");
+            System.out.println("Running thread for results sender...");
+            (new Thread(new ResultsSender(results))).start();
         })).start();
     }
 
