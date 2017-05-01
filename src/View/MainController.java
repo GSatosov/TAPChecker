@@ -37,8 +37,7 @@ public class MainController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         tests.setOnAction(event -> {
             tests.setDisable(true);
-            General.getResults();
-            tests.setDisable(false);
+            General.getResults(() -> tests.setDisable(false));
         });
 
         logout.setOnAction(event -> {

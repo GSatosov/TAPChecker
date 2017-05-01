@@ -1,5 +1,6 @@
 package Controller;
 
+import Model.Callback;
 import Model.Result;
 import Model.Task;
 
@@ -11,6 +12,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 
 /**
  * Entry point for program.
@@ -39,7 +41,7 @@ public class General {
         return startDate;
     }
 
-    public static void getResults() {
+    public static void getResults(Callback callback) {
         startDate = new Date();
         ArrayList<Result> results = new ArrayList<>();
         tasksQueue = new ConcurrentLinkedQueue<>();
@@ -65,7 +67,7 @@ public class General {
                     } else {
                         if (!applier.sentJavaTasks())
                             applier.startJavaTesting();
-                        Result resultJava = applier.handleHaskellTask(task);
+                        Result resultJava = applier.handleJavaTask(task);
                         results.add(resultJava);
                         System.out.println(resultJava);
                     }
@@ -83,11 +85,9 @@ public class General {
             System.out.println(new Date().getTime() - startDate.getTime() + " ms.");
             System.out.println("Task applier closed.");
             System.out.println("Running thread for results sender...");
+            callback.call();
             (new Thread(new ResultsSender(results))).start();
         })).start();
     }
 
-    public static void main(String[] args) {
-        getResults();
-    }
 }
