@@ -2,7 +2,6 @@ package Model;
 
 import Controller.Cryptographer;
 import com.google.api.client.util.IOUtils;
-import org.mindrot.jbcrypt.BCrypt;
 
 import javax.crypto.NoSuchPaddingException;
 import java.io.*;
@@ -102,7 +101,6 @@ public class Settings implements Serializable {
     }
 
     public void setPassword(String password) {
-        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
         this.password = password;
     }
 
