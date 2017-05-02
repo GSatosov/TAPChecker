@@ -275,22 +275,16 @@ class TestsApplier {
                         reader.close();
                         File jpsFile = new File(parentFolder + File.separator + taskName + "Jps.txt");
                         jpsFile.createNewFile();
-                        BufferedReader jpsReader = new BufferedReader(new FileReader(jpsFile));
                         ProcessBuilder jpsProcess = new ProcessBuilder("jps");
                         jpsProcess.redirectOutput(jpsFile).redirectError(jpsFile);
                         Process p = jpsProcess.start();
                         while (p.isAlive()) {
                             Thread.sleep(10);
                         }
-                        String jpsLine = jpsReader.readLine();
-                        while (jpsLine != null) {
-                            if (jpsLine.contains(taskName)) {
-                                break;
-                            }
-                            jpsLine = jpsReader.readLine();
-                        }
-                        jpsReader.close();
-                        String pid = jpsLine.split(" ")[0];
+                        String pid = "";
+                        List<String> processIds = Files.readAllLines(jpsFile.toPath()).stream().filter(a -> a.contains(taskName)).collect(Collectors.toList());
+                        if (processIds.size() > 0)
+                            pid = processIds.get(0).split(" ")[0];
                         if (System.getProperty("os.name").startsWith("Windows"))
                             Runtime.getRuntime().exec("taskkill /F /PID " + pid);
                         else
