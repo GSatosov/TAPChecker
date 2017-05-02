@@ -291,7 +291,7 @@ class TestsApplier {
                             Runtime.getRuntime().exec("kill -9 " + pid);
                         jpsFile.delete();
                         clearFolderFromJavaFiles(task, inputFile, outputFile);
-                        return new Result("TL", task); //Time Limit.
+                        return new Result("TL" + curScore, task); //Time Limit.
                     }
                     Thread.sleep(10);
                     computationTime += 10;
@@ -299,7 +299,7 @@ class TestsApplier {
                 if (errorFile.length() != 0) {
                     reader.close(); //Close inputFile
                     clearFolderFromJavaFiles(task, inputFile, outputFile);
-                    return new Result("RE", task); //Runtime Error
+                    return new Result("RE" + curScore, task); //Runtime Error
                 }
                 ArrayList<String> testOutput = new ArrayList<>();
                 String curString = reader.readLine();
