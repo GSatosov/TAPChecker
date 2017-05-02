@@ -61,10 +61,7 @@ class TestsApplier {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return new Result(response, task);
-    }
-
-    private Result javaResult(String response, Task task) {
+        output.clear();
         return new Result(response, task);
     }
 
@@ -80,7 +77,7 @@ class TestsApplier {
                     break;
                 Thread.sleep(10);
             }
-            Thread.sleep(100);
+
             if (output.get(0).startsWith("'ghci' is not recognized as an internal or external command"))
                 throw new IOException();
         } catch (IOException e) {
@@ -101,7 +98,6 @@ class TestsApplier {
             e.printStackTrace();
         }
         startedGhci = true;
-        output.clear();
         ArrayList<Test> testContents = task.getTestContents();
         cmdInput.println(":l " + task.getSourcePath());
         try {
@@ -169,13 +165,14 @@ class TestsApplier {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                    startedGhci = false;
+                    haskellProcess.destroy();
+                    startHaskellProcess(); //Restart ghci if we encountered infinite input/ long computation.
                     try {
                         haskellOutputWriter.close();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    startedGhci = false;
-                    startHaskellProcess(); //Restart ghci if we encountered infinite input/ long computation.
                     return haskellResult("TL " + curTest, task); //Took too long to compute.
                 }
                 try {
@@ -185,6 +182,8 @@ class TestsApplier {
                 }
                 computationTime += 10;
             }
+            if (output.size() > beforeTesting + 1 && output.get(beforeTesting + 1).startsWith("<interactive>"))
+                return haskellResult("RE " + curTest, task);
             String response = output.get(beforeTesting).split(" ", 2)[1]; // *>TaskName> Output
             if (testOutputVariants.contains("Error") && response.startsWith("*** Exception") && !response.startsWith("*** Exception: Prelude") // If exception is expected.
                     || testOutputVariants.contains(response))
@@ -260,7 +259,6 @@ class TestsApplier {
         pb.redirectOutput(outputFile);
         pb.redirectError(errorFile);
         ArrayList<Test> testContents = task.getTestContents();
-        int maxScore = testContents.size();
         int curTest = 1;
         for (Test test : testContents) {
             try {
@@ -268,9 +266,9 @@ class TestsApplier {
                 FileWriter outputCleaner = new FileWriter(outputFile);
                 outputCleaner.close(); //To clear output
                 BufferedReader reader = new BufferedReader(new FileReader(outputFile));
-                test.getInput().forEach(testInput -> {
+                test.getInput().forEach(testLine -> {
                     try {
-                        writer.write(testInput);
+                        writer.write(testLine);
                         writer.write("\n");
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -298,7 +296,10 @@ class TestsApplier {
                             Runtime.getRuntime().exec("taskkill /F /PID " + pid);
                         else
                             Runtime.getRuntime().exec("kill -9 " + pid);
+                        Thread.sleep(100);
                         jpsFile.delete();
+                        if (errorFile.delete())
+                            System.out.println("Deleted");
                         clearFolderFromJavaFiles(task, inputFile, outputFile);
                         return new Result("TL " + curTest, task); //Time Limit.
                     }
@@ -319,8 +320,10 @@ class TestsApplier {
                 reader.close();
                 if (test.getOutputVariants().contains(testOutput))
                     curTest++;
-                else
-                    return new Result("WA" + curTest, task);
+                else {
+                    clearFolderFromJavaFiles(task, inputFile, outputFile);
+                    return new Result("WA " + curTest, task);
+                }
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
