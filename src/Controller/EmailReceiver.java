@@ -4,6 +4,7 @@ import Model.*;
 
 import javax.crypto.NoSuchPaddingException;
 import javax.mail.*;
+import javax.mail.internet.MimeBodyPart;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,6 +14,8 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -87,8 +90,25 @@ public class EmailReceiver {
             subject[2] = subject[2].toLowerCase().replaceAll(" ", "_");
             subject[2] = subject[2].substring(0, 1).toUpperCase() + subject[2].substring(1);
         }
-        ArrayList<Attachment> attachments = retrieveAttachments(message);
+        String contentType = message.getContentType();
         ArrayList<Task> tasks = new ArrayList<>();
+        if (contentType.contains("multipart")) {
+            Multipart multiPart = (Multipart) message.getContent();
+            for (int i = 0; i < multiPart.getCount(); i++) {
+                MimeBodyPart part = (MimeBodyPart) multiPart.getBodyPart(i);
+                if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
+                    File dir = new File(Settings.getInstance().getDataFolder() + "/" + subject[2] + "/" + subject[1] + "/" + subject[0] + "/" + (new SimpleDateFormat("yyyyMMddHHmmss")).format(message.getReceivedDate()));
+                    dir.mkdirs();
+                    File f = new File(Settings.getInstance().getDataFolder() + "/" + subject[2] + "/" + subject[1] + "/" + subject[0] + "/" + (new SimpleDateFormat("yyyyMMddHHmmss")).format(message.getReceivedDate()) + "/" + part.getFileName());
+                    part.saveFile(f);
+                    Task task = new Task(part.getFileName(), subject[2], f.getAbsolutePath(), message.getReceivedDate());
+                    task.setAuthor(new Student(fullName, subject[1]));
+                    tasks.add(task);
+                }
+            }
+        }
+
+        /*ArrayList<Attachment> attachments = retrieveAttachments(message);
         attachments.forEach(attachment -> {
             File f = new File(Settings.getInstance().getDataFolder() + "/" + subject[2] + "/" + subject[1] + "/" + subject[0] + "/" + attachment.getFileName());
             f.mkdirs();
@@ -97,12 +117,13 @@ public class EmailReceiver {
                     ExponentialBackOff.execute(() -> Files.copy(attachment.getStream(), f.toPath(), StandardCopyOption.REPLACE_EXISTING), 5);
                 }
                 attachment.getStream().close();
-                tasks.add(new Task(attachment.getFileName(), subject[2], f.getAbsolutePath()));
+                Task task = new Task(attachment.getFileName(), subject[2], f.getAbsolutePath());
+                task.setAuthor(new Student(fullName, subject[1]))
+                tasks.add(task);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-        });
-        tasks.forEach(task -> task.setAuthor(new Student(fullName, subject[1])));
+        });*/
         return tasks;
     }
 
@@ -138,16 +159,15 @@ public class EmailReceiver {
                                         att.setTestContents(localTests.get(att.getName()));
                                         General.getTasksQueue().add(att);
                                         System.out.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " s).");
-                                    }
-                                    else {
-                                            ExponentialBackOff.execute(() -> {
-                                                ArrayList<Test> cTests = GoogleDriveManager.getTests(att);
-                                                localTests.put(att.getName(), cTests);
-                                                att.setTestContents(cTests);
-                                                System.out.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " s).");
-                                                General.getTasksQueue().add(att);
-                                                return null;
-                                            });
+                                    } else {
+                                        ExponentialBackOff.execute(() -> {
+                                            ArrayList<Test> cTests = GoogleDriveManager.getTests(att);
+                                            localTests.put(att.getName(), cTests);
+                                            att.setTestContents(cTests);
+                                            System.out.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " s).");
+                                            General.getTasksQueue().add(att);
+                                            return null;
+                                        });
                                     }
                                 })).start();
                             });
@@ -165,33 +185,33 @@ public class EmailReceiver {
                 throw new RuntimeException(e);
             }
         });
-
         return tasks;
     }
 
     private static AtomicInteger downloadedMessagesCount;
     private static ConcurrentHashMap<String, ArrayList<Test>> localTests;
+
     /*
     Retrieve attachments from message
      */
-    private static ArrayList<Attachment> retrieveAttachments(Message message) throws IOException, MessagingException {
+    /*private static ArrayList<Attachment> retrieveAttachments(Message message) throws IOException, MessagingException {
         Object content = message.getContent();
         ArrayList<Attachment> result = new ArrayList<>();
 
         if (content instanceof Multipart) {
             Multipart multipart = (Multipart) content;
             for (int i = 0; i < multipart.getCount(); i++) {
-                result.addAll(retrieveAttachments(multipart.getBodyPart(i)));
+                result.addAll(retrieveAttachments((MimeBodyPart) multipart.getBodyPart(i)));
             }
         }
 
         return result;
-    }
+    }*/
 
     /*
     Retrieve attachments from message
      */
-    private static ArrayList<Attachment> retrieveAttachments(BodyPart part) throws IOException, MessagingException {
+    /*private static ArrayList<Attachment> retrieveAttachments(MimeBodyPart part) throws IOException, MessagingException {
         ArrayList<Attachment> result = new ArrayList<>();
         Object content = part.getContent();
         if (content instanceof InputStream || content instanceof String) {
@@ -203,11 +223,10 @@ public class EmailReceiver {
         if (content instanceof Multipart) {
             Multipart multipart = (Multipart) content;
             for (int i = 0; i < multipart.getCount(); i++) {
-                BodyPart bodyPart = multipart.getBodyPart(i);
-                result.addAll(retrieveAttachments(bodyPart));
+                result.addAll(retrieveAttachments((MimeBodyPart) multipart.getBodyPart(i)));
             }
         }
 
         return result;
-    }
+    }*/
 }

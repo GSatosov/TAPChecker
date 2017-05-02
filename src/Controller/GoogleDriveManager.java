@@ -1,5 +1,6 @@
 package Controller;
 
+import Model.Callback;
 import Model.Settings;
 import Model.Task;
 import Model.Test;
@@ -19,6 +20,7 @@ import com.google.api.services.drive.model.*;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.sheets.v4.Sheets;
+import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -36,25 +38,13 @@ public class GoogleDriveManager {
     /**
      * Global instance of the JSON factory.
      */
-    private static final JsonFactory JSON_FACTORY =
+    public static final JsonFactory JSON_FACTORY =
             JacksonFactory.getDefaultInstance();
 
     /**
      * Global instance of the HTTP transport.
      */
-    private static HttpTransport HTTP_TRANSPORT;
-
-    private static void setDriveService() throws IOException {
-        service = getDriveService();
-    }
-
-    /**
-     * Global instance of the scopes required by this quickstart.
-     * <p>
-     * If modifying these scopes, delete your previously saved credentials
-     * at ~/.credentials/drive-java-quickstart
-     */
-    private static final List<String> SCOPES = Arrays.asList(DriveScopes.DRIVE_METADATA, DriveScopes.DRIVE_FILE, DriveScopes.DRIVE_READONLY);
+    public static HttpTransport HTTP_TRANSPORT;
 
     static {
         try {
@@ -72,8 +62,14 @@ public class GoogleDriveManager {
      * @return an authorized Credential object.
      * @throws IOException
      */
-    private static Credential authorize() throws IOException {
+    public static Credential authorize() throws IOException {
         // Build flow and trigger user authorization request.
+        HashSet tScopes = new HashSet();
+        tScopes.addAll(SheetsScopes.all());
+        tScopes.add(DriveScopes.DRIVE_METADATA);
+        tScopes.add(DriveScopes.DRIVE_FILE);
+        tScopes.add(DriveScopes.DRIVE_READONLY);
+        Set<String> SCOPES = Collections.unmodifiableSet(tScopes);
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY, Settings.getClientId(), Settings.getClientSecret(), SCOPES).setDataStoreFactory(DATA_STORE_FACTORY).setAccessType("offline").build();
         Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
         return credential;
@@ -86,13 +82,29 @@ public class GoogleDriveManager {
      * @throws IOException
      */
     private static Drive getDriveService() throws IOException {
-        Credential credential = authorize();
-        return new Drive.Builder(
-                HTTP_TRANSPORT, JSON_FACTORY, credential)
-                .setApplicationName(Settings.getApplicationName())
-                .build();
+        if (service == null) {
+            Credential credential = authorize();
+            service = new Drive.Builder(
+                    HTTP_TRANSPORT, JSON_FACTORY, credential)
+                    .setApplicationName(Settings.getApplicationName())
+                    .build();
+        }
+        return service;
     }
-    static private Drive service;
+
+    public static Drive getService() throws IOException {
+        if (service == null) {
+            synchronized (Sheets.class) {
+                if (service == null) {
+                    Credential credential = authorize();
+                    service = new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).build();
+                }
+            }
+        }
+        return service;
+    }
+
+    private static volatile Drive service;
 
     static ArrayList<Test> getTests(Task task) throws IOException {
         Drive service = getDriveService();

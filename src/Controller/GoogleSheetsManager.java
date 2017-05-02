@@ -16,64 +16,33 @@ import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
 import com.google.api.services.sheets.v4.model.ValueRange;
 
+import javax.crypto.NoSuchPaddingException;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 class GoogleSheetsManager {
-    static private Sheets service;
 
-    private static void setSheetsService() throws IOException {
-        service = getSheetsService();
-    }
+    private static volatile Sheets service;
 
-    /**
-     * Global instance of the {@link FileDataStoreFactory}.
-     */
-    private static FileDataStoreFactory DATA_STORE_FACTORY;
-
-    /* Global instance of the JSON factory. */
-    private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
-
-    /* Global instance of the HTTP transport. */
-    private static HttpTransport HTTP_TRANSPORT;
-
-    /* Global instance of the scopes required by this manager.
-     *
-     * If modifying these scopes, delete your previously saved credentials
-     * at {@link Settings.credentialsStoreDir}
-     */
-    private static final Set<String> SCOPES = SheetsScopes.all();
-
-    static {
-        try {
-            HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-            DATA_STORE_FACTORY = new FileDataStoreFactory(Settings.getCredentialsStoreDir());
-            setSheetsService();
-        } catch (Throwable t) {
-            t.printStackTrace();
-            System.exit(1);
+    /*
+    * Build and return an authorized Sheets API client service.
+    */
+    public static Sheets getService() throws IOException {
+        if (service == null) {
+            synchronized (Sheets.class) {
+                if (service == null) {
+                    Credential credential = GoogleDriveManager.authorize();
+                    service = new Sheets.Builder(GoogleDriveManager.HTTP_TRANSPORT, GoogleDriveManager.JSON_FACTORY, credential).setApplicationName(Settings.getApplicationName()).build();
+                }
+            }
         }
-    }
-
-    /*
-     * Creates an authorized Credential object.
-     */
-    private static Credential authorize() throws IOException {
-        // Build flow and trigger user authorization request.
-        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY, Settings.getClientId(), Settings.getClientSecret(), SCOPES).setDataStoreFactory(DATA_STORE_FACTORY).setAccessType("offline").build();
-        Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
-        System.out.println("Credentials saved to " + Settings.getCredentialsStoreDir().getAbsolutePath());
-        return credential;
-    }
-
-    /*
-     * Build and return an authorized Sheets API client service.
-     */
-    public static Sheets getSheetsService() throws IOException {
-        Credential credential = authorize();
-        return new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).setApplicationName(Settings.getApplicationName()).build();
+        return service;
     }
 
 }

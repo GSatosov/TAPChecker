@@ -1,7 +1,9 @@
 package View;
 
 import Controller.EmailReceiver;
+import Controller.GoogleDriveManager;
 import Model.Settings;
+import com.google.api.client.auth.oauth2.Credential;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;

@@ -12,7 +12,7 @@ public class Task {
     private String sourcePath;
     private ArrayList<Test> testContents;
     private Student author;
-    private Date sentDate;
+    private Date receivedDate;
 
     public void setAuthor(Student author) {
         this.author = author;
@@ -22,8 +22,8 @@ public class Task {
         return this.author;
     }
 
-    public Date getSentDate() {
-        return this.sentDate;
+    public Date getReceivedDate() {
+        return this.receivedDate;
     }
 
     public ArrayList<Test> getTestContents() {
@@ -46,10 +46,19 @@ public class Task {
         return this.sourcePath;
     }
 
-    public Task(String name, String subject, String source) {
+    public Student getStudent() {
+        return author;
+    }
+
+    public String getGroup() {
+        return getStudent().getGroupName();
+    }
+
+    public Task(String name, String subject, String source, Date receivedDate) {
         this.name = name;
         this.subjectName = subject;
         this.sourcePath = source;
+        this.receivedDate = receivedDate;
     }
 
     @Override

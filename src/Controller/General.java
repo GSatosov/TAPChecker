@@ -12,7 +12,6 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Consumer;
 
 /**
  * Entry point for program.
@@ -42,6 +41,13 @@ public class General {
     }
 
     public static void getResults(Callback callback) {
+        try {
+            GoogleDriveManager.authorize();
+        } catch (IOException e) {
+            callback.call();
+            return;
+        }
+
         startDate = new Date();
         ArrayList<Result> results = new ArrayList<>();
         tasksQueue = new ConcurrentLinkedQueue<>();
@@ -85,8 +91,7 @@ public class General {
             System.out.println(new Date().getTime() - startDate.getTime() + " ms.");
             System.out.println("Task applier closed.");
             System.out.println("Running thread for results sender...");
-            callback.call();
-            (new Thread(new ResultsSender(results))).start();
+            (new Thread(new ResultsSender(results, callback))).start();
         })).start();
     }
 

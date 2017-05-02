@@ -13,6 +13,5 @@
     <orderEntry type="library" name="com.google.oauth-client:google-oauth-client-jetty:1.22.0" level="project" />
     <orderEntry type="library" name="com.google.apis:google-api-services-sheets:v4-rev463-1.22.0" level="project" />
     <orderEntry type="library" name="com.google.api-client:google-api-client:1.22.0" level="project" />
-    <orderEntry type="library" name="org.mindrot:jbcrypt:0.4" level="project" />
   </component>
 </module>
