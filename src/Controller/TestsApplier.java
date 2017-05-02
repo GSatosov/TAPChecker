@@ -235,6 +235,7 @@ class TestsApplier {
             errorStream.close();
             BufferedReader br = new BufferedReader(new FileReader(errorFile));
             if (br.readLine() != null) {
+                br.close();
                 return new Result("CE", task);
             }
             br.close();
