@@ -55,6 +55,19 @@ class TestsApplier {
         });
     }
 
+    private Result haskellResult(String response, Task task) {
+        try {
+            haskellOutputWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new Result(response, task);
+    }
+
+    private Result javaResult(String response, Task task) {
+        return new Result(response, task);
+    }
+
     void startHaskellProcess() {
         notInterrupted = true;
         sentHaskellTasks = true;
@@ -67,6 +80,7 @@ class TestsApplier {
                     break;
                 Thread.sleep(10);
             }
+            Thread.sleep(100);
             if (output.get(0).startsWith("'ghci' is not recognized as an internal or external command"))
                 throw new IOException();
         } catch (IOException e) {
@@ -108,7 +122,7 @@ class TestsApplier {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                return new Result("CE", task); //Compilation Error
+                return haskellResult("CE", task); //Compilation Error
             }
             if (compilationTime == 100) {
                 notInterrupted = false;
@@ -121,7 +135,7 @@ class TestsApplier {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                return new Result("TL", task); // Took too long to compile.
+                return haskellResult("TL", task); // Took too long to compile.
             }
             try {
                 Thread.sleep(10);
@@ -129,8 +143,7 @@ class TestsApplier {
                 e.printStackTrace();
             }
         }
-        int testingScore = 0;
-        int maxScore = testContents.size();
+        int curTest = 1;
         for (Test test : testContents) {
             int beforeTesting = output.size();
             String testCommand = test.getInput().get(0); //Haskell tasks do not support multi-line inputs.
@@ -163,7 +176,7 @@ class TestsApplier {
                     }
                     startedGhci = false;
                     startHaskellProcess(); //Restart ghci if we encountered infinite input/ long computation.
-                    return new Result("TL", task); //Took too long to compute.
+                    return haskellResult("TL " + curTest, task); //Took too long to compute.
                 }
                 try {
                     Thread.sleep(10);
@@ -173,17 +186,13 @@ class TestsApplier {
                 computationTime += 10;
             }
             String response = output.get(beforeTesting).split(" ", 2)[1]; // *>TaskName> Output
-            if (testOutputVariants.contains("Error") && response.startsWith("*** Exception") // If exception is expected.
+            if (testOutputVariants.contains("Error") && response.startsWith("*** Exception") && !response.startsWith("*** Exception: Prelude") // If exception is expected.
                     || testOutputVariants.contains(response))
-                testingScore++;
+                curTest++;
+            else
+                return haskellResult("WA " + curTest, task);
         }
-        try {
-            haskellOutputWriter.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        String taskResult = testingScore + "/" + maxScore;
-        return new Result(taskResult, task);
+        return haskellResult("OK", task);
     }
 
     void finishHaskellTesting() {
@@ -252,7 +261,7 @@ class TestsApplier {
         pb.redirectError(errorFile);
         ArrayList<Test> testContents = task.getTestContents();
         int maxScore = testContents.size();
-        int curScore = 0;
+        int curTest = 1;
         for (Test test : testContents) {
             try {
                 FileWriter writer = new FileWriter(inputFile); //To clear input.
@@ -291,7 +300,7 @@ class TestsApplier {
                             Runtime.getRuntime().exec("kill -9 " + pid);
                         jpsFile.delete();
                         clearFolderFromJavaFiles(task, inputFile, outputFile);
-                        return new Result("TL" + curScore, task); //Time Limit.
+                        return new Result("TL " + curTest, task); //Time Limit.
                     }
                     Thread.sleep(10);
                     computationTime += 10;
@@ -299,7 +308,7 @@ class TestsApplier {
                 if (errorFile.length() != 0) {
                     reader.close(); //Close inputFile
                     clearFolderFromJavaFiles(task, inputFile, outputFile);
-                    return new Result("RE" + curScore, task); //Runtime Error
+                    return new Result("RE " + curTest, task); //Runtime Error
                 }
                 ArrayList<String> testOutput = new ArrayList<>();
                 String curString = reader.readLine();
@@ -309,17 +318,16 @@ class TestsApplier {
                 }
                 reader.close();
                 if (test.getOutputVariants().contains(testOutput))
-                    curScore++;
+                    curTest++;
+                else
+                    return new Result("WA" + curTest, task);
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
         }
         errorFile.delete();
         clearFolderFromJavaFiles(task, inputFile, outputFile);
-        String taskResult = curScore + "/" + maxScore;
-        if (curScore < maxScore)
-            return new Result(taskResult, task);
-        return new Result(curScore + "/" + maxScore, task);
+        return new Result("OK", task);
     }
 
     private void clearFolderFromJavaFiles(Task task, File inputFile, File outputFile) {
