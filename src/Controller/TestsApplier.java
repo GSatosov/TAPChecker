@@ -284,7 +284,7 @@ class TestsApplier {
                         String pid = "";
                         List<String> processIds = Files.readAllLines(jpsFile.toPath()).stream().filter(a -> a.contains(taskName)).collect(Collectors.toList());
                         if (processIds.size() > 0)
-                            pid = processIds.get(0);
+                            pid = processIds.get(0).split(" ")[0];
                         if (System.getProperty("os.name").startsWith("Windows"))
                             Runtime.getRuntime().exec("taskkill /F /PID " + pid);
                         else
