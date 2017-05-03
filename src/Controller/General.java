@@ -54,11 +54,11 @@ public class General {
                 if (!getTasksQueue().isEmpty()) {
                     Task task = getTasksQueue().poll();
                     if (task.getName().endsWith("hs")) {
-                        if (!applier.sentHaskellTasks())
-                            applier.startHaskellProcess();
+                        if (!applier.startedHaskellTesting())
+                            applier.startHaskellTesting();
                         System.out.println(applier.handleHaskellTask(task));
                     } else {
-                        if (!applier.sentJavaTasks())
+                        if (!applier.startedJavaTesting())
                             applier.startJavaTesting();
                         System.out.println(applier.handleJavaTask(task));
                     }
@@ -71,7 +71,7 @@ public class General {
                     }
                 }
             }
-            if (applier.sentHaskellTasks())
+            if (applier.startedHaskellTesting())
                 applier.finishHaskellTesting();
             System.out.println(new Date().getTime() - startDate.getTime() + " ms.");
             System.out.println("Task applier closed.");

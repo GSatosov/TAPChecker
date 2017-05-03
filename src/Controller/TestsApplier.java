@@ -18,21 +18,21 @@ import java.util.stream.Collectors;
  */
 class TestsApplier {
     private volatile boolean notInterrupted;
-    private ArrayList<String> output;
+    private volatile ArrayList<String> output;
     private Process haskellProcess;
     private volatile boolean startedGhci;
-    private boolean sentHaskellTasks;
-    private boolean sentJavaTasks;
+    private boolean startedHaskellTesting;
+    private boolean startedJavaTesting;
     private PrintStream cmdInput;
     private JavaCompiler compiler;
     private BufferedWriter haskellOutputWriter;
 
-    boolean sentHaskellTasks() {
-        return sentHaskellTasks;
+    boolean startedHaskellTesting() {
+        return this.startedHaskellTesting;
     }
 
-    boolean sentJavaTasks() {
-        return sentJavaTasks;
+    boolean startedJavaTesting() {
+        return this.startedJavaTesting;
     }
 
     private Thread cmdOutput(InputStream stream) {
@@ -65,20 +65,19 @@ class TestsApplier {
         return new Result(response, task);
     }
 
-    void startHaskellProcess() {
+    void startHaskellTesting() {
         notInterrupted = true;
-        sentHaskellTasks = true;
         try {
             haskellProcess = new ProcessBuilder("ghci").redirectErrorStream(true).start();
             cmdInput = new PrintStream(haskellProcess.getOutputStream());
-            cmdOutput(haskellProcess.getInputStream()).start();
+            Thread haskellCmdThread = cmdOutput(haskellProcess.getInputStream());
+            haskellCmdThread.start();
             while (true) { //On first launch ProcessBuilder takes a lot of time to execute first command.
                 if (!output.isEmpty())
                     break;
                 Thread.sleep(10);
             }
-
-            if (output.get(0).startsWith("'ghci' is not recognized as an internal or external command"))
+            if (output.get(0).startsWith("'ghci' is not"))
                 throw new IOException();
         } catch (IOException e) {
             e.printStackTrace();
@@ -86,6 +85,7 @@ class TestsApplier {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        startedHaskellTesting = true;
     }
 
     Result handleHaskellTask(Task task) {
@@ -121,11 +121,13 @@ class TestsApplier {
                 return haskellResult("CE", task); //Compilation Error
             }
             if (compilationTime == 100) {
-                notInterrupted = false;
-                cmdInput.close();
-                haskellProcess.destroy();
-                startedGhci = false;
-                startHaskellProcess();
+                finishHaskellTesting();
+                try {
+                    Thread.sleep(250);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                startHaskellTesting();
                 try {
                     haskellOutputWriter.close();
                 } catch (IOException e) {
@@ -165,14 +167,18 @@ class TestsApplier {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    startedGhci = false;
-                    haskellProcess.destroy();
-                    startHaskellProcess(); //Restart ghci if we encountered infinite input/ long computation.
+                    finishHaskellTesting();
+                    try {
+                        Thread.sleep(250);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                     try {
                         haskellOutputWriter.close();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                    startHaskellTesting(); //Restart ghci if we encountered infinite input/ long computation.
                     return haskellResult("TL " + curTest, task); //Took too long to compute.
                 }
                 try {
@@ -195,6 +201,7 @@ class TestsApplier {
     }
 
     void finishHaskellTesting() {
+        startedGhci = false;
         notInterrupted = false;
         haskellProcess.destroy();
         cmdInput.close();
@@ -202,7 +209,7 @@ class TestsApplier {
 
     void startJavaTesting() {
         compiler = ToolProvider.getSystemJavaCompiler();
-        sentJavaTasks = true;
+        startedJavaTesting = true;
     }
 
     private void removePackageStatementInJavaTasks(Task task) {
@@ -296,10 +303,9 @@ class TestsApplier {
                             Runtime.getRuntime().exec("taskkill /F /PID " + pid);
                         else
                             Runtime.getRuntime().exec("kill -9 " + pid);
-                        Thread.sleep(100);
+                        Thread.sleep(250);
                         jpsFile.delete();
-                        if (errorFile.delete())
-                            System.out.println("Deleted");
+                        errorFile.delete();
                         clearFolderFromJavaFiles(task, inputFile, outputFile);
                         return new Result("TL " + curTest, task); //Time Limit.
                     }
@@ -338,4 +344,6 @@ class TestsApplier {
         outputFile.delete();
         new File(task.getSourcePath().substring(0, task.getSourcePath().length() - 4) + "class").delete();
     }
+
 }
+
