@@ -1,6 +1,5 @@
 package Controller;
 
-import Model.Callback;
 import Model.Settings;
 import Model.Task;
 import Model.Test;
@@ -8,24 +7,23 @@ import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.HttpTransport;
-import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
-
-import com.google.api.services.drive.DriveScopes;
-import com.google.api.services.drive.model.*;
 import com.google.api.services.drive.Drive;
+import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
+import com.google.api.services.drive.model.FileList;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
-import com.google.api.services.sheets.v4.model.ValueRange;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.*;
 
 public class GoogleDriveManager {
@@ -38,13 +36,13 @@ public class GoogleDriveManager {
     /**
      * Global instance of the JSON factory.
      */
-    public static final JsonFactory JSON_FACTORY =
+    static final JsonFactory JSON_FACTORY =
             JacksonFactory.getDefaultInstance();
 
     /**
      * Global instance of the HTTP transport.
      */
-    public static HttpTransport HTTP_TRANSPORT;
+    static HttpTransport HTTP_TRANSPORT;
 
     static {
         try {
@@ -62,7 +60,7 @@ public class GoogleDriveManager {
      * @return an authorized Credential object.
      * @throws IOException
      */
-    public static Credential authorize() throws IOException {
+    static Credential authorize() throws IOException {
         // Build flow and trigger user authorization request.
         HashSet tScopes = new HashSet();
         tScopes.addAll(SheetsScopes.all());
@@ -71,8 +69,7 @@ public class GoogleDriveManager {
         tScopes.add(DriveScopes.DRIVE_READONLY);
         Set<String> SCOPES = Collections.unmodifiableSet(tScopes);
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY, Settings.getClientId(), Settings.getClientSecret(), SCOPES).setDataStoreFactory(DATA_STORE_FACTORY).setAccessType("offline").build();
-        Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
-        return credential;
+        return new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
     }
 
     /**
@@ -113,7 +110,7 @@ public class GoogleDriveManager {
                 .execute();
         String taskSubject = task.getSubjectName();
         Optional<File> parentFile = result.getFiles().stream().filter(file -> file.getName().equals(taskSubject)).findFirst();
-        String parentId = parentFile.isPresent() ? parentFile.get().getId() : null;
+        String parentId = parentFile.map(File::getId).orElse(null);
         if (parentId == null) throw new IOException("There is no subject folder!");
         else {
             result = service.files().list()

@@ -1,24 +1,24 @@
 package Controller;
 
-import Model.*;
+import Model.Settings;
+import Model.Student;
+import Model.Task;
+import Model.Test;
 
 import javax.crypto.NoSuchPaddingException;
 import javax.mail.*;
 import javax.mail.internet.MimeBodyPart;
-
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Created by Alexander Baranov on 03.03.2017.
@@ -54,7 +54,7 @@ public class EmailReceiver {
         try {
             Store store = session.getStore();
             System.out.println("Credentials validation: Trying to connect...");
-            store.connect(Settings.getInstance().getHostByEmail(email), email, password);
+            store.connect(Settings.getHostByEmail(email), email, password);
         } catch (MessagingException e) {
             System.out.println("Credentials validation: Failed!");
             return false;
@@ -97,9 +97,9 @@ public class EmailReceiver {
             for (int i = 0; i < multiPart.getCount(); i++) {
                 MimeBodyPart part = (MimeBodyPart) multiPart.getBodyPart(i);
                 if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
-                    File dir = new File(Settings.getInstance().getDataFolder() + "/" + subject[2] + "/" + subject[1] + "/" + subject[0] + "/" + (new SimpleDateFormat("yyyyMMddHHmmss")).format(message.getReceivedDate()));
+                    File dir = new File(Settings.getDataFolder() + "/" + subject[2] + "/" + subject[1] + "/" + subject[0] + "/" + (new SimpleDateFormat(Settings.getSourcesDateFormat())).format(message.getReceivedDate()));
                     dir.mkdirs();
-                    File f = new File(Settings.getInstance().getDataFolder() + "/" + subject[2] + "/" + subject[1] + "/" + subject[0] + "/" + (new SimpleDateFormat("yyyyMMddHHmmss")).format(message.getReceivedDate()) + "/" + part.getFileName());
+                    File f = new File(Settings.getDataFolder() + "/" + subject[2] + "/" + subject[1] + "/" + subject[0] + "/" + (new SimpleDateFormat(Settings.getSourcesDateFormat())).format(message.getReceivedDate()) + "/" + part.getFileName());
                     part.saveFile(f);
                     Task task = new Task(part.getFileName(), subject[2], f.getAbsolutePath(), message.getReceivedDate());
                     task.setAuthor(new Student(fullName, subject[1]));
@@ -132,7 +132,7 @@ public class EmailReceiver {
     /*
     Retrieve messages data from inbox folder
      */
-    static ArrayList<Task> retrieveMessagesData() throws IOException, MessagingException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+    static void retrieveMessagesData() throws IOException, MessagingException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException {
         Properties props = new Properties();
         props.put("mail.store.protocol", "imaps");
         Session session = Session.getInstance(props);
@@ -143,8 +143,7 @@ public class EmailReceiver {
         Date lastDateEmailChecking = Settings.getInstance().getLastDateEmailChecked();
         System.out.println(lastDateEmailChecking.toString());
         Date newDateEmailChecking = new Date();
-        ArrayList<Task> tasks = new ArrayList<>();
-        downloadedMessagesCount = new AtomicInteger();
+        downloadedMessagesCount = new CountDownLatch(messages.length);
         localTests = new ConcurrentHashMap<>();
         fileSystemSemaphore = new Object();
         Arrays.stream(messages).forEach(message -> {
@@ -153,25 +152,32 @@ public class EmailReceiver {
                     (new Thread(Thread.currentThread().getThreadGroup(), () -> {
                         try {
                             ArrayList<Task> attachments = saveMessageAttachments(message);
-                            attachments.forEach(att -> {
-                                (new Thread(Thread.currentThread().getThreadGroup(), () -> {
-                                    if (localTests.containsKey(att.getName())) {
-                                        att.setTestContents(localTests.get(att.getName()));
-                                        General.getTasksQueue().add(att);
-                                        System.out.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " s).");
+                            attachments.forEach(att -> (new Thread(Thread.currentThread().getThreadGroup(), () -> {
+                                if (localTests.containsKey(att.getName())) {
+                                    att.setTestContents(localTests.get(att.getName()));
+                                    if (att.getName().endsWith(".hs")) {
+                                        General.getHaskellTasksQueue().add(att);
                                     } else {
-                                        ExponentialBackOff.execute(() -> {
-                                            ArrayList<Test> cTests = GoogleDriveManager.getTests(att);
-                                            localTests.put(att.getName(), cTests);
-                                            att.setTestContents(cTests);
-                                            System.out.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " s).");
-                                            General.getTasksQueue().add(att);
-                                            return null;
-                                        });
+                                        General.getJavaTasksQueue().add(att);
                                     }
-                                })).start();
-                            });
-                            if (downloadedMessagesCount.incrementAndGet() == messages.length) {
+                                    System.out.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " s).");
+                                } else {
+                                    ExponentialBackOff.execute(() -> {
+                                        ArrayList<Test> cTests = GoogleDriveManager.getTests(att);
+                                        localTests.put(att.getName(), cTests);
+                                        att.setTestContents(cTests);
+                                        System.out.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " s).");
+                                        if (att.getName().endsWith(".hs")) {
+                                            General.getHaskellTasksQueue().add(att);
+                                        } else {
+                                            General.getJavaTasksQueue().add(att);
+                                        }
+                                        return null;
+                                    });
+                                }
+                            })).start());
+                            downloadedMessagesCount.countDown();
+                            if (downloadedMessagesCount.getCount() == 0) {
                                 Settings.getInstance().setLastDateEmailChecked(new Date(0L));  // Left this way for testing purposes.
                                 Settings.getInstance().saveSettings();
                                 inbox.close(false);
@@ -185,10 +191,10 @@ public class EmailReceiver {
                 throw new RuntimeException(e);
             }
         });
-        return tasks;
     }
 
-    private static AtomicInteger downloadedMessagesCount;
+    private static CountDownLatch downloadedMessagesCount;
+
     private static ConcurrentHashMap<String, ArrayList<Test>> localTests;
 
     /*

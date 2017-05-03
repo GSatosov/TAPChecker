@@ -46,11 +46,11 @@ public class Task {
         return this.sourcePath;
     }
 
-    public Student getStudent() {
+    Student getStudent() {
         return author;
     }
 
-    public String getGroup() {
+    String getGroup() {
         return getStudent().getGroupName();
     }
 
@@ -63,6 +63,6 @@ public class Task {
 
     @Override
     public String toString() {
-        return "{" + this.name + ", " + this.subjectName + ", " + this.sourcePath + "}";
+        return "{" + this.name + ", " + this.subjectName + ", " + getStudent() + ", " + getReceivedDate() + ", " + this.sourcePath + "}";
     }
 }
