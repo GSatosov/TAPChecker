@@ -5,7 +5,10 @@ import Model.Settings;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
 
 import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;

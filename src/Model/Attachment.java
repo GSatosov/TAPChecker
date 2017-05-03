@@ -4,7 +4,7 @@ import java.io.InputStream;
 
 /**
  * Created by Alexander Baranov on 03.03.2017.
- *
+ * <p>
  * Attachment model
  */
 public class Attachment {

@@ -27,14 +27,12 @@ public class Settings implements Serializable {
                     if (settingsFile.exists()) {
                         try {
                             FileInputStream inputStream = new FileInputStream(settingsFile);
-                            instance = (Settings)Cryptographer.decrypt(inputStream);
-                        }
-                        catch (IOException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException e) {
+                            instance = (Settings) Cryptographer.decrypt(inputStream);
+                        } catch (IOException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException e) {
                             instance = new Settings();
                             e.printStackTrace();
                         }
-                    }
-                    else {
+                    } else {
                         instance = new Settings();
                     }
                 }
@@ -75,7 +73,13 @@ public class Settings implements Serializable {
     /*
     Directory to store user credentials for this application.
      */
-    private transient static final File credentialsStoreDir = new File(System.getProperty("user.home"), ".credentials/thesis/googledrive");
+    private transient static final File credentialsStoreDir = new File(System.getProperty("user.home"), ".credentials/" + getApplicationName() + "/google");
+
+    private transient static final String sourcesDateFormat = "yyyyMMddHHmmss";
+
+    public static String getSourcesDateFormat() {
+        return sourcesDateFormat;
+    }
 
     /*
     Last date when email was checked.
@@ -104,13 +108,14 @@ public class Settings implements Serializable {
         this.password = password;
     }
 
-    public static String getSettingsFileName() {
+    private static String getSettingsFileName() {
         return settingsFileName;
     }
 
     public String getHost() {
         return host + this.getEmail().split("@")[1];
     }
+
     public static String getHostByEmail(String email) {
         return host + email.split("@")[1];
     }
@@ -147,12 +152,12 @@ public class Settings implements Serializable {
     /*
     Encrypt and save settings file to data folder.
      */
-        public void saveSettings() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
-            (new File(Settings.getInstance().getDataFolder())).mkdirs();
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            Cryptographer.encrypt(getInstance(), baos);
-            ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-            IOUtils.copy(bais, new FileOutputStream(getDataFolder() + "/" + getSettingsFileName()));
-        }
+    public void saveSettings() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
+        (new File(Settings.getDataFolder())).mkdirs();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Cryptographer.encrypt(getInstance(), baos);
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        IOUtils.copy(bais, new FileOutputStream(getDataFolder() + "/" + getSettingsFileName()));
+    }
 
 }

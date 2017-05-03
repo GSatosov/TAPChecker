@@ -13,6 +13,14 @@ public class Student {
         this.groupName = groupName;
     }
 
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public String getName() {
+        return name;
+    }
+
     @Override
     public String toString() {
         return this.name + " from group " + this.groupName;
