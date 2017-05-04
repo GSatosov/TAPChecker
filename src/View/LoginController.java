@@ -7,6 +7,8 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
@@ -36,6 +38,18 @@ public class LoginController implements Initializable {
         loginIndicator.setVisible(false);
         mailServer.setItems(FXCollections.observableArrayList("@gmail.com", "@mail.ru"));
         mailServer.setValue(mailServer.getItems().get(0));
+
+        MainFrame.getPrimaryStage().addEventHandler(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                if (mailServer.isFocused()) {
+                        mailServer.show();
+                } else {
+                    login.fire();
+                    event.consume();
+                }
+            }
+        });
+
         login.setOnAction(event -> {
             login.setDisable(true);
             loginIndicator.setVisible(true);
