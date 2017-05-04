@@ -122,11 +122,6 @@ class TestsApplier {
             }
             if (compilationTime == 100) {
                 finishHaskellTesting();
-                try {
-                    Thread.sleep(250);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
                 startHaskellTesting();
                 try {
                     haskellOutputWriter.close();
@@ -161,11 +156,6 @@ class TestsApplier {
                     cmdInput.close();
                     finishHaskellTesting();
                     try {
-                        Thread.sleep(250);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    try {
                         haskellOutputWriter.close();
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -193,12 +183,14 @@ class TestsApplier {
     }
 
     void finishHaskellTesting() {
+        Process p;
         try {
             if (System.getProperty("os.name").startsWith("Windows"))
-                Runtime.getRuntime().exec("taskkill /F /IM ghc.exe");
+                p = Runtime.getRuntime().exec("taskkill /F /IM ghc.exe");
             else
-                Runtime.getRuntime().exec("kill -9 ghc");
-        } catch (IOException e) {
+                p = Runtime.getRuntime().exec("kill -9 ghc");
+            p.waitFor();
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
         startedGhci = false;
