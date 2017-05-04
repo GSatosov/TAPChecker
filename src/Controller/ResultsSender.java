@@ -14,6 +14,7 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -26,7 +27,7 @@ public class ResultsSender implements Runnable {
     private Callback onExit;
     private Callback onClassSystemReady;
     private boolean updateTable;
-    private ArrayList<Task> classSystem;
+    private List<Result> classSystem;
 
     private boolean deleteDirectory(File file) {
         File[] contents = file.listFiles();
@@ -41,7 +42,7 @@ public class ResultsSender implements Runnable {
         return flag && file.delete();
     }
 
-    private ResultsSender(ArrayList<Result> rs, Callback onExit, boolean updateTable, @NotNull ArrayList<Task> classSystem, Callback onClassSystemReady) {
+    private ResultsSender(ArrayList<Result> rs, Callback onExit, boolean updateTable, @NotNull List<Result> classSystem, Callback onClassSystemReady) {
         this.results = new HashMap<>();
         if (rs != null) {
             rs.sort((r1, r2) -> r2.getTask().getReceivedDate().compareTo(r1.getTask().getReceivedDate()));
@@ -77,11 +78,11 @@ public class ResultsSender implements Runnable {
     }
 
 
-    ResultsSender(ArrayList<Result> rs, Callback onExit, @NotNull ArrayList<Task> classSystem, Callback onClassSystemReady) {
+    ResultsSender(ArrayList<Result> rs, Callback onExit, @NotNull List<Result> classSystem, Callback onClassSystemReady) {
         this(rs, onExit, true, classSystem, onClassSystemReady);
     }
 
-    public ResultsSender(Callback onExit, @NotNull ArrayList<Task> classSystem, Callback onClassSystemReady) {
+    public ResultsSender(Callback onExit, @NotNull List<Result> classSystem, Callback onClassSystemReady) {
         this(null, onExit, false, classSystem, onClassSystemReady);
     }
 
@@ -220,7 +221,7 @@ public class ResultsSender implements Runnable {
                                             studResults.add(studName);
                                             for (int i = 0; i < newTasks.size() - 1; i++) studResults.add("");
                                         }
-                                        studResults.set(newTasks.indexOf(StringUtils.capitalize(result.getTask().getName().split("\\.")[0])), result.getResult());
+                                        studResults.set(newTasks.indexOf(StringUtils.capitalize(result.getTask().getName().split("\\.")[0])), result.getMessage());
                                         studentsResults.put(studName, studResults);
                                     }
                                 });
@@ -271,12 +272,12 @@ public class ResultsSender implements Runnable {
         onClassSystemReady.call();
     }
 
-    private ArrayList<Task> getFileSystem(ArrayList<Result> results) {
-        ArrayList<Task> fileSystem = new ArrayList<>();
+    private List<Result> getFileSystem(ArrayList<Result> results) {
+        List<Result> fileSystem = new ArrayList<>();
         results.forEach(result -> {
             Task task = new Task(result.getTask().getName(), result.getSubject(), result.getTask().getSourcePath(), result.getTask().getReceivedDate());
             task.setAuthor(new Student(result.getStudent().getName(), result.getStudent().getGroupName()));
-            fileSystem.add(task);
+            fileSystem.add(new Result(result.getMessage(), task));
         });
         return fileSystem;
     }
