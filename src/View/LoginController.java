@@ -5,10 +5,7 @@ import Model.Settings;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 
 import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
@@ -30,14 +27,18 @@ public class LoginController implements Initializable {
 
     @FXML
     private Button login;
+    @FXML
+    private ProgressIndicator loginIndicator;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        loginIndicator.setVisible(false);
         mailServer.setItems(FXCollections.observableArrayList("@gmail.com", "@mail.ru"));
         mailServer.setValue(mailServer.getItems().get(0));
 
         login.setOnAction(event -> {
             login.setDisable(true);
+            loginIndicator.setVisible(true);
             String email = emailField.getText() + mailServer.getValue();
             String password = pwField.getText();
             if (!EmailReceiver.validate(email, password)) {
@@ -52,8 +53,10 @@ public class LoginController implements Initializable {
                 e.printStackTrace();
             }
             pwField.clear();
+            loginIndicator.setVisible(false);
             login.setDisable(false);
-            MainFrame.getPrimaryStage().setScene(MainFrame.getMainScene());
+            //MainFrame.getPrimaryStage().setScene(MainFrame.getMainScene());
+            MainFrame.setStagetoMain();
         });
     }
 }

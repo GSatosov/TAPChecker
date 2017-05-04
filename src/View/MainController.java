@@ -46,7 +46,8 @@ public class MainController implements Initializable {
             } catch (InvalidKeyException | IOException | NoSuchPaddingException | NoSuchAlgorithmException e) {
                 e.printStackTrace();
             }
-            MainFrame.getPrimaryStage().setScene(MainFrame.getLoginScene());
+            //MainFrame.getPrimaryStage().setScene(MainFrame.getLoginScene());
+            MainFrame.setStageToLogin();
         });
 
         settings.setOnAction(event -> {

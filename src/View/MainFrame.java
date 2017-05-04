@@ -45,6 +45,17 @@ public class MainFrame extends Application {
         MainFrame.loginScene = loginScene;
     }
 
+    static void setStageToLogin() {
+        primaryStage.setScene(loginScene);
+        primaryStage.setResizable(false);
+        primaryStage.sizeToScene();
+    }
+
+    static void setStagetoMain() {
+        primaryStage.setScene(mainScene);
+        primaryStage.setResizable(true);
+    }
+
     @Override
     public void start(Stage primaryStage) throws Exception {
         setPrimaryStage(primaryStage);
@@ -53,9 +64,9 @@ public class MainFrame extends Application {
         setMainScene(new Scene(FXMLLoader.load(getClass().getResource("Main.fxml")), 640, 480));
 
         if (Settings.getInstance().getEmail().isEmpty()) {
-            primaryStage.setScene(loginScene);
+            setStageToLogin();
         } else {
-            primaryStage.setScene(mainScene);
+            setStagetoMain();
         }
 
         primaryStage.show();
