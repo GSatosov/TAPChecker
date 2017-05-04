@@ -10,9 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 
@@ -107,7 +105,7 @@ public class General {
             try {
                 latch.await();
                 System.out.println("Running thread for results sender...");
-                ArrayList<Task> classSystem = new ArrayList<>();
+                List<Result> classSystem = Collections.synchronizedList(new ArrayList<Result>());
                 (new Thread(new ResultsSender(results, onExit, classSystem, () -> startAntiplagiarismTesting(classSystem)))).start();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -115,7 +113,7 @@ public class General {
         })).start();
     }
 
-    private static void startAntiplagiarismTesting(ArrayList<Task> classSystem) {
+    private static void startAntiplagiarismTesting(List<Result> classSystem) {
         classSystem.forEach(System.out::println);
     }
 
