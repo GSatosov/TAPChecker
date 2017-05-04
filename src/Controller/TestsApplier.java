@@ -122,11 +122,6 @@ class TestsApplier {
             }
             if (compilationTime == 100) {
                 finishHaskellTesting();
-                try {
-                    Thread.sleep(250);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
                 startHaskellTesting();
                 try {
                     haskellOutputWriter.close();
@@ -159,20 +154,7 @@ class TestsApplier {
                 if (output.size() > beforeTesting) break;
                 if (computationTime >= test.getTime()) {
                     cmdInput.close();
-                    try {
-                        if (System.getProperty("os.name").startsWith("Windows"))
-                            Runtime.getRuntime().exec("taskkill /F /IM ghc.exe");
-                        else
-                            Runtime.getRuntime().exec("kill -9 ghc");
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
                     finishHaskellTesting();
-                    try {
-                        Thread.sleep(250);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
                     try {
                         haskellOutputWriter.close();
                     } catch (IOException e) {
@@ -201,6 +183,16 @@ class TestsApplier {
     }
 
     void finishHaskellTesting() {
+        Process taskKill;
+        try {
+            if (System.getProperty("os.name").startsWith("Windows"))
+                taskKill = Runtime.getRuntime().exec("taskkill /F /IM ghc.exe");
+            else
+                taskKill = Runtime.getRuntime().exec("kill -9 ghc");
+            taskKill.waitFor();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
         startedGhci = false;
         notInterrupted = false;
         haskellProcess.destroy();
@@ -293,18 +285,17 @@ class TestsApplier {
                         ProcessBuilder jpsProcess = new ProcessBuilder("jps");
                         jpsProcess.redirectOutput(jpsFile).redirectError(jpsFile);
                         Process p = jpsProcess.start();
-                        while (p.isAlive()) {
-                            Thread.sleep(10);
-                        }
+                        p.waitFor();
                         String pid = "";
                         List<String> processIds = Files.readAllLines(jpsFile.toPath()).stream().filter(a -> a.contains(taskName)).collect(Collectors.toList());
                         if (processIds.size() > 0)
                             pid = processIds.get(0).split(" ")[0];
+                        Process taskKill;
                         if (System.getProperty("os.name").startsWith("Windows"))
-                            Runtime.getRuntime().exec("taskkill /F /PID " + pid);
+                            taskKill = Runtime.getRuntime().exec("taskkill /F /PID " + pid);
                         else
-                            Runtime.getRuntime().exec("kill -9 " + pid);
-                        Thread.sleep(250);
+                            taskKill = Runtime.getRuntime().exec("kill -9 " + pid);
+                        taskKill.waitFor();
                         jpsFile.delete();
                         errorFile.delete();
                         clearFolderFromJavaFiles(task, inputFile, outputFile);

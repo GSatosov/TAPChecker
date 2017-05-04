@@ -14,6 +14,7 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -22,7 +23,8 @@ import java.util.stream.Collectors;
 public class ResultsSender implements Runnable {
 
     private HashMap<String, ArrayList<Result>> results;
-    private Callback callback;
+    private Callback onExit;
+    private Callback onClassSystemReady;
     private boolean updateTable;
     private ArrayList<Task> classSystem;
 
@@ -39,7 +41,7 @@ public class ResultsSender implements Runnable {
         return flag && file.delete();
     }
 
-    private ResultsSender(ArrayList<Result> rs, Callback callback, boolean updateTable, @NotNull ArrayList<Task> classSystem) {
+    private ResultsSender(ArrayList<Result> rs, Callback onExit, boolean updateTable, @NotNull ArrayList<Task> classSystem, Callback onClassSystemReady) {
         this.results = new HashMap<>();
         if (rs != null) {
             rs.sort((r1, r2) -> r2.getTask().getReceivedDate().compareTo(r1.getTask().getReceivedDate()));
@@ -68,24 +70,25 @@ public class ResultsSender implements Runnable {
                 results.put(key, res);
             });
         }
-        this.callback = callback;
+        this.onExit = onExit;
         this.updateTable = updateTable;
         this.classSystem = classSystem;
+        this.onClassSystemReady = onClassSystemReady;
     }
 
 
-    ResultsSender(ArrayList<Result> rs, Callback callback, @NotNull ArrayList<Task> classSystem) {
-        this(rs, callback, true, classSystem);
+    ResultsSender(ArrayList<Result> rs, Callback onExit, @NotNull ArrayList<Task> classSystem, Callback onClassSystemReady) {
+        this(rs, onExit, true, classSystem, onClassSystemReady);
     }
 
-    public ResultsSender(Callback callback, @NotNull ArrayList<Task> classSystem) {
-        this(null, callback, false, classSystem);
+    public ResultsSender(Callback onExit, @NotNull ArrayList<Task> classSystem, Callback onClassSystemReady) {
+        this(null, onExit, false, classSystem, onClassSystemReady);
     }
 
     @Override
     public void run() {
         if (Settings.getInstance().getResultsTableURL().isEmpty()) {
-            callback.call();
+            onExit.call();
             throw new RuntimeException("There is no table for results!");
         }
         try {
@@ -113,7 +116,7 @@ public class ResultsSender implements Runnable {
                         response = service.spreadsheets().values().get(spreadsheetId, range).execute();
                     } catch (IOException e1) {
                         e1.printStackTrace();
-                        callback.call();
+                        onExit.call();
                         Thread.currentThread().interrupt();
                     }
                 }
@@ -130,7 +133,7 @@ public class ResultsSender implements Runnable {
                             while (i < values.size()) {
                                 List<Object> row = values.get(i);
                                 if (row.size() > 0) {
-                                    final String group = row.get(0).toString();
+                                    final String group = row.get(0).toString().replaceAll("Группа ", "");
                                     tasks.clear();
                                     i++;
                                     row = values.get(i);
@@ -154,7 +157,7 @@ public class ResultsSender implements Runnable {
                                                             (filePath, fileAttr) -> !fileAttr.isDirectory() && filePath.getFileName().toString().split("\\.")[0].toLowerCase().equals(taskName.toLowerCase()))
                                                             .sorted((f1, f2) -> f2.getParent().getFileName().compareTo(f1.getParent().getFileName())).findFirst();
                                                     if (!path.isPresent()) {
-                                                        callback.call();
+                                                        onExit.call();
                                                         throw new RuntimeException("There is no file with source code: " + name + ", " + taskName);
                                                     }
                                                     Task downloadedTask = new Task(path.get().getFileName().toString(), subject, path.get().toAbsolutePath().toString(), new SimpleDateFormat(Settings.getSourcesDateFormat(), Locale.ENGLISH).parse(path.get().getParent().getFileName().toString()));
@@ -176,8 +179,27 @@ public class ResultsSender implements Runnable {
                         this.classSystem.addAll(getFileSystem(v));
                         if (updateTable) {
                             List<List<Object>> writeData = new ArrayList<>();
+                            final ArrayList<Request> requests = new ArrayList<>();
+                            AtomicInteger lineIndex = new AtomicInteger(0);
+                            final CellFormat centerFormat = new CellFormat().setHorizontalAlignment("CENTER");
+                            final CellFormat centerBoldFormat = new CellFormat().setHorizontalAlignment("CENTER").setTextFormat(new TextFormat().setBold(true));
+                            final Integer maxStudentsInGroup = groups.stream().map(group -> v.stream().filter(result -> result.getGroup().equals(group)).map(result -> result.getStudent().getName()).collect(Collectors.toSet()).size()).max(Integer::compareTo).get();
+                            BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(Collections.singletonList(new Request().setUpdateCells(new UpdateCellsRequest()
+                                    .setRange(new GridRange().setSheetId(sheetID))
+                                    .setFields("*")
+                            )));
+                            service.spreadsheets().batchUpdate(spreadsheetId, body).execute();
+
                             groups.stream().sorted(String::compareTo).forEach(group -> {
-                                writeData.add(Collections.singletonList(group));
+                                writeData.add(Collections.singletonList("Группа " + group));
+                                requests.add(new Request().setRepeatCell(new RepeatCellRequest()
+                                        .setRange(new GridRange().setSheetId(sheetID).setStartRowIndex(lineIndex.get()).setEndRowIndex(lineIndex.get() + 2))
+                                        .setCell(new CellData().setUserEnteredFormat(centerBoldFormat))
+                                        .setFields("userEnteredFormat(textFormat,horizontalAlignment)")));
+                                Border borderDotted = new Border().setStyle("DOUBLE").setColor(new Color().setRed(0f).setGreen(0f).setBlue(0f));
+                                requests.add(new Request().setUpdateBorders(new UpdateBordersRequest()
+                                        .setRange(new GridRange().setSheetId(sheetID).setStartRowIndex(lineIndex.get()).setEndRowIndex(lineIndex.get() + 1).setStartColumnIndex(0).setEndColumnIndex(maxStudentsInGroup + 1))
+                                        .setTop(borderDotted).setLeft(borderDotted).setBottom(borderDotted).setRight(borderDotted).setInnerHorizontal(borderDotted).setInnerVertical(borderDotted)));
                                 final ArrayList<String> newTasks = new ArrayList<>();
                                 v.forEach(r -> {
                                     if (r.getGroup().equals(group) && !newTasks.contains(StringUtils.capitalize(r.getTask().getName().split("\\.")[0])))
@@ -186,6 +208,8 @@ public class ResultsSender implements Runnable {
                                 newTasks.sort(String::compareTo);
                                 newTasks.add(0, "ФИО");
                                 writeData.add(new ArrayList<>(newTasks));
+                                Integer currentIndex = lineIndex.get() + 2;
+                                lineIndex.set(v.stream().filter(result -> result.getGroup().equals(group)).map(result -> result.getStudent().getName()).collect(Collectors.toSet()).size() + currentIndex);
                                 HashMap<String, ArrayList<Object>> studentsResults = new HashMap<>();
                                 v.forEach(result -> {
                                     if (result.getGroup().equals(group)) {
@@ -200,6 +224,15 @@ public class ResultsSender implements Runnable {
                                         studentsResults.put(studName, studResults);
                                     }
                                 });
+                                requests.add(new Request().setRepeatCell(new RepeatCellRequest()
+                                        .setRange(new GridRange().setSheetId(sheetID).setStartRowIndex(currentIndex).setEndRowIndex(lineIndex.get()).setStartColumnIndex(1))
+                                        .setCell(new CellData().setUserEnteredFormat(centerFormat))
+                                        .setFields("userEnteredFormat(horizontalAlignment)")));
+                                Border border = new Border().setStyle("SOLID").setWidth(1).setColor(new Color().setRed(0f).setGreen(0f).setBlue(0f));
+                                requests.add(new Request().setUpdateBorders(new UpdateBordersRequest()
+                                        .setRange(new GridRange().setSheetId(sheetID).setStartRowIndex(currentIndex - 1).setEndRowIndex(lineIndex.get()).setStartColumnIndex(0).setEndColumnIndex(maxStudentsInGroup + 1))
+                                        .setLeft(borderDotted).setRight(border).setBottom(border).setInnerHorizontal(border).setInnerVertical(border)));
+                                lineIndex.incrementAndGet();
                                 studentsResults.forEach((key, result) -> writeData.add(result));
                                 writeData.add(new ArrayList<>(Collections.singletonList("")));
                             });
@@ -212,31 +245,30 @@ public class ResultsSender implements Runnable {
                                 Optional<Integer> newTasksSize = writeData.stream().map(List::size).max(Integer::compareTo);
                                 DimensionRange dimensions = new DimensionRange().setDimension("COLUMNS").setStartIndex(0).setEndIndex(newTasksSize.orElse(1)).setSheetId(sheetID);
                                 autoResizeDimensions.setDimensions(dimensions);
-                                List<Request> requests = new ArrayList<>();
                                 requests.add(new Request().setAutoResizeDimensions(autoResizeDimensions));
-                                BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(requests);
-                                service.spreadsheets().batchUpdate(spreadsheetId, body).execute();
+                                BatchUpdateSpreadsheetRequest bodyR = new BatchUpdateSpreadsheetRequest().setRequests(requests);
+                                service.spreadsheets().batchUpdate(spreadsheetId, bodyR).execute();
                             } catch (IOException e1) {
                                 e1.printStackTrace();
-                                callback.call();
+                                onExit.call();
                                 Thread.currentThread().interrupt();
                             }
                         }
                     } catch (IOException | ParseException e) {
                         e.printStackTrace();
-                        callback.call();
+                        onExit.call();
                         Thread.currentThread().interrupt();
                     }
                 }
             });
         } catch (IOException e) {
             e.printStackTrace();
-            callback.call();
+            onExit.call();
             Thread.currentThread().interrupt();
         }
         if (updateTable) System.out.println("Results successfully loaded to Google spreadsheet!");
-        System.out.println(this.classSystem);
-        callback.call();
+        onExit.call();
+        onClassSystemReady.call();
     }
 
     private ArrayList<Task> getFileSystem(ArrayList<Result> results) {

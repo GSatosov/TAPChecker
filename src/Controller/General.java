@@ -40,11 +40,11 @@ public class General {
         return startDate;
     }
 
-    public static void getResults(Callback callback) {
+    public static void getResults(Callback onExit) {
         try {
             GoogleDriveManager.authorize();
         } catch (IOException e) {
-            callback.call();
+            onExit.call();
             return;
         }
         latch = new CountDownLatch(2);
@@ -108,11 +108,15 @@ public class General {
                 latch.await();
                 System.out.println("Running thread for results sender...");
                 ArrayList<Task> classSystem = new ArrayList<>();
-                (new Thread(new ResultsSender(results, callback, classSystem))).start();
+                (new Thread(new ResultsSender(results, onExit, classSystem, () -> startAntiplagiarismTesting(classSystem)))).start();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         })).start();
+    }
+
+    private static void startAntiplagiarismTesting(ArrayList<Task> classSystem) {
+        classSystem.forEach(System.out::println);
     }
 
 }
