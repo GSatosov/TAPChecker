@@ -23,7 +23,8 @@ import java.util.stream.Collectors;
 public class ResultsSender implements Runnable {
 
     private HashMap<String, ArrayList<Result>> results;
-    private Callback callback;
+    private Callback onExit;
+    private Callback onClassSystemReady;
     private boolean updateTable;
     private ArrayList<Task> classSystem;
 
@@ -40,7 +41,7 @@ public class ResultsSender implements Runnable {
         return flag && file.delete();
     }
 
-    private ResultsSender(ArrayList<Result> rs, Callback callback, boolean updateTable, @NotNull ArrayList<Task> classSystem) {
+    private ResultsSender(ArrayList<Result> rs, Callback onExit, boolean updateTable, @NotNull ArrayList<Task> classSystem, Callback onClassSystemReady) {
         this.results = new HashMap<>();
         if (rs != null) {
             rs.sort((r1, r2) -> r2.getTask().getReceivedDate().compareTo(r1.getTask().getReceivedDate()));
@@ -69,24 +70,25 @@ public class ResultsSender implements Runnable {
                 results.put(key, res);
             });
         }
-        this.callback = callback;
+        this.onExit = onExit;
         this.updateTable = updateTable;
         this.classSystem = classSystem;
+        this.onClassSystemReady = onClassSystemReady;
     }
 
 
-    ResultsSender(ArrayList<Result> rs, Callback callback, @NotNull ArrayList<Task> classSystem) {
-        this(rs, callback, true, classSystem);
+    ResultsSender(ArrayList<Result> rs, Callback onExit, @NotNull ArrayList<Task> classSystem, Callback onClassSystemReady) {
+        this(rs, onExit, true, classSystem, onClassSystemReady);
     }
 
-    public ResultsSender(Callback callback, @NotNull ArrayList<Task> classSystem) {
-        this(null, callback, false, classSystem);
+    public ResultsSender(Callback onExit, @NotNull ArrayList<Task> classSystem, Callback onClassSystemReady) {
+        this(null, onExit, false, classSystem, onClassSystemReady);
     }
 
     @Override
     public void run() {
         if (Settings.getInstance().getResultsTableURL().isEmpty()) {
-            callback.call();
+            onExit.call();
             throw new RuntimeException("There is no table for results!");
         }
         try {
@@ -114,7 +116,7 @@ public class ResultsSender implements Runnable {
                         response = service.spreadsheets().values().get(spreadsheetId, range).execute();
                     } catch (IOException e1) {
                         e1.printStackTrace();
-                        callback.call();
+                        onExit.call();
                         Thread.currentThread().interrupt();
                     }
                 }
@@ -155,7 +157,7 @@ public class ResultsSender implements Runnable {
                                                             (filePath, fileAttr) -> !fileAttr.isDirectory() && filePath.getFileName().toString().split("\\.")[0].toLowerCase().equals(taskName.toLowerCase()))
                                                             .sorted((f1, f2) -> f2.getParent().getFileName().compareTo(f1.getParent().getFileName())).findFirst();
                                                     if (!path.isPresent()) {
-                                                        callback.call();
+                                                        onExit.call();
                                                         throw new RuntimeException("There is no file with source code: " + name + ", " + taskName);
                                                     }
                                                     Task downloadedTask = new Task(path.get().getFileName().toString(), subject, path.get().toAbsolutePath().toString(), new SimpleDateFormat(Settings.getSourcesDateFormat(), Locale.ENGLISH).parse(path.get().getParent().getFileName().toString()));
@@ -248,25 +250,25 @@ public class ResultsSender implements Runnable {
                                 service.spreadsheets().batchUpdate(spreadsheetId, bodyR).execute();
                             } catch (IOException e1) {
                                 e1.printStackTrace();
-                                callback.call();
+                                onExit.call();
                                 Thread.currentThread().interrupt();
                             }
                         }
                     } catch (IOException | ParseException e) {
                         e.printStackTrace();
-                        callback.call();
+                        onExit.call();
                         Thread.currentThread().interrupt();
                     }
                 }
             });
         } catch (IOException e) {
             e.printStackTrace();
-            callback.call();
+            onExit.call();
             Thread.currentThread().interrupt();
         }
         if (updateTable) System.out.println("Results successfully loaded to Google spreadsheet!");
-        this.classSystem.forEach(System.out::println);
-        callback.call();
+        onExit.call();
+        onClassSystemReady.call();
     }
 
     private ArrayList<Task> getFileSystem(ArrayList<Result> results) {
