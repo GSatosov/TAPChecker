@@ -2,6 +2,7 @@ package View;
 
 import Controller.EmailReceiver;
 import Model.Settings;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -35,28 +36,34 @@ public class LoginController implements Initializable {
         loginIndicator.setVisible(false);
         mailServer.setItems(FXCollections.observableArrayList("@gmail.com", "@mail.ru"));
         mailServer.setValue(mailServer.getItems().get(0));
-
         login.setOnAction(event -> {
             login.setDisable(true);
             loginIndicator.setVisible(true);
-            String email = emailField.getText() + mailServer.getValue();
-            String password = pwField.getText();
-            if (!EmailReceiver.validate(email, password)) {
-                login.setDisable(false);
-                return;
-            }
-            Settings.getInstance().setEmail(email);
-            Settings.getInstance().setPassword(password);
-            try {
-                Settings.getInstance().saveSettings();
-            } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IOException e) {
-                e.printStackTrace();
-            }
-            pwField.clear();
-            loginIndicator.setVisible(false);
-            login.setDisable(false);
+            new Thread(() -> {
+                String email = emailField.getText() + mailServer.getValue();
+                String password = pwField.getText();
+                if (!EmailReceiver.validate(email, password)) {
+                    System.out.println("Failed: " + email + ", " + password);
+                    login.setDisable(false);
+                    loginIndicator.setVisible(false);
+                    return;
+                }
+                Settings.getInstance().setEmail(email);
+                Settings.getInstance().setPassword(password);
+                try {
+                    Settings.getInstance().saveSettings();
+                    pwField.clear();
+                    loginIndicator.setVisible(false);
+                    login.setDisable(false);
+                    Platform.runLater(() -> MainFrame.setStagetoMain());
+                } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IOException e) {
+                    loginIndicator.setVisible(false);
+                    login.setDisable(false);
+                    e.printStackTrace();
+                }
+            }).start();
+
             //MainFrame.getPrimaryStage().setScene(MainFrame.getMainScene());
-            MainFrame.setStagetoMain();
         });
     }
 }
