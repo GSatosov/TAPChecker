@@ -14,6 +14,7 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -220,7 +221,7 @@ public class ResultsSender implements Runnable {
                                             studResults.add(studName);
                                             for (int i = 0; i < newTasks.size() - 1; i++) studResults.add("");
                                         }
-                                        studResults.set(newTasks.indexOf(StringUtils.capitalize(result.getTask().getName().split("\\.")[0])), result.getResult());
+                                        studResults.set(newTasks.indexOf(StringUtils.capitalize(result.getTask().getName().split("\\.")[0])), result.getMessage());
                                         studentsResults.put(studName, studResults);
                                     }
                                 });
@@ -276,7 +277,7 @@ public class ResultsSender implements Runnable {
         results.forEach(result -> {
             Task task = new Task(result.getTask().getName(), result.getSubject(), result.getTask().getSourcePath(), result.getTask().getReceivedDate());
             task.setAuthor(new Student(result.getStudent().getName(), result.getStudent().getGroupName()));
-            fileSystem.add(new Result(result.getResult(), task));
+            fileSystem.add(new Result(result.getMessage(), task));
         });
         return fileSystem;
     }
