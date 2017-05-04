@@ -14,6 +14,7 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -130,7 +131,7 @@ public class ResultsSender implements Runnable {
                             while (i < values.size()) {
                                 List<Object> row = values.get(i);
                                 if (row.size() > 0) {
-                                    final String group = row.get(0).toString();
+                                    final String group = row.get(0).toString().replaceAll("Группа ", "");
                                     tasks.clear();
                                     i++;
                                     row = values.get(i);
@@ -176,8 +177,27 @@ public class ResultsSender implements Runnable {
                         this.classSystem.addAll(getFileSystem(v));
                         if (updateTable) {
                             List<List<Object>> writeData = new ArrayList<>();
+                            final ArrayList<Request> requests = new ArrayList<>();
+                            AtomicInteger lineIndex = new AtomicInteger(0);
+                            final CellFormat centerFormat = new CellFormat().setHorizontalAlignment("CENTER");
+                            final CellFormat centerBoldFormat = new CellFormat().setHorizontalAlignment("CENTER").setTextFormat(new TextFormat().setBold(true));
+                            final Integer maxStudentsInGroup = groups.stream().map(group -> v.stream().filter(result -> result.getGroup().equals(group)).map(result -> result.getStudent().getName()).collect(Collectors.toSet()).size()).max(Integer::compareTo).get();
+                            BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(Collections.singletonList(new Request().setUpdateCells(new UpdateCellsRequest()
+                                    .setRange(new GridRange().setSheetId(sheetID))
+                                    .setFields("*")
+                            )));
+                            service.spreadsheets().batchUpdate(spreadsheetId, body).execute();
+
                             groups.stream().sorted(String::compareTo).forEach(group -> {
-                                writeData.add(Collections.singletonList(group));
+                                writeData.add(Collections.singletonList("Группа " + group));
+                                requests.add(new Request().setRepeatCell(new RepeatCellRequest()
+                                        .setRange(new GridRange().setSheetId(sheetID).setStartRowIndex(lineIndex.get()).setEndRowIndex(lineIndex.get() + 2))
+                                        .setCell(new CellData().setUserEnteredFormat(centerBoldFormat))
+                                        .setFields("userEnteredFormat(textFormat,horizontalAlignment)")));
+                                Border borderDotted = new Border().setStyle("DOUBLE").setColor(new Color().setRed(0f).setGreen(0f).setBlue(0f));
+                                requests.add(new Request().setUpdateBorders(new UpdateBordersRequest()
+                                        .setRange(new GridRange().setSheetId(sheetID).setStartRowIndex(lineIndex.get()).setEndRowIndex(lineIndex.get() + 1).setStartColumnIndex(0).setEndColumnIndex(maxStudentsInGroup + 1))
+                                        .setTop(borderDotted).setLeft(borderDotted).setBottom(borderDotted).setRight(borderDotted).setInnerHorizontal(borderDotted).setInnerVertical(borderDotted)));
                                 final ArrayList<String> newTasks = new ArrayList<>();
                                 v.forEach(r -> {
                                     if (r.getGroup().equals(group) && !newTasks.contains(StringUtils.capitalize(r.getTask().getName().split("\\.")[0])))
@@ -186,6 +206,8 @@ public class ResultsSender implements Runnable {
                                 newTasks.sort(String::compareTo);
                                 newTasks.add(0, "ФИО");
                                 writeData.add(new ArrayList<>(newTasks));
+                                Integer currentIndex = lineIndex.get() + 2;
+                                lineIndex.set(v.stream().filter(result -> result.getGroup().equals(group)).map(result -> result.getStudent().getName()).collect(Collectors.toSet()).size() + currentIndex);
                                 HashMap<String, ArrayList<Object>> studentsResults = new HashMap<>();
                                 v.forEach(result -> {
                                     if (result.getGroup().equals(group)) {
@@ -200,6 +222,15 @@ public class ResultsSender implements Runnable {
                                         studentsResults.put(studName, studResults);
                                     }
                                 });
+                                requests.add(new Request().setRepeatCell(new RepeatCellRequest()
+                                        .setRange(new GridRange().setSheetId(sheetID).setStartRowIndex(currentIndex).setEndRowIndex(lineIndex.get()).setStartColumnIndex(1))
+                                        .setCell(new CellData().setUserEnteredFormat(centerFormat))
+                                        .setFields("userEnteredFormat(horizontalAlignment)")));
+                                Border border = new Border().setStyle("SOLID").setWidth(1).setColor(new Color().setRed(0f).setGreen(0f).setBlue(0f));
+                                requests.add(new Request().setUpdateBorders(new UpdateBordersRequest()
+                                        .setRange(new GridRange().setSheetId(sheetID).setStartRowIndex(currentIndex - 1).setEndRowIndex(lineIndex.get()).setStartColumnIndex(0).setEndColumnIndex(maxStudentsInGroup + 1))
+                                        .setLeft(borderDotted).setRight(border).setBottom(border).setInnerHorizontal(border).setInnerVertical(border)));
+                                lineIndex.incrementAndGet();
                                 studentsResults.forEach((key, result) -> writeData.add(result));
                                 writeData.add(new ArrayList<>(Collections.singletonList("")));
                             });
@@ -212,10 +243,9 @@ public class ResultsSender implements Runnable {
                                 Optional<Integer> newTasksSize = writeData.stream().map(List::size).max(Integer::compareTo);
                                 DimensionRange dimensions = new DimensionRange().setDimension("COLUMNS").setStartIndex(0).setEndIndex(newTasksSize.orElse(1)).setSheetId(sheetID);
                                 autoResizeDimensions.setDimensions(dimensions);
-                                List<Request> requests = new ArrayList<>();
                                 requests.add(new Request().setAutoResizeDimensions(autoResizeDimensions));
-                                BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(requests);
-                                service.spreadsheets().batchUpdate(spreadsheetId, body).execute();
+                                BatchUpdateSpreadsheetRequest bodyR = new BatchUpdateSpreadsheetRequest().setRequests(requests);
+                                service.spreadsheets().batchUpdate(spreadsheetId, bodyR).execute();
                             } catch (IOException e1) {
                                 e1.printStackTrace();
                                 callback.call();
