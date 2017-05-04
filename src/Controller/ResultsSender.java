@@ -235,7 +235,7 @@ public class ResultsSender implements Runnable {
             Thread.currentThread().interrupt();
         }
         if (updateTable) System.out.println("Results successfully loaded to Google spreadsheet!");
-        System.out.println(this.classSystem);
+        this.classSystem.forEach(System.out::println);
         callback.call();
     }
 
