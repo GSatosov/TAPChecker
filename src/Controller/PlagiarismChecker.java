@@ -6,14 +6,15 @@ import Model.Task;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * Created by GSatosov on 5/2/2017.
+ * Class for checking tasks on plagiarism using Levenshtein distance algorithm.
  */
-public class PlagiarismChecker {
+class PlagiarismChecker {
     private List<ArrayList<Task>> taskList;
 
     PlagiarismChecker(List<ArrayList<Task>> tasks) {
@@ -22,10 +23,9 @@ public class PlagiarismChecker {
 
     ArrayList<PlagiarismResult> start() {
         ArrayList<PlagiarismResult> results = new ArrayList<>();
-        ThreadGroup group = new ThreadGroup(Thread.currentThread().getThreadGroup(), "Task Threads");
         System.out.println("Starting plagiarism check.");
         CountDownLatch latch = new CountDownLatch(taskList.size());
-        taskList.forEach(list -> new Thread(group, () -> {
+        taskList.forEach(list -> new Thread(() -> {
             results.addAll(handleListOfTasks(list));
             latch.countDown();
         }).start());
@@ -58,15 +58,20 @@ public class PlagiarismChecker {
         String preparedSecondTask = prepareTask(task2);
         int maxDistance = Math.max(preparedFirstTask.length(), preparedSecondTask.length());
         int distance = LevenshteinDistance(preparedFirstTask, preparedSecondTask);
-        String result = (1 - (distance * 1.0 / maxDistance)) * 100 + "%";
-        return new PlagiarismResult(result, task1.getAuthor(), task2.getAuthor(), task1.getName());
+        NumberFormat nf = NumberFormat.getInstance();
+        nf.setMaximumFractionDigits(2);
+        double result = (1 - (distance * 1.0 / maxDistance)) * 100;
+        return new PlagiarismResult(nf.format(result) + "%", task1.getAuthor(), task2.getAuthor(), task1);
     }
 
     //Removes comments (currently one-line comments) and lines with module name/class name/public static void main.
     private String prepareTask(Task task) throws IOException {
         ArrayList<String> lines = new ArrayList<>(Files.readAllLines(Paths.get(task.getSourcePath())));
-        if (task.getName().endsWith("hs"))
-            return lines.stream().filter(line -> !line.isEmpty()).filter(line -> !line.trim().startsWith("--") && !line.trim().startsWith("module")).reduce("", String::concat);
+        if (task.getName().endsWith("hs")) {
+            char[] taskName = task.getName().split("\\.")[0].toCharArray();
+            taskName[0] = Character.toLowerCase(taskName[0]);
+            return lines.stream().filter(line -> !line.isEmpty()).filter(line -> !line.trim().startsWith("--") && !line.trim().startsWith("module") && !line.trim().contains(new String(taskName) + " ::")).reduce("", String::concat);
+        }
         return lines.stream().filter(line -> !line.contains("class" + task.getName().split("\\.")[0]) && !line.trim().startsWith("//") && !line.contains("public static void main")).reduce("", String::concat);
     }
 
