@@ -116,18 +116,16 @@ public class General {
     }
 
     private static void startAntiplagiarismTesting(List<Result> classSystem) {
-        classSystem.forEach(System.out::println);
         ArrayList<String> taskNames = new ArrayList<>();
         List<ArrayList<Task>> tasksForPlagiarismCheck = Collections.synchronizedList(new ArrayList<ArrayList<Task>>());
         ArrayList<Task> tasks = classSystem.stream().filter(result -> result.getMessage().equals("OK")).map(Result::getTask).collect(Collectors.toCollection(ArrayList::new));
         System.out.println("Parsing file system.");
         tasks.forEach(task -> {
-            if (!taskNames.contains(task.getName())) {
+            if (!taskNames.contains(task.getName()) && tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).count() > 1) {
                 taskNames.add(task.getName());
                 tasksForPlagiarismCheck.add(tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).collect(Collectors.toCollection(ArrayList::new)));
             }
         });
-
         PlagiarismChecker checker = new PlagiarismChecker(tasksForPlagiarismCheck);
         File plagiarismResultsFile = new File("PlagiarismResults.txt");
         try {
