@@ -1,5 +1,7 @@
 package Model;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -45,6 +47,42 @@ public class Test {
         this.antiPlagiarism = antiPlagiarism;
         this.deadline = deadline;
         this.hardDeadline = hardDeadline;
+    }
+
+    public void logOutputVariants(BufferedWriter writer) {
+        this.outputVariants.forEach(outputVariant -> {
+            if (outputVariant.size() < 6) {
+                outputVariant.subList(0, this.outputVariants.size() - 1).forEach(testOutputVariant -> {
+                    try {
+                        writer.write(testOutputVariant + " or,");
+                        writer.newLine();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+                try {
+                    writer.write(outputVariant.get(outputVariant.size() - 1));
+                    writer.newLine();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            } else {
+                outputVariant.subList(0, 5).forEach(testOutputVariant -> {
+                    try {
+                        writer.write(testOutputVariant + " or");
+                        writer.newLine();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    try {
+                        writer.write("...or " + (outputVariant.size() - 5) + " more.");
+                        writer.newLine();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
+        });
     }
 
     @Override
