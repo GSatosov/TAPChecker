@@ -70,7 +70,7 @@ class PlagiarismChecker {
         if (task.getName().endsWith("hs")) {
             char[] taskName = task.getName().split("\\.")[0].toCharArray();
             taskName[0] = Character.toLowerCase(taskName[0]);
-            return lines.stream().filter(line -> !line.isEmpty()).filter(line -> !line.trim().startsWith("--") && !line.trim().startsWith("module") && !line.trim().contains(new String(taskName)+" ::")).reduce("", String::concat);
+            return lines.stream().filter(line -> !line.isEmpty()).filter(line -> !line.trim().startsWith("--") && !line.trim().startsWith("module") && !line.trim().contains(new String(taskName) + " ::")).reduce("", String::concat);
         }
         return lines.stream().filter(line -> !line.contains("class" + task.getName().split("\\.")[0]) && !line.trim().startsWith("//") && !line.contains("public static void main")).reduce("", String::concat);
     }

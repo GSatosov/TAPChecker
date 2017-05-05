@@ -186,7 +186,6 @@ class TestsApplier {
         }
         output.clear();
         return new Result("OK", task);
-
     }
 
     void finishHaskellTesting() {
