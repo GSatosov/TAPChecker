@@ -7,17 +7,17 @@ public class PlagiarismResult {
     private String result;
     private Student firstStudent;
     private Student secondStudent;
-    private String taskName;
+    private Task task;
 
-    public PlagiarismResult(String result, Student firstStudent, Student secondStudent, String taskName) {
+    public PlagiarismResult(String result, Student firstStudent, Student secondStudent, Task task) {
         this.result = result;
         this.firstStudent = firstStudent;
         this.secondStudent = secondStudent;
-        this.taskName = taskName;
+        this.task = task;
     }
 
     @Override
     public String toString() {
-        return "The probability of plagiarism between " + firstStudent + " and " + secondStudent + " on task " + taskName + " is " + result;
+        return "The probability of plagiarism between " + firstStudent + " and " + secondStudent + " on task " + task.getSubjectName() + " " + task.getName() + " is " + result;
     }
 }

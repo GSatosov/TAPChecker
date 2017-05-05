@@ -6,14 +6,15 @@ import Model.Task;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 /**
- * Created by GSatosov on 5/2/2017.
+ * Class for checking tasks on plagiarism using Levenshtein distance algorithm.
  */
-public class PlagiarismChecker {
+class PlagiarismChecker {
     private List<ArrayList<Task>> taskList;
 
     PlagiarismChecker(List<ArrayList<Task>> tasks) {
@@ -22,10 +23,9 @@ public class PlagiarismChecker {
 
     ArrayList<PlagiarismResult> start() {
         ArrayList<PlagiarismResult> results = new ArrayList<>();
-        ThreadGroup group = new ThreadGroup(Thread.currentThread().getThreadGroup(), "Task Threads");
         System.out.println("Starting plagiarism check.");
         CountDownLatch latch = new CountDownLatch(taskList.size());
-        taskList.forEach(list -> new Thread(group, () -> {
+        taskList.forEach(list -> new Thread(() -> {
             results.addAll(handleListOfTasks(list));
             latch.countDown();
         }).start());
@@ -58,8 +58,10 @@ public class PlagiarismChecker {
         String preparedSecondTask = prepareTask(task2);
         int maxDistance = Math.max(preparedFirstTask.length(), preparedSecondTask.length());
         int distance = LevenshteinDistance(preparedFirstTask, preparedSecondTask);
-        String result = (1 - (distance * 1.0 / maxDistance)) * 100 + "%";
-        return new PlagiarismResult(result, task1.getAuthor(), task2.getAuthor(), task1.getName());
+        NumberFormat nf = NumberFormat.getInstance();
+        nf.setMaximumFractionDigits(2);
+        double result = (1 - (distance * 1.0 / maxDistance)) * 100;
+        return new PlagiarismResult(nf.format(result) + "%", task1.getAuthor(), task2.getAuthor(), task1);
     }
 
     //Removes comments (currently one-line comments) and lines with module name/class name/public static void main.
