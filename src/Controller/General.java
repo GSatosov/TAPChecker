@@ -7,12 +7,14 @@ import Model.Task;
 import javax.crypto.NoSuchPaddingException;
 import javax.mail.MessagingException;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
 
 /**
  * Entry point for program.
@@ -65,9 +67,9 @@ public class General {
                     Task task = getHaskellTasksQueue().poll();
                     if (!applier.startedHaskellTesting())
                         applier.startHaskellTesting();
-                    Result resultHaskell = applier.handleHaskellTask(task);
-                    results.add(resultHaskell);
-                    System.out.println(resultHaskell);
+                    Result haskellResult = applier.handleHaskellTask(task);
+                    results.add(haskellResult);
+                    System.out.println(haskellResult);
                 } else {
                     try {
                         Thread.sleep(100);
@@ -87,9 +89,9 @@ public class General {
                     Task task = getJavaTasksQueue().poll();
                     if (!applier.startedJavaTesting())
                         applier.startJavaTesting();
-                    Result resultJava = applier.handleJavaTask(task);
-                    results.add(resultJava);
-                    System.out.println(resultJava);
+                    Result javaResult = applier.handleJavaTask(task);
+                    results.add(javaResult);
+                    System.out.println(javaResult);
                 } else {
                     try {
                         Thread.sleep(100);
@@ -114,7 +116,34 @@ public class General {
     }
 
     private static void startAntiplagiarismTesting(List<Result> classSystem) {
-        classSystem.forEach(System.out::println);
+        ArrayList<String> taskNames = new ArrayList<>();
+        List<ArrayList<Task>> tasksForPlagiarismCheck = Collections.synchronizedList(new ArrayList<ArrayList<Task>>());
+        ArrayList<Task> tasks = classSystem.stream().filter(result -> result.getMessage().equals("OK")).map(Result::getTask).collect(Collectors.toCollection(ArrayList::new));
+        System.out.println("Parsing file system.");
+        tasks.forEach(task -> {
+            if (!taskNames.contains(task.getName()) && tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).count() > 1) {
+                taskNames.add(task.getName());
+                tasksForPlagiarismCheck.add(tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).collect(Collectors.toCollection(ArrayList::new)));
+            }
+        });
+        PlagiarismChecker checker = new PlagiarismChecker(tasksForPlagiarismCheck);
+        File plagiarismResultsFile = new File("PlagiarismResults.txt");
+        try {
+            plagiarismResultsFile.createNewFile();
+            FileWriter writer = new FileWriter(plagiarismResultsFile);
+            checker.start().forEach(result -> {
+                try {
+                    writer.write(result + "\n");
+                    writer.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Plagiarism check has been concluded. The results lie in PlagiarismResult.txt file.");
     }
 
 }

@@ -1,7 +1,5 @@
 package Model;
 
-import com.sun.istack.internal.NotNull;
-
 /**
  * Created by GSatosov on 3/22/2017.
  */
@@ -30,7 +28,7 @@ public class Result implements Comparable {
         return task;
     }
 
-    public String getResult() {
+    public String getMessage() {
         return result;
     }
 
@@ -43,15 +41,15 @@ public class Result implements Comparable {
     public int compareTo(Object o) {
         if (o instanceof Result) {
             Result b = (Result) o;
-            if (getResult().equals(b.getResult())) {
+            if (getMessage().equals(b.getMessage())) {
                 return getTask().getReceivedDate() == null || b.getTask().getReceivedDate() == null ? 1 : getTask().getReceivedDate().compareTo(b.getTask().getReceivedDate());
-            } else if (getResult().equals("OK") && !b.getResult().equals("OK")) return 1;
-            else if (!getResult().equals("OK") && b.getResult().equals("OK")) return -1;
-            else if (!getResult().equals("CE") && b.getResult().equals("CE")) return 1;
-            else if (getResult().equals("CE") && !b.getResult().equals("CE")) return -1;
+            } else if (getMessage().equals("OK") && !b.getMessage().equals("OK")) return 1;
+            else if (!getMessage().equals("OK") && b.getMessage().equals("OK")) return -1;
+            else if (!getMessage().equals("CE") && b.getMessage().equals("CE")) return 1;
+            else if (getMessage().equals("CE") && !b.getMessage().equals("CE")) return -1;
             else {
-                String[] errorA = getResult().split(" ");
-                String[] errorB = getResult().split(" ");
+                String[] errorA = getMessage().split(" ");
+                String[] errorB = getMessage().split(" ");
                 if (errorA[0].equals(errorB[0])) {
                     Integer aR = Integer.parseInt(errorA[1]);
                     Integer bR = Integer.parseInt(errorB[1]);

@@ -18,7 +18,7 @@ public class Task {
         this.author = author;
     }
 
-    Student getAuthor() {
+    public Student getAuthor() {
         return this.author;
     }
 
