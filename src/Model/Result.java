@@ -4,12 +4,12 @@ package Model;
  * Created by GSatosov on 3/22/2017.
  */
 public class Result implements Comparable {
-    private String result;
+    private String message;
     private Task task;
 
-    public Result(String result, Task task) {
+    public Result(String message, Task task) {
         this.task = task;
-        this.result = result;
+        this.message = message;
     }
 
     public Student getStudent() {
@@ -29,12 +29,12 @@ public class Result implements Comparable {
     }
 
     public String getMessage() {
-        return result;
+        return message;
     }
 
     @Override
     public String toString() {
-        return task.getAuthor() + " has scored " + result + " on " + task.getSubjectName() + " " + task.getName() + ".";
+        return task.getAuthor() + " has scored " + message + " on " + task.getSubjectName() + " " + task.getName() + ".";
     }
 
     @Override

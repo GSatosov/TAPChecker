@@ -75,7 +75,7 @@ public class Test {
                         e.printStackTrace();
                     }
                     try {
-                        writer.write("...or " + (outputVariant.size() - 5) + " more.");
+                        writer.write("...and " + (outputVariant.size() - 5) + " more lines.");
                         writer.newLine();
                     } catch (IOException e) {
                         e.printStackTrace();
