@@ -67,8 +67,11 @@ class PlagiarismChecker {
     //Removes comments (currently one-line comments) and lines with module name/class name/public static void main.
     private String prepareTask(Task task) throws IOException {
         ArrayList<String> lines = new ArrayList<>(Files.readAllLines(Paths.get(task.getSourcePath())));
-        if (task.getName().endsWith("hs"))
-            return lines.stream().filter(line -> !line.isEmpty()).filter(line -> !line.trim().startsWith("--") && !line.trim().startsWith("module")).reduce("", String::concat);
+        if (task.getName().endsWith("hs")) {
+            char[] taskName = task.getName().split("\\.")[0].toCharArray();
+            taskName[0] = Character.toLowerCase(taskName[0]);
+            return lines.stream().filter(line -> !line.isEmpty()).filter(line -> !line.trim().startsWith("--") && !line.trim().startsWith("module") && !line.trim().contains(new String(taskName)+" ::")).reduce("", String::concat);
+        }
         return lines.stream().filter(line -> !line.contains("class" + task.getName().split("\\.")[0]) && !line.trim().startsWith("//") && !line.contains("public static void main")).reduce("", String::concat);
     }
 
