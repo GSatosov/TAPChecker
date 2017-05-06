@@ -6,19 +6,29 @@
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TextField?>
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="View.SettingsСontroller"
             prefHeight="400.0" prefWidth="600.0">
-    <TabPane AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.rightAnchor="0">
+    <TabPane AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="40" AnchorPane.rightAnchor="0">
         <Tab text="Common" closable="false">
             <AnchorPane>
-                <Button fx:id="logout" text="Log out" AnchorPane.bottomAnchor="5" AnchorPane.rightAnchor="5"></Button>
+                <HBox AnchorPane.topAnchor="40" AnchorPane.leftAnchor="20" spacing="10">
+                    <TextField fx:id="tableLink"/>
+                    <Button fx:id="generateTableLink" text="Generate link"/>
+                </HBox>
+                <Button fx:id="logout" text="Log out" AnchorPane.bottomAnchor="20" AnchorPane.rightAnchor="20"/>
             </AnchorPane>
         </Tab>
         <Tab text="Autoresponder" closable="false"></Tab>
         <Tab text="Antiplagiary" closable="false"></Tab>
     </TabPane>
 
+    <HBox AnchorPane.bottomAnchor="15" AnchorPane.rightAnchor="15" spacing="10">
+        <Button fx:id="apply" text="Apply" disable="true"/>
+        <Button fx:id="ok" text="Ok"/>
+        <Button fx:id="cancel" text="Cancel"/>
+    </HBox>
 
 </AnchorPane>

@@ -4,9 +4,6 @@ import Model.Callback;
 import Model.Result;
 import Model.Task;
 import View.MainController;
-import javafx.collections.FXCollections;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TableView;
 
 import javax.crypto.NoSuchPaddingException;
 import javax.mail.MessagingException;
@@ -16,7 +13,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
@@ -118,29 +118,15 @@ public class General {
                 e.printStackTrace();
             }
         })).start();
-//        (new Thread(() -> {
-//            try {
-//                latch.await();
-//                System.out.println("Sending results to table");
-//                HashMap<String, Tab> tabHashMap = new HashMap<>();
-//                (new Thread(() -> {
-//                    for (Result r: results) {
-//                        if (tabHashMap.containsKey(r.getSubject())) {
-//                            tabHashMap.get(r.getSubject()).getContent();
-//                        } else {
-//                            tabHashMap.put(r.getSubject(), new Tab(r.getSubject(), new TableView<TableRowData>(FXCollections
-//                                    .observableArrayList(new TableRowData(new String[] {r.getGroup()}),
-//                                            new TableRowData(new String[] {r.getStudent().getName(), r.getMessage()})))));
-//                        }
-//                    }
-//                })).start();
-//                for (Map.Entry<String, Tab> entry: tabHashMap.entrySet()) {
-//                    MainController.addTab(entry.getValue());
-//                }
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//        })).start();
+        (new Thread(() -> {
+            try {
+                latch.await();
+                System.out.println("Sending results to table");
+                (new Thread(() -> MainController.showResults(results))).start();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        })).start();
     }
 
     private static void startAntiplagiarismTesting(List<Result> classSystem) {
@@ -173,13 +159,4 @@ public class General {
         }
         System.out.println("Plagiarism check has been concluded. The results lie in PlagiarismResult.txt file.");
     }
-
-    class TableRowData {
-        private String[] data;
-
-        public TableRowData (String[] data) {
-            this.data = data;
-        }
-    }
-
 }

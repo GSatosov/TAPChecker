@@ -33,9 +33,15 @@ public class LoginController implements Initializable {
     @FXML
     private ProgressIndicator loginIndicator;
 
+    private String getHostName(String email) {
+        return email.substring(0, email.lastIndexOf("@"));
+    }
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         loginIndicator.setVisible(false);
+        if (!Settings.getInstance().getEmail().isEmpty())
+            emailField.setText(getHostName(Settings.getInstance().getEmail()));
         mailServer.setItems(FXCollections.observableArrayList("@gmail.com", "@mail.ru"));
         mailServer.setValue(mailServer.getItems().get(0));
 

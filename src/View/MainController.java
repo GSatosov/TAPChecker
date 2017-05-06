@@ -1,6 +1,8 @@
 package View;
 
 import Controller.General;
+import Model.Result;
+import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -8,11 +10,15 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.TableView;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
@@ -43,6 +49,34 @@ public class MainController implements Initializable {
         return settingsFrame;
     }
 
+    public static void showResults(ArrayList<Result> results) {
+        HashMap<String, TableView<String[]>> tableHashMap = new HashMap<>();
+        boolean containsGroup;
+        for (Result r: results) {
+            if (tableHashMap.containsKey(r.getSubject())) {
+                containsGroup = false;
+                for (String [] row: tableHashMap.get(r.getSubject()).getItems()) {
+                    if (row[0].equals(r.getGroup())) {
+                        tableHashMap.get(r.getSubject()).getItems().add(tableHashMap.get(r.getSubject()).getItems().indexOf(row) + 1,
+                                new String[] {r.getStudent().getName(), r.getMessage()});
+                    }
+                    containsGroup = true;
+                }
+
+                if (!containsGroup) {
+                    tableHashMap.get(r.getSubject()).getItems().addAll(new String[] {r.getGroup(), "", ""}, new String[] {r.getStudent().getName(), r.getMessage()});
+                }
+            } else {
+                tableHashMap.put(r.getSubject(), new TableView<>(FXCollections
+                        .observableArrayList(new String[] {r.getGroup(), "", ""},
+                                new String[] {r.getStudent().getName(), r.getMessage()})));
+            }
+        }
+        for (Map.Entry<String, TableView<String []>> entry: tableHashMap.entrySet()) {
+            addTab(new Tab(entry.getKey(), entry.getValue()));
+        }
+    }
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         tests.setOnAction(event -> {
@@ -63,7 +97,7 @@ public class MainController implements Initializable {
         settings.setOnAction(event -> {
             settingsFrame = new Stage();
             try {
-                settingsFrame.setScene(new Scene(new FXMLLoader(getClass().getResource("Settings.fxml")).load(), 640, 480));
+                settingsFrame.setScene(new Scene(new FXMLLoader(getClass().getResource("Settings.fxml")).load(), 600, 400));
             } catch (IOException e) {
                 e.printStackTrace();
             }
