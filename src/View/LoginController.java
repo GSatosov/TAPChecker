@@ -76,8 +76,6 @@ public class LoginController implements Initializable {
                     e.printStackTrace();
                 }
             }).start();
-
-            //MainFrame.getPrimaryStage().setScene(MainFrame.getMainScene());
         });
     }
 }
