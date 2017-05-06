@@ -3,15 +3,20 @@ package Controller;
 import Model.Callback;
 import Model.Result;
 import Model.Task;
+import View.MainController;
 
 import javax.crypto.NoSuchPaddingException;
 import javax.mail.MessagingException;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
@@ -113,6 +118,15 @@ public class General {
                 e.printStackTrace();
             }
         })).start();
+        (new Thread(() -> {
+            try {
+                latch.await();
+                System.out.println("Sending results to table");
+                (new Thread(() -> MainController.showResults(results))).start();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        })).start();
     }
 
     private static void startAntiplagiarismTesting(List<Result> classSystem) {
@@ -130,11 +144,11 @@ public class General {
         File plagiarismResultsFile = new File("PlagiarismResults.txt");
         try {
             plagiarismResultsFile.createNewFile();
-            FileWriter writer = new FileWriter(plagiarismResultsFile);
+            BufferedWriter writer = new BufferedWriter(new FileWriter(plagiarismResultsFile));
             checker.start().forEach(result -> {
                 try {
-                    writer.write(result + "\n");
-                    writer.flush();
+                    writer.write(result.toString());
+                    writer.newLine();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -145,5 +159,4 @@ public class General {
         }
         System.out.println("Plagiarism check has been concluded. The results lie in PlagiarismResult.txt file.");
     }
-
 }
