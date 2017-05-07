@@ -18,11 +18,11 @@ import java.util.stream.Collectors;
  */
 class TestsApplier {
     private volatile boolean notInterrupted;
-    private volatile ArrayList<String> output;
+    private volatile ArrayList<String> haskellOutput;
     private Process haskellProcess;
     private boolean startedHaskellTesting;
     private boolean startedJavaTesting;
-    private PrintStream cmdInput;
+    private PrintStream haskellProcessInput;
     private JavaCompiler compiler;
     private BufferedWriter haskellOutputWriter;
     private BufferedWriter javaOutputWriter;
@@ -36,15 +36,30 @@ class TestsApplier {
     }
 
     private Thread cmdOutput(InputStream stream) {
-        output = new ArrayList<>();
+        haskellOutput = new ArrayList<>();
+        final boolean[] readyToCompileFiles = {false}; //...
         return new Thread(() -> {
-            try (BufferedReader r = new BufferedReader(new InputStreamReader(stream, "Cp866"))) {
-                String ch;
+            try {
+                int curByte;
+                String curLine = "";
                 while (notInterrupted) {
-                    ch = r.readLine();
-                    if (ch == null) continue;
-                    output.add(ch);
+                    curByte = stream.read();
+                    if (curLine.equals("Prelude>")) {
+                        if (!readyToCompileFiles[0]) {
+                            haskellOutput.add(curLine);
+                            readyToCompileFiles[0] = true;
+                        }
+                        curLine = "";
+                    }
+                    if (curLine.equals(System.getProperty("line.separator")))
+                        curLine = "";
+                    if (curLine.endsWith(System.getProperty("line.separator"))) { //Newline character.
+                        haskellOutput.add(curLine.split(System.getProperty("line.separator"))[0]); //Output\r\n -> Output
+                        curLine = "";
+                    }
+                    curLine = curLine.concat(Character.toString((char) curByte));
                 }
+                haskellOutput.add(curLine);
             } catch (IOException e) {
                 System.out.println(e.getMessage());
             }
@@ -52,13 +67,12 @@ class TestsApplier {
     }
 
     private Result haskellFailResult(String response, Task task) {
-        logOutput(haskellOutputWriter, output);
+        haskellOutput.clear();
         try {
             haskellOutputWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        output.clear();
         return new Result(response, task);
     }
 
@@ -66,23 +80,24 @@ class TestsApplier {
         notInterrupted = true;
         try {
             haskellProcess = new ProcessBuilder("ghci").redirectErrorStream(true).start();
-            cmdInput = new PrintStream(haskellProcess.getOutputStream());
+            haskellProcessInput = new PrintStream(haskellProcess.getOutputStream());
             Thread haskellCmdThread = cmdOutput(haskellProcess.getInputStream());
             haskellCmdThread.start();
             while (true) { //On first launch ProcessBuilder takes a lot of time to execute first command.
-                if (!output.isEmpty())
-                    break;
-                Thread.sleep(10);
+                if (!haskellOutput.isEmpty()) {
+                    if (haskellOutput.contains("Prelude>"))
+                        break;
+                    if (haskellOutput.get(0).startsWith("'ghci' is not"))
+                        throw new IOException();
+                    Thread.sleep(10);
+                }
             }
-            if (output.get(0).startsWith("'ghci' is not"))
-                throw new IOException();
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("Add ghci to your path before proceeding.");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        output.clear();
         startedHaskellTesting = true;
     }
 
@@ -96,22 +111,25 @@ class TestsApplier {
             e.printStackTrace();
         }
         ArrayList<Test> testContents = task.getTestContents();
-        cmdInput.println(":l " + task.getSourcePath());
+        haskellProcessInput.println(":l " + task.getSourcePath());
         try {
-            haskellOutputWriter.write(":l " + task.getSourcePath());
+            haskellOutputWriter.write("Starting testing process...");
             haskellOutputWriter.newLine();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        cmdInput.flush();
+        this.haskellOutput.clear();
+        haskellProcessInput.flush();
         int compilationTime = 0;
         while (true) {
             compilationTime++;
-            if (!output.isEmpty() && output.get(output.size() - 1).startsWith("Ok, modules loaded:"))
-                break;
-            else if (!output.isEmpty() && !(output.get(output.size() - 1).contains("[1 of 1]") || output.get(output.size() - 1).isEmpty()))
-                return haskellFailResult("CE", task); //Compilation Error;
-            if (compilationTime == 100) {
+            if (!this.haskellOutput.isEmpty()) {
+                if (this.haskellOutput.stream().filter(line -> line.startsWith("Ok, modules loaded:")).count() > 0)
+                    break;
+                if (this.haskellOutput.contains("Failed, modules loaded: none."))
+                    return haskellFailResult("CE", task); //Compilation Error;
+            }
+            if (compilationTime == 200) {
                 finishHaskellTesting();
                 startHaskellTesting();
                 return haskellFailResult("SE", task); // System error — most likely an error on our end.
@@ -124,15 +142,16 @@ class TestsApplier {
         }
         try {
             haskellOutputWriter.write("Starting testing process");
+            haskellOutputWriter.newLine();
         } catch (IOException e) {
             e.printStackTrace();
         }
         for (int i = 0; i < testContents.size(); i++) {
             Test test = testContents.get(i);
-            output.clear();
+            this.haskellOutput.clear();
             String testCommand = test.getInput().get(0); //Haskell tasks do not support multi-line inputs.
             ArrayList<String> testOutputVariants = test.getOutputVariants().stream().map(v -> v.get(0)).collect(Collectors.toCollection(ArrayList::new));
-            cmdInput.println(testCommand);
+            haskellProcessInput.println(testCommand);
             try {
                 haskellOutputWriter.write("Test № " + (i + 1) + ": " + testCommand);
                 haskellOutputWriter.newLine();
@@ -142,14 +161,20 @@ class TestsApplier {
                 e.printStackTrace();
             }
             test.logOutputVariants(haskellOutputWriter);
-            cmdInput.flush();
+            haskellProcessInput.flush();
+            try {
+                haskellOutputWriter.write("Got:");
+                haskellOutputWriter.newLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             int computationTime = 0;
             while (true) {
-                if (output.size() > 0) break;
+                if (this.haskellOutput.size() > 0) break;
                 if (computationTime >= test.getTime()) {
-                    cmdInput.close();
+                    haskellProcessInput.close();
                     finishHaskellTesting();
-                    logOutput(haskellOutputWriter, output);
+                    Test.logList(haskellOutputWriter, this.haskellOutput);
                     startHaskellTesting(); //Restart ghci if we encountered infinite input/ long computation.
                     return haskellFailResult("TL " + (i + 1), task); //Took too long to compute.
                 }
@@ -160,15 +185,11 @@ class TestsApplier {
                 }
                 computationTime += 10;
             }
-            try {
-                haskellOutputWriter.write("Got:");
-                haskellOutputWriter.newLine();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if (output.size() > 1 && output.get(1).startsWith("<interactive>"))
+            if (this.haskellOutput.size() > 1 && this.haskellOutput.get(1).startsWith("<interactive>")) {
+                Test.logList(haskellOutputWriter, this.haskellOutput);
                 return haskellFailResult("RE " + (i + 1), task);
-            String response = output.get(0).split(" ", 2)[1]; // *>TaskName> Output
+            }
+            String response = this.haskellOutput.get(0).split(" ", 2)[1]; // *>TaskName> Output
             try {
                 haskellOutputWriter.write(response);
                 haskellOutputWriter.newLine();
@@ -176,19 +197,21 @@ class TestsApplier {
                 e.printStackTrace();
             }
             if (!(testOutputVariants.contains("Error") && response.startsWith("*** Exception") && !response.startsWith("*** Exception: Prelude") // If exception is expected.
-                    || testOutputVariants.contains(response)))
+                    || testOutputVariants.contains(response))) {
                 return haskellFailResult("WA " + (i + 1), task);
+            }
         }
         try {
             haskellOutputWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        output.clear();
+        this.haskellOutput.clear();
         return new Result("OK", task);
     }
 
     void finishHaskellTesting() {
+        notInterrupted = false;
         Process taskKill;
         try {
             if (System.getProperty("os.name").startsWith("Windows"))
@@ -199,9 +222,8 @@ class TestsApplier {
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-        notInterrupted = false;
         haskellProcess.destroy();
-        cmdInput.close();
+        haskellProcessInput.close();
     }
 
     void startJavaTesting() {
@@ -279,7 +301,7 @@ class TestsApplier {
             try {
                 BufferedWriter writer = new BufferedWriter(new FileWriter(testInputFile)); //To clear input.
                 FileWriter outputCleaner = new FileWriter(testOutputFile);
-                outputCleaner.close(); //To clear output
+                outputCleaner.close(); //To clear Output
                 test.getInput().forEach(testLine -> {
                     try {
                         writer.write(testLine);
@@ -324,14 +346,13 @@ class TestsApplier {
                 javaOutputWriter.write("Got:");
                 javaOutputWriter.newLine();
                 if (errorFile.length() != 0) {
-                    logOutput(javaOutputWriter, new ArrayList<>(Files.readAllLines(Paths.get(errorFile.getPath()))));
+                    Test.logList(javaOutputWriter, new ArrayList<>(Files.readAllLines(Paths.get(errorFile.getPath()))));
                     return javaResult("RE " + (i + 1), task, testInputFile, testOutputFile, errorFile); //Runtime Error
                 }
                 ArrayList<String> testOutput = new ArrayList<>(Files.readAllLines(Paths.get(testOutputFile.getPath())));
-                logOutput(javaOutputWriter, testOutput);
-                if (!test.getOutputVariants().contains(testOutput)) {
+                Test.logList(javaOutputWriter, testOutput);
+                if (!test.getOutputVariants().contains(testOutput))
                     return javaResult("WA " + (i + 1), task, testInputFile, testOutputFile, errorFile);
-                }
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
@@ -339,16 +360,6 @@ class TestsApplier {
         return javaResult("OK", task, testInputFile, testOutputFile, errorFile);
     }
 
-    private void logOutput(BufferedWriter writer, ArrayList<String> response) {
-        response.forEach(line -> {
-            try {
-                writer.write(line);
-                writer.newLine();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-    }
 
     private Result javaResult(String response, Task task, File inputFile, File outputFile, File errorFile) {
         try {
@@ -362,6 +373,5 @@ class TestsApplier {
         new File(task.getSourcePath().substring(0, task.getSourcePath().length() - 4) + "class").delete();
         return new Result(response, task);
     }
-
 }
 

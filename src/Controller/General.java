@@ -45,7 +45,7 @@ public class General {
         return startDate;
     }
 
-    public static void getResults(Callback onExit) {
+    public static void getResults(Callback onExit, MainController mainController) {
         try {
             GoogleDriveManager.authorize();
         } catch (IOException e) {
@@ -108,21 +108,22 @@ public class General {
             System.out.println("Java task applier closed: " + (new Date().getTime() - startDate.getTime() + " ms."));
             latch.countDown();
         })).start();
+        CountDownLatch tableLatch = new CountDownLatch(1);
         (new Thread(() -> {
             try {
                 latch.await();
                 System.out.println("Running thread for results sender...");
                 List<Result> classSystem = Collections.synchronizedList(new ArrayList<Result>());
-                (new Thread(new ResultsSender(results, onExit, classSystem, () -> startAntiplagiarismTesting(classSystem)))).start();
+                (new Thread(new ResultsSender(results, () -> {tableLatch.countDown(); onExit.call();}, classSystem, () -> startAntiplagiarismTesting(classSystem)))).start();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         })).start();
         (new Thread(() -> {
             try {
-                latch.await();
+                tableLatch.await();
                 System.out.println("Sending results to table");
-                (new Thread(() -> MainController.showResults(results))).start();
+                (new Thread(() -> mainController.showResults(results))).start();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
