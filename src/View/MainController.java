@@ -16,10 +16,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
 
 /**
  * Created by Arseniy Nazarov on 20.04.17.
@@ -27,10 +24,10 @@ import java.util.ResourceBundle;
 public class MainController implements Initializable {
 
     @FXML
-    private static TabPane resultsTable;
+    private TabPane resultsTable;
 
     @FXML
-    private static TabPane plagiary;
+    private TabPane plagiary;
 
     @FXML
     private Button tests;
@@ -45,26 +42,32 @@ public class MainController implements Initializable {
         return settingsFrame;
     }
 
-    public static void showResults(ArrayList<Result> results) {
+    public void showResults(ArrayList<Result> results) {
         HashMap<String, TableView<String[]>> tableHashMap = new HashMap<>();
         boolean containsGroup;
+
+        
         for (Result r: results) {
             if (tableHashMap.containsKey(r.getSubject())) {
                 containsGroup = false;
-                for (String [] row: tableHashMap.get(r.getSubject()).getItems()) {
+                Iterator<String[]> rowsIterator = tableHashMap.get(r.getSubject()).getItems().iterator();
+                String[] row;
+                while (rowsIterator.hasNext()) {
+                    row = rowsIterator.next();
                     if (row[0].equals(r.getGroup())) {
                         tableHashMap.get(r.getSubject()).getItems().add(tableHashMap.get(r.getSubject()).getItems().indexOf(row) + 1,
                                 new String[] {r.getStudent().getName(), r.getMessage()});
+                        rowsIterator.next();
                     }
                     containsGroup = true;
                 }
 
                 if (!containsGroup) {
-                    tableHashMap.get(r.getSubject()).getItems().addAll(new String[] {r.getGroup(), "", ""}, new String[] {r.getStudent().getName(), r.getMessage()});
+                    tableHashMap.get(r.getSubject()).getItems().addAll(new String[] {r.getGroup()}, new String[] {r.getStudent().getName(), r.getMessage()});
                 }
             } else {
                 tableHashMap.put(r.getSubject(), new TableView<>(FXCollections
-                        .observableArrayList(new String[] {r.getGroup(), "", ""},
+                        .observableArrayList(new String[] {r.getGroup()},
                                 new String[] {r.getStudent().getName(), r.getMessage()})));
             }
         }
@@ -79,7 +82,7 @@ public class MainController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         tests.setOnAction(event -> {
             tests.setDisable(true);
-            General.getResults(() -> tests.setDisable(false));
+            General.getResults(() -> tests.setDisable(false), this);
         });
 
         switchTables.setOnAction(event -> {
