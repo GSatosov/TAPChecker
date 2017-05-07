@@ -27,14 +27,10 @@ import java.util.ResourceBundle;
 public class MainController implements Initializable {
 
     @FXML
-    private static TabPane results;
-
-    public static void addTab(Tab t) {
-        results.getTabs().add(t);
-    }
+    private static TabPane resultsTable;
 
     @FXML
-    private TabPane plagiary;
+    private static TabPane plagiary;
 
     @FXML
     private Button tests;
@@ -45,7 +41,7 @@ public class MainController implements Initializable {
 
     private static Stage settingsFrame;
 
-    public static Stage getSettingsFrame (){
+    static Stage getSettingsFrame(){
         return settingsFrame;
     }
 
@@ -72,8 +68,10 @@ public class MainController implements Initializable {
                                 new String[] {r.getStudent().getName(), r.getMessage()})));
             }
         }
+
+        resultsTable.getTabs().clear();
         for (Map.Entry<String, TableView<String []>> entry: tableHashMap.entrySet()) {
-            addTab(new Tab(entry.getKey(), entry.getValue()));
+            resultsTable.getTabs().add(new Tab(entry.getKey(), entry.getValue()));
         }
     }
 
@@ -85,11 +83,11 @@ public class MainController implements Initializable {
         });
 
         switchTables.setOnAction(event -> {
-            if (results.isVisible()) {
-                results.setVisible(false);
+            if (resultsTable.isVisible()) {
+                resultsTable.setVisible(false);
                 plagiary.setVisible(true);
             } else {
-                results.setVisible(true);
+                resultsTable.setVisible(true);
                 plagiary.setVisible(false);
             }
         });

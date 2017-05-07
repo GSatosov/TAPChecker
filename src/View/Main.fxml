@@ -4,6 +4,8 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.text.Text?>
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="View.MainController"
@@ -15,11 +17,20 @@
         <Button fx:id="switchTables" text="Switch tables"/>
         <Button fx:id="settings" text="Settings"/>
     </HBox>
-    <TabPane fx:id="results"
+    <TabPane fx:id="resultsTable"
                AnchorPane.topAnchor="40" AnchorPane.rightAnchor="5" AnchorPane.leftAnchor="5"
-               prefHeight="400"/>
+               prefHeight="400">
+        <Tab closable="false">
+            <Text text="No data in table"/>
+        </Tab>
+    </TabPane>
+
     <TabPane fx:id="plagiary"
                visible="false"
                AnchorPane.topAnchor="40" AnchorPane.rightAnchor="5" AnchorPane.leftAnchor="5"
-               prefHeight="400" />
+               prefHeight="400" >
+        <Tab closable="false">
+            <Text text="No data in table"/>
+        </Tab>
+    </TabPane>
 </AnchorPane>
