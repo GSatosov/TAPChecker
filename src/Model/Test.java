@@ -50,37 +50,26 @@ public class Test {
     }
 
     public void logOutputVariants(BufferedWriter writer) {
-        this.outputVariants.forEach(outputVariant -> {
-            if (outputVariant.size() < 6) {
-                outputVariant.subList(0, this.outputVariants.size() - 1).forEach(testOutputVariant -> {
-                    try {
-                        writer.write(testOutputVariant + " or,");
-                        writer.newLine();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                });
+        this.outputVariants.subList(0, outputVariants.size() - 1).forEach(outputVariant -> {
+            logList(writer, outputVariant);
+            if (this.outputVariants.size() > 1)
                 try {
-                    writer.write(outputVariant.get(outputVariant.size() - 1));
+                    writer.write("OR,");
                     writer.newLine();
-                } catch (IOException e1) {
-                    e1.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            } else {
-                outputVariant.subList(0, 5).forEach(testOutputVariant -> {
-                    try {
-                        writer.write(testOutputVariant + " or");
-                        writer.newLine();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    try {
-                        writer.write("...and " + (outputVariant.size() - 5) + " more lines.");
-                        writer.newLine();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                });
+        });
+        logList(writer, this.outputVariants.get(outputVariants.size() - 1));
+    }
+
+    public static void logList(BufferedWriter writer, ArrayList<String> list) {
+        list.forEach(line -> {
+            try {
+                writer.write(line);
+                writer.newLine();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         });
     }
