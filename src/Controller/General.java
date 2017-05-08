@@ -4,6 +4,7 @@ import Model.Callback;
 import Model.Result;
 import Model.Task;
 import View.MainController;
+import javafx.application.Platform;
 
 import javax.crypto.NoSuchPaddingException;
 import javax.mail.MessagingException;
@@ -119,15 +120,15 @@ public class General {
                 e.printStackTrace();
             }
         })).start();
-        (new Thread(() -> {
+        Platform.runLater(() -> {
             try {
                 tableLatch.await();
                 System.out.println("Sending results to table");
-                (new Thread(() -> mainController.showResults(results))).start();
+                Platform.runLater((new Thread(() -> mainController.showResults(results))));
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-        })).start();
+        });
     }
 
     private static void startAntiplagiarismTesting(List<Result> classSystem) {
