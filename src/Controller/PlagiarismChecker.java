@@ -137,7 +137,4 @@ class PlagiarismChecker {
         return cost[len0 - 1];
     }
 
-    public static void main(String[] args) throws IOException {
-        System.out.println(prepareTask(new Task("sum.java", "abc", "E:\\Study\\Thesis\\data\\Java\\A3403\\Баранов_Александр\\20170423192720\\sum.java", new Date())));
-    }
 }
