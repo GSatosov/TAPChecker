@@ -68,7 +68,11 @@ public class General {
                     Task task = getHaskellTasksQueue().poll();
                     if (!applier.startedHaskellTesting())
                         applier.startHaskellTesting();
-                    Result haskellResult = applier.handleHaskellTask(task);
+                    Result haskellResult;
+                    if (task.getReceivedDate().getTime() > task.getTestContents().get(0).getDeadline().getTime() && task.getTestContents().get(0).hasHardDeadline())
+                        haskellResult = new Result("DL", task);
+                    else
+                        haskellResult = applier.handleHaskellTask(task);
                     results.add(haskellResult);
                     System.out.println(haskellResult);
                 } else {
@@ -90,7 +94,11 @@ public class General {
                     Task task = getJavaTasksQueue().poll();
                     if (!applier.startedJavaTesting())
                         applier.startJavaTesting();
-                    Result javaResult = applier.handleJavaTask(task);
+                    Result javaResult;
+                    if (task.getReceivedDate().getTime() > task.getTestContents().get(0).getDeadline().getTime() && task.getTestContents().get(0).hasHardDeadline())
+                        javaResult = new Result("DL", task);
+                    else
+                        javaResult = applier.handleJavaTask(task);
                     results.add(javaResult);
                     System.out.println(javaResult);
                 } else {
@@ -119,7 +127,7 @@ public class General {
     private static void startAntiplagiarismTesting(List<Result> classSystem) {
         ArrayList<String> taskNames = new ArrayList<>();
         List<ArrayList<Task>> tasksForPlagiarismCheck = Collections.synchronizedList(new ArrayList<ArrayList<Task>>());
-        ArrayList<Task> tasks = classSystem.stream().filter(result -> result.getMessage().equals("OK")).map(Result::getTask).collect(Collectors.toCollection(ArrayList::new));
+        ArrayList<Task> tasks = classSystem.stream().filter(result -> result.getMessage().contains("OK")).map(Result::getTask).collect(Collectors.toCollection(ArrayList::new));
         System.out.println("Parsing file system.");
         tasks.forEach(task -> {
             if (!taskNames.contains(task.getName()) && tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).count() > 1) {

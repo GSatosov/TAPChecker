@@ -24,6 +24,8 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class GoogleDriveManager {
@@ -103,7 +105,7 @@ public class GoogleDriveManager {
 
     private static volatile Drive service;
 
-    static ArrayList<Test> getTests(Task task) throws IOException {
+    static ArrayList<Test> getTests(Task task) throws IOException, ParseException {
         Drive service = getDriveService();
         FileList result = service.files().list()
                 .setQ("mimeType = 'application/vnd.google-apps.folder'")
@@ -144,9 +146,8 @@ public class GoogleDriveManager {
                 OutputStream outputStream = new ByteArrayOutputStream();
                 service.files().get(fileId).executeMediaAndDownloadTo(outputStream);
                 ArrayList<Test> testsResult = new ArrayList<>();
-
                 JSONObject tests = new JSONObject(outputStream.toString());
-                String deadline = tests.getString("deadline");
+                Date deadline = new SimpleDateFormat("dd.MM.yyyy").parse(tests.getString("deadline"));
                 boolean antiPlagiarism = tests.getBoolean("antiPlagiarism");
                 long time = tests.getLong("maximumOperatingTimeInMS");
                 boolean hardDeadline = tests.getBoolean("hasHardDeadline");

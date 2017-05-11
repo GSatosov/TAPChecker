@@ -66,13 +66,15 @@ class TestsApplier {
         });
     }
 
-    private Result haskellFailResult(String response, Task task) {
+    private Result haskellResult(String response, Task task) {
         haskellOutput.clear();
         try {
             haskellOutputWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+        if (task.getReceivedDate().getTime() > task.getTestContents().get(0).getDeadline().getTime())
+            return new Result("DL " + response, task);
         return new Result(response, task);
     }
 
@@ -127,12 +129,12 @@ class TestsApplier {
                 if (this.haskellOutput.stream().filter(line -> line.startsWith("Ok, modules loaded:")).count() > 0)
                     break;
                 if (this.haskellOutput.contains("Failed, modules loaded: none."))
-                    return haskellFailResult("CE", task); //Compilation Error;
+                    return haskellResult("CE", task); //Compilation Error;
             }
             if (compilationTime == 200) {
                 finishHaskellTesting();
                 startHaskellTesting();
-                return haskellFailResult("SE", task); // System error — most likely an error on our end.
+                return haskellResult("SE", task); // System error — most likely an error on our end.
             }
             try {
                 Thread.sleep(10);
@@ -176,7 +178,7 @@ class TestsApplier {
                     finishHaskellTesting();
                     Test.logList(haskellOutputWriter, this.haskellOutput);
                     startHaskellTesting(); //Restart ghci if we encountered infinite input/ long computation.
-                    return haskellFailResult("TL " + (i + 1), task); //Took too long to compute.
+                    return haskellResult("TL " + (i + 1), task); //Took too long to compute.
                 }
                 try {
                     Thread.sleep(10);
@@ -187,7 +189,7 @@ class TestsApplier {
             }
             if (this.haskellOutput.size() > 1 && this.haskellOutput.get(1).startsWith("<interactive>")) {
                 Test.logList(haskellOutputWriter, this.haskellOutput);
-                return haskellFailResult("RE " + (i + 1), task);
+                return haskellResult("RE " + (i + 1), task);
             }
             String response = this.haskellOutput.get(0).split(" ", 2)[1]; // *>TaskName> Output
             try {
@@ -198,16 +200,10 @@ class TestsApplier {
             }
             if (!(testOutputVariants.contains("Error") && response.startsWith("*** Exception") && !response.startsWith("*** Exception: Prelude") // If exception is expected.
                     || testOutputVariants.contains(response))) {
-                return haskellFailResult("WA " + (i + 1), task);
+                return haskellResult("WA " + (i + 1), task);
             }
         }
-        try {
-            haskellOutputWriter.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        this.haskellOutput.clear();
-        return new Result("OK", task);
+        return haskellResult("OK", task);
     }
 
     void finishHaskellTesting() {
@@ -265,6 +261,8 @@ class TestsApplier {
             if (br.readLine() != null) {
                 br.close();
                 javaOutputWriter.close();
+                if (task.getReceivedDate().getTime() > task.getTestContents().get(0).getDeadline().getTime())
+                    return new Result("DL CE", task);
                 return new Result("CE", task);
             }
             errorFile.createNewFile();
@@ -371,6 +369,8 @@ class TestsApplier {
         inputFile.delete();
         outputFile.delete();
         new File(task.getSourcePath().substring(0, task.getSourcePath().length() - 4) + "class").delete();
+        if (task.getReceivedDate().getTime() > task.getTestContents().get(0).getDeadline().getTime())
+            return new Result("DL " + response, task);
         return new Result(response, task);
     }
 }

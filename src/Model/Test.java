@@ -3,6 +3,7 @@ package Model;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * Created by GSatosov on 3/18/2017.
@@ -12,9 +13,9 @@ public class Test {
     private ArrayList<ArrayList<String>> outputVariants;
     private long time;
     private boolean antiPlagiarism;
-    private String deadline;
+    private Date deadline;
 
-    public boolean isHardDeadline() {
+    public boolean hasHardDeadline() {
         return this.hardDeadline;
     }
 
@@ -32,7 +33,7 @@ public class Test {
         return this.time;
     }
 
-    public String getDeadline() {
+    public Date getDeadline() {
         return this.deadline;
     }
 
@@ -40,7 +41,7 @@ public class Test {
         return this.antiPlagiarism;
     }
 
-    public Test(ArrayList<String> input, ArrayList<ArrayList<String>> outputVariants, long time, String deadline, boolean antiPlagiarism, boolean hardDeadline) {
+    public Test(ArrayList<String> input, ArrayList<ArrayList<String>> outputVariants, long time, Date deadline, boolean antiPlagiarism, boolean hardDeadline) {
         this.input = input;
         this.outputVariants = outputVariants;
         this.time = time;
