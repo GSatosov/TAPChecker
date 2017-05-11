@@ -73,10 +73,11 @@ class PlagiarismChecker {
                     .filter(line -> !line.trim().startsWith("--") && !line.trim().startsWith("module") && !line.trim().contains(new String(taskName) + " ::"))
                     .reduce("", String::concat), "{-", "-}").replaceAll("\\s+", " ");
         }
-        String taskWithoutComments = removeMultiLineComments(lines.stream().filter(line -> !line.trim().startsWith("//")).reduce("", String::concat), "/*", "*/").replaceAll("\\s+", " ");
+        String taskWithoutComments = removeMultiLineComments(lines.stream().filter(line -> !line.trim().startsWith("//")).reduce("", String::concat), "/*", "*/")
+                .replaceAll("\\s+", " ");
         String firstSection = taskWithoutComments.substring(0, taskWithoutComments.indexOf("{") + 1);
-        String concatenatedSections = firstSection.
-                concat(parseJavaFileIntoSections(new ArrayList<>(), taskWithoutComments.substring(taskWithoutComments.indexOf("{") + 1, taskWithoutComments.length())));
+        String concatenatedSections = firstSection
+                .concat(parseJavaFileIntoSections(new ArrayList<>(), taskWithoutComments.substring(taskWithoutComments.indexOf("{") + 1, taskWithoutComments.length())));
         return concatenatedSections.replace("public static void main(String[] args)", "")
                 .replace("public static void main (String[] args)", "")
                 .replace("public class " + task.getName().split("\\.")[0], "")
@@ -110,6 +111,7 @@ class PlagiarismChecker {
         String newRemainder = remainder.substring(rightIndex + 1, remainder.length());
         if (!newRemainder.contains("{")) {
             sections.sort((o1, o2) -> o2.length() - o1.length());
+            sections.add(newRemainder);
             return sections.stream().reduce("", String::concat);
         }
         return parseJavaFileIntoSections(sections, newRemainder);
