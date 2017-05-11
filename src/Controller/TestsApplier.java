@@ -374,4 +374,3 @@ class TestsApplier {
         return new Result(response, task);
     }
 }
-

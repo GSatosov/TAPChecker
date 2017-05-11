@@ -7,8 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -61,18 +60,59 @@ class PlagiarismChecker {
         NumberFormat nf = NumberFormat.getInstance();
         nf.setMaximumFractionDigits(2);
         double result = (1 - (distance * 1.0 / maxDistance)) * 100;
-        return new PlagiarismResult(nf.format(result) + "%", task1.getAuthor(), task2.getAuthor(), task1);
+        return new PlagiarismResult(nf.format(result) + "%", task1, task2);
     }
 
     //Removes comments (currently one-line comments) and lines with module name/class name/public static void main.
-    private String prepareTask(Task task) throws IOException {
+    private static String prepareTask(Task task) throws IOException {
         ArrayList<String> lines = new ArrayList<>(Files.readAllLines(Paths.get(task.getSourcePath())));
         if (task.getName().endsWith("hs")) {
             char[] taskName = task.getName().split("\\.")[0].toCharArray();
             taskName[0] = Character.toLowerCase(taskName[0]);
-            return lines.stream().filter(line -> !line.isEmpty()).filter(line -> !line.trim().startsWith("--") && !line.trim().startsWith("module") && !line.trim().contains(new String(taskName) + " ::")).reduce("", String::concat);
+            return removeMultiLineComments(lines.stream().filter(line -> !line.isEmpty())
+                    .filter(line -> !line.trim().startsWith("--") && !line.trim().startsWith("module") && !line.trim().contains(new String(taskName) + " ::"))
+                    .reduce("", String::concat), "{-", "-}").replaceAll("\\s+", " ");
         }
-        return lines.stream().filter(line -> !line.contains("class" + task.getName().split("\\.")[0]) && !line.trim().startsWith("//") && !line.contains("public static void main")).reduce("", String::concat);
+        String taskWithoutComments = removeMultiLineComments(lines.stream().filter(line -> !line.trim().startsWith("//")).reduce("", String::concat), "/*", "*/").replaceAll("\\s+", " ");
+        String firstSection = taskWithoutComments.substring(0, taskWithoutComments.indexOf("{") + 1);
+        String concatenatedSections = firstSection.
+                concat(parseJavaFileIntoSections(new ArrayList<>(), taskWithoutComments.substring(taskWithoutComments.indexOf("{") + 1, taskWithoutComments.length())));
+        return concatenatedSections.replace("public static void main(String[] args)", "")
+                .replace("public static void main (String[] args)", "")
+                .replace("public class " + task.getName().split("\\.")[0], "")
+                .replace("class " + task.getName().split("\\.")[0], "");
+    }
+
+    private static String removeMultiLineComments(String concatenatedLines, String delimiter1, String delimiter2) { //Example : {- ... -} for Haskell comments, /* ... */ for Java comments.
+        if ((concatenatedLines.contains(delimiter1) && concatenatedLines.contains(delimiter2))) {
+            int leftIndex = concatenatedLines.indexOf(delimiter1);
+            int rightIndex = concatenatedLines.indexOf(delimiter2);
+            return (removeMultiLineComments(concatenatedLines.substring(0, leftIndex)
+                    .concat(concatenatedLines.substring(rightIndex + delimiter2.length(), concatenatedLines.length())), delimiter1, delimiter2));
+        }
+        return concatenatedLines;
+    }
+
+    static private String parseJavaFileIntoSections(ArrayList<String> sections, String remainder) {
+        int leftIndex = remainder.indexOf("{");
+        int balance = 1;
+        int rightIndex = leftIndex + 1;
+        while (rightIndex < remainder.length()) {
+            if (remainder.charAt(rightIndex) == '{')
+                balance++;
+            if (remainder.charAt(rightIndex) == '}')
+                balance--;
+            if (balance == 0)
+                break;
+            rightIndex++;
+        }
+        sections.add(remainder.substring(0, rightIndex));
+        String newRemainder = remainder.substring(rightIndex + 1, remainder.length());
+        if (!newRemainder.contains("{")) {
+            sections.sort((o1, o2) -> o2.length() - o1.length());
+            return sections.stream().reduce("", String::concat);
+        }
+        return parseJavaFileIntoSections(sections, newRemainder);
     }
 
     private int LevenshteinDistance(String task1, String task2) {
@@ -97,4 +137,7 @@ class PlagiarismChecker {
         return cost[len0 - 1];
     }
 
+    public static void main(String[] args) throws IOException {
+        System.out.println(prepareTask(new Task("sum.java", "abc", "E:\\Study\\Thesis\\data\\Java\\A3403\\Баранов_Александр\\20170423192720\\sum.java", new Date())));
+    }
 }

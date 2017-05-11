@@ -5,19 +5,18 @@ package Model;
  */
 public class PlagiarismResult {
     private String result;
-    private Student firstStudent;
-    private Student secondStudent;
-    private Task task;
+    private Task taskFromFirstStudent;
+    private Task taskFromSecondStudent;
 
-    public PlagiarismResult(String result, Student firstStudent, Student secondStudent, Task task) {
+    public PlagiarismResult(String result, Task task1, Task task2) {
         this.result = result;
-        this.firstStudent = firstStudent;
-        this.secondStudent = secondStudent;
-        this.task = task;
+        this.taskFromFirstStudent = task1;
+        this.taskFromSecondStudent = task2;
     }
 
     @Override
     public String toString() {
-        return "The probability of plagiarism between " + firstStudent + " and " + secondStudent + " on task " + task.getSubjectName() + " " + task.getName() + " is " + result;
+        return "The probability of plagiarism between " + taskFromFirstStudent.getAuthor() + " and " + taskFromSecondStudent.getAuthor()
+                + " on task " + taskFromFirstStudent.getSubjectName() + " " + taskFromFirstStudent.getName() + " is " + result;
     }
 }
