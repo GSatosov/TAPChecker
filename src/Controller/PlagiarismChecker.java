@@ -111,7 +111,7 @@ class PlagiarismChecker {
         String newRemainder = remainder.substring(rightIndex + 1, remainder.length());
         if (!newRemainder.contains("{")) {
             sections.sort((o1, o2) -> o2.length() - o1.length());
-            sections.set(0, newRemainder);
+            sections.add(0,newRemainder);
             return sections.stream().reduce("", String::concat);
         }
         return parseJavaFileIntoSections(sections, newRemainder);
