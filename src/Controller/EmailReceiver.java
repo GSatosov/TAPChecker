@@ -97,9 +97,10 @@ public class EmailReceiver {
             for (int i = 0; i < multiPart.getCount(); i++) {
                 MimeBodyPart part = (MimeBodyPart) multiPart.getBodyPart(i);
                 if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
-                    File dir = new File(Settings.getDataFolder() + "/" + subject[2] + "/" + subject[1] + "/" + subject[0] + "/" + (new SimpleDateFormat(Settings.getSourcesDateFormat())).format(message.getReceivedDate()));
+                    String folder = Settings.getDataFolder() + "/" + Transliteration.cyr2lat(subject[2]) + "/" + Transliteration.cyr2lat(subject[1]) + "/" + Transliteration.cyr2lat(subject[0]) + "/" + (new SimpleDateFormat(Settings.getSourcesDateFormat())).format(message.getReceivedDate());
+                    File dir = new File(folder);
                     dir.mkdirs();
-                    File f = new File(Settings.getDataFolder() + "/" + subject[2] + "/" + subject[1] + "/" + subject[0] + "/" + (new SimpleDateFormat(Settings.getSourcesDateFormat())).format(message.getReceivedDate()) + "/" + part.getFileName());
+                    File f = new File(folder + "/" + part.getFileName());
                     part.saveFile(f);
                     Task task = new Task(part.getFileName(), subject[2], f.getAbsolutePath(), message.getReceivedDate());
                     task.setAuthor(new Student(fullName, subject[1]));

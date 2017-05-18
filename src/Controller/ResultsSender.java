@@ -154,7 +154,7 @@ public class ResultsSender implements Runnable {
                                                 if (!result.isEmpty() && v.stream().noneMatch(r -> r.getTask().getName().split("\\.")[0].toLowerCase().equals(tasks.get(index - 1).toLowerCase()) && r.getStudent().getName().equals(name) && r.getGroup().equals(group))) {
                                                     String taskName = tasks.get(index - 1);
 
-                                                    Optional<Path> path = Files.find(Paths.get(Settings.getDataFolder() + "/" + subject.replaceAll(" ", "_") + "/" + group + "/" + name.replaceAll(" ", "_")), Integer.MAX_VALUE,
+                                                    Optional<Path> path = Files.find(Paths.get(Settings.getDataFolder() + "/" + Transliteration.cyr2lat(subject.replaceAll(" ", "_")) + "/" + Transliteration.cyr2lat(group) + "/" + Transliteration.cyr2lat(name.replaceAll(" ", "_"))), Integer.MAX_VALUE,
                                                             (filePath, fileAttr) -> !fileAttr.isDirectory() && filePath.getFileName().toString().split("\\.")[0].toLowerCase().equals(taskName.toLowerCase()))
                                                             .sorted((f1, f2) -> f2.getParent().getFileName().compareTo(f1.getParent().getFileName())).findFirst();
                                                     if (!path.isPresent()) {
