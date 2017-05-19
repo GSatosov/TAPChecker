@@ -36,6 +36,10 @@ import java.util.stream.Collectors;
  */
 public class EmailReceiver {
 
+    private static CountDownLatch downloadedMessagesCount;
+
+    private static ConcurrentHashMap<Task, ArrayList<Test>> localTests;
+
     /*
     Receive all unread emails from teacher email
      */
@@ -106,27 +110,8 @@ public class EmailReceiver {
                 }
             }
         }
-
-        /*ArrayList<Attachment> attachments = retrieveAttachments(message);
-        attachments.forEach(attachment -> {
-            File f = new File(Settings.getInstance().getDataFolder() + "/" + subject[2] + "/" + subject[1] + "/" + subject[0] + "/" + attachment.getFileName());
-            f.mkdirs();
-            try {
-                synchronized (fileSystemSemaphore) {
-                    ExponentialBackOff.execute(() -> Files.copy(attachment.getStream(), f.toPath(), StandardCopyOption.REPLACE_EXISTING), 5);
-                }
-                attachment.getStream().close();
-                Task task = new Task(attachment.getFileName(), subject[2], f.getAbsolutePath());
-                task.setAuthor(new Student(fullName, subject[1]))
-                tasks.add(task);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        });*/
         return tasks;
     }
-
-    private static Object fileSystemSemaphore;
 
     /*
     Retrieve messages data from inbox folder
@@ -136,7 +121,7 @@ public class EmailReceiver {
         props.put("mail.store.protocol", "imaps");
         Session session = Session.getInstance(props);
         Store store = session.getStore();
-        store.connect(Settings.getInstance().getHost(), Settings.getInstance().getEmail(), Settings.getInstance().getPassword());
+        store.connect(Settings.getInstance().getHost(), Settings.getEmail(), Settings.getPassword());
         Folder inbox = store.getFolder("INBOX");
         Message[] messages = receiveEmails(inbox);
         Date lastDateEmailChecking = Settings.getInstance().getLastDateEmailChecked();
@@ -144,7 +129,6 @@ public class EmailReceiver {
         Date newDateEmailChecking = new Date();
         downloadedMessagesCount = new CountDownLatch(messages.length);
         localTests = new ConcurrentHashMap<>();
-        fileSystemSemaphore = new Object();
         Arrays.stream(messages).forEach(message -> {
             try {
                 if (lastDateEmailChecking.compareTo(message.getReceivedDate()) < 0) {
@@ -198,46 +182,4 @@ public class EmailReceiver {
         });
     }
 
-    private static CountDownLatch downloadedMessagesCount;
-
-    private static ConcurrentHashMap<Task, ArrayList<Test>> localTests;
-
-    /*
-    Retrieve attachments from message
-     */
-    /*private static ArrayList<Attachment> retrieveAttachments(Message message) throws IOException, MessagingException {
-        Object content = message.getContent();
-        ArrayList<Attachment> result = new ArrayList<>();
-
-        if (content instanceof Multipart) {
-            Multipart multipart = (Multipart) content;
-            for (int i = 0; i < multipart.getCount(); i++) {
-                result.addAll(retrieveAttachments((MimeBodyPart) multipart.getBodyPart(i)));
-            }
-        }
-
-        return result;
-    }*/
-
-    /*
-    Retrieve attachments from message
-     */
-    /*private static ArrayList<Attachment> retrieveAttachments(MimeBodyPart part) throws IOException, MessagingException {
-        ArrayList<Attachment> result = new ArrayList<>();
-        Object content = part.getContent();
-        if (content instanceof InputStream || content instanceof String) {
-            if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition()) || (part.getFileName() != null && !part.getFileName().isEmpty())) {
-                result.add(new Attachment(part.getFileName(), part.getInputStream()));
-            }
-        }
-
-        if (content instanceof Multipart) {
-            Multipart multipart = (Multipart) content;
-            for (int i = 0; i < multipart.getCount(); i++) {
-                result.addAll(retrieveAttachments((MimeBodyPart) multipart.getBodyPart(i)));
-            }
-        }
-
-        return result;
-    }*/
 }

@@ -40,7 +40,7 @@ public class MainController implements Initializable {
         });
 
         logout.setOnAction(event -> {
-            Settings.getInstance().setPassword("");
+            Settings.setPassword("");
             try {
                 Settings.getInstance().saveSettings();
             } catch (InvalidKeyException | IOException | NoSuchPaddingException | NoSuchAlgorithmException e) {

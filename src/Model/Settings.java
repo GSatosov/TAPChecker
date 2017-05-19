@@ -1,8 +1,5 @@
 package Model;
 
-import Controller.Cryptographer;
-import com.google.api.client.util.IOUtils;
-
 import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.security.InvalidKeyException;
@@ -26,9 +23,10 @@ public class Settings implements Serializable {
                     File settingsFile = new File(getDataFolder() + "/" + getSettingsFileName());
                     if (settingsFile.exists()) {
                         try {
-                            FileInputStream inputStream = new FileInputStream(settingsFile);
-                            instance = (Settings) Cryptographer.decrypt(inputStream);
-                        } catch (IOException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException e) {
+                            FileInputStream fin = new FileInputStream(getDataFolder() + "/" + getSettingsFileName());
+                            ObjectInputStream ois = new ObjectInputStream(fin);
+                            instance = (Settings) ois.readObject();
+                        } catch (IOException | ClassNotFoundException e) {
                             instance = new Settings();
                             e.printStackTrace();
                         }
@@ -54,11 +52,11 @@ public class Settings implements Serializable {
     /*
     E-mail address
      */
-    private String email = ""; //kubenskiythesis@gmail.com
+    private transient static String email = ""; //kubenskiythesis@gmail.com
     /*
     Password
      */
-    private String password = ""; //sansanich
+    private transient static String password = ""; //sansanich
 
     /*
     Folder path for all attachments which we receive from e-mail
@@ -100,12 +98,12 @@ public class Settings implements Serializable {
         return clientSecret;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public static void setEmail(String email) {
+        Settings.email = email;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public static void setPassword(String password) {
+        Settings.password = password;
     }
 
     private static String getSettingsFileName() {
@@ -113,7 +111,7 @@ public class Settings implements Serializable {
     }
 
     public String getHost() {
-        return host + this.getEmail().split("@")[1];
+        return host + getEmail().split("@")[1];
     }
 
     public static String getHostByEmail(String email) {
@@ -121,12 +119,12 @@ public class Settings implements Serializable {
     }
 
 
-    public String getEmail() {
-        return this.email;
+    public static String getEmail() {
+        return email;
     }
 
-    public String getPassword() {
-        return this.password;
+    public static String getPassword() {
+        return password;
     }
 
     public static String getDataFolder() {
@@ -154,10 +152,11 @@ public class Settings implements Serializable {
      */
     public void saveSettings() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
         (new File(Settings.getDataFolder())).mkdirs();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Cryptographer.encrypt(getInstance(), baos);
-        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        IOUtils.copy(bais, new FileOutputStream(getDataFolder() + "/" + getSettingsFileName()));
+        FileOutputStream fout = new FileOutputStream(getDataFolder() + "/" + getSettingsFileName());
+        ObjectOutputStream oos = new ObjectOutputStream(fout);
+        oos.writeObject(getInstance());
+        oos.close();
+        fout.close();
     }
 
 }

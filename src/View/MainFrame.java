@@ -52,7 +52,7 @@ public class MainFrame extends Application {
         setLoginScene(new Scene(FXMLLoader.load(getClass().getResource("Login.fxml")), 430, 180));
         setMainScene(new Scene(FXMLLoader.load(getClass().getResource("Main.fxml")), 640, 480));
 
-        if (Settings.getInstance().getEmail().isEmpty()) {
+        if (Settings.getEmail().isEmpty()) {
             primaryStage.setScene(loginScene);
         } else {
             primaryStage.setScene(mainScene);

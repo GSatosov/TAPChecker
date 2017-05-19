@@ -3,7 +3,6 @@ package Model;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 
 /**
  * Created by GSatosov on 3/18/2017.

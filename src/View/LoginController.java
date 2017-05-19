@@ -44,8 +44,8 @@ public class LoginController implements Initializable {
                 login.setDisable(false);
                 return;
             }
-            Settings.getInstance().setEmail(email);
-            Settings.getInstance().setPassword(password);
+            Settings.setEmail(email);
+            Settings.setPassword(password);
             try {
                 Settings.getInstance().saveSettings();
             } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IOException e) {
