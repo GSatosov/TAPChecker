@@ -2,13 +2,13 @@ package View;
 
 import Controller.EmailReceiver;
 import Model.Settings;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
@@ -30,30 +30,58 @@ public class LoginController implements Initializable {
 
     @FXML
     private Button login;
+    @FXML
+    private ProgressIndicator loginIndicator;
+
+    private String getHostName(String email) {
+        return email.substring(0, email.lastIndexOf("@"));
+    }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        loginIndicator.setVisible(false);
+        if (!Settings.getInstance().getEmail().isEmpty())
+            emailField.setText(getHostName(Settings.getInstance().getEmail()));
         mailServer.setItems(FXCollections.observableArrayList("@gmail.com", "@mail.ru"));
         mailServer.setValue(mailServer.getItems().get(0));
 
+        MainFrame.getPrimaryStage().addEventHandler(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                if (mailServer.isFocused()) {
+                        mailServer.show();
+                } else {
+                    login.fire();
+                    event.consume();
+                }
+            }
+        });
+
         login.setOnAction(event -> {
             login.setDisable(true);
-            String email = emailField.getText() + mailServer.getValue();
-            String password = pwField.getText();
-            if (!EmailReceiver.validate(email, password)) {
-                login.setDisable(false);
-                return;
-            }
-            Settings.setEmail(email);
-            Settings.setPassword(password);
-            try {
-                Settings.getInstance().saveSettings();
-            } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IOException e) {
-                e.printStackTrace();
-            }
-            pwField.clear();
-            login.setDisable(false);
-            MainFrame.getPrimaryStage().setScene(MainFrame.getMainScene());
+            loginIndicator.setVisible(true);
+            new Thread(() -> {
+                String email = emailField.getText() + mailServer.getValue();
+                String password = pwField.getText();
+                if (!EmailReceiver.validate(email, password)) {
+                    System.out.println("Failed: " + email + ", " + password);
+                    login.setDisable(false);
+                    loginIndicator.setVisible(false);
+                    return;
+                }
+                Settings.setEmail(email);
+                Settings.setPassword(password);
+                try {
+                    Settings.getInstance().saveSettings();
+                    pwField.clear();
+                    loginIndicator.setVisible(false);
+                    login.setDisable(false);
+                    Platform.runLater(() -> MainFrame.setStagetoMain());
+                } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IOException e) {
+                    loginIndicator.setVisible(false);
+                    login.setDisable(false);
+                    e.printStackTrace();
+                }
+            }).start();
         });
     }
 }

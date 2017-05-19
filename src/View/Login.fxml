@@ -5,10 +5,9 @@
 <GridPane xmlns="http://javafx.com/javafx"
           xmlns:fx="http://javafx.com/fxml"
           fx:controller="View.LoginController"
-          fx:id="pane"
           alignment="CENTER"
           hgap="10" vgap="10"
-          prefHeight="120" prefWidth="320">
+          prefHeight="180" prefWidth="430">
 
     <Label text="Email:"
            GridPane.columnIndex="0" GridPane.rowIndex="1"/>
@@ -18,11 +17,15 @@
         <ChoiceBox fx:id="mailServer"
                    GridPane.columnIndex="2" GridPane.rowIndex="1"/>
     </HBox>
-    <Label text="Password:"
-           GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-    <PasswordField fx:id="pwField"
-                   GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-    <Button fx:id="login" text="Log in"
-            GridPane.columnIndex="1" GridPane.rowIndex="3"/>
-
+        <Label text="Password:"
+               GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <PasswordField fx:id="pwField"
+                       GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+    <HBox GridPane.columnIndex="1" GridPane.rowIndex="3" alignment="CENTER_RIGHT">
+        <ProgressIndicator fx:id="loginIndicator"
+                           scaleX="0.5" scaleY="0.5"
+                           GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+        <Button fx:id="login" text="Log in"
+                GridPane.columnIndex="2" GridPane.rowIndex="3"/>
+    </HBox>
 </GridPane>

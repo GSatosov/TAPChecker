@@ -3,6 +3,8 @@ package Controller;
 import Model.Callback;
 import Model.Result;
 import Model.Task;
+import View.MainController;
+import javafx.application.Platform;
 
 import javax.crypto.NoSuchPaddingException;
 import javax.mail.MessagingException;
@@ -12,7 +14,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
@@ -41,7 +46,7 @@ public class General {
         return startDate;
     }
 
-    public static void getResults(Callback onExit) {
+    public static void getResults(Callback onExit, MainController mainController) {
         try {
             GoogleDriveManager.authorize();
         } catch (IOException e) {
@@ -112,16 +117,26 @@ public class General {
             System.out.println("Java task applier closed: " + (new Date().getTime() - startDate.getTime() + " ms."));
             latch.countDown();
         })).start();
+        CountDownLatch tableLatch = new CountDownLatch(1);
         (new Thread(() -> {
             try {
                 latch.await();
                 System.out.println("Running thread for results sender...");
                 List<Result> classSystem = Collections.synchronizedList(new ArrayList<Result>());
-                (new Thread(new ResultsSender(results, onExit, classSystem, () -> startAntiplagiarismTesting(classSystem)))).start();
+                (new Thread(new ResultsSender(results, () -> {tableLatch.countDown(); onExit.call();}, classSystem, () -> startAntiplagiarismTesting(classSystem)))).start();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         })).start();
+        Platform.runLater(() -> {
+            try {
+                tableLatch.await();
+                System.out.println("Sending results to table");
+                Platform.runLater((new Thread(() -> mainController.showResults(results))));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     private static void startAntiplagiarismTesting(List<Result> classSystem) {
@@ -154,5 +169,4 @@ public class General {
         }
         System.out.println("Plagiarism check has been concluded. The results lie in PlagiarismResult.txt file.");
     }
-
 }

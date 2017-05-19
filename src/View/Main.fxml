@@ -1,33 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.geometry.Insets?>
-<GridPane xmlns="http://javafx.com/javafx"
-          xmlns:fx="http://javafx.com/fxml"
-          fx:controller="View.MainController"
-          hgap="10" vgap="10"
-          prefHeight="480" prefWidth="640">
-    <padding>
-        <Insets top="20" left="15" right="15"></Insets>
-    </padding>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.text.Text?>
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="View.MainController"
+            prefHeight="480" prefWidth="640">
 
-    <TableView fx:id="results"
-               GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.columnSpan="2"
-               prefWidth="636" prefHeight="400"/>
-    <Button fx:id="tests" text="Run tests"
-            GridPane.columnIndex="0" GridPane.rowIndex="1"
-            alignment="BOTTOM_LEFT"/>
-    <HBox GridPane.columnIndex="1" GridPane.rowIndex="1"
-          alignment="BOTTOM_RIGHT"
+    <HBox AnchorPane.topAnchor="5" AnchorPane.rightAnchor="5" AnchorPane.leftAnchor="5"
           spacing="10">
-        <Button fx:id="settings" text="Settings"
-                GridPane.columnIndex="1" GridPane.rowIndex="1"
-                alignment="BOTTOM_RIGHT"/>
-        <Button fx:id="logout" text="Log Out"
-                alignment="BOTTOM_RIGHT"
-                GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+        <Button fx:id="tests" text="Run tests" />
+        <Button fx:id="switchTables" text="Switch tables"/>
+        <Button fx:id="settings" text="Settings"/>
     </HBox>
-</GridPane>
+    <TabPane fx:id="resultsTable"
+               AnchorPane.topAnchor="40" AnchorPane.rightAnchor="5" AnchorPane.leftAnchor="5"
+               prefHeight="400">
+        <Tab closable="false">
+            <Text text="No data in table"/>
+        </Tab>
+    </TabPane>
+
+    <TabPane fx:id="plagiary"
+               visible="false"
+               AnchorPane.topAnchor="40" AnchorPane.rightAnchor="5" AnchorPane.leftAnchor="5"
+               prefHeight="400" >
+        <Tab closable="false">
+            <Text text="No data in table"/>
+        </Tab>
+    </TabPane>
+</AnchorPane>
