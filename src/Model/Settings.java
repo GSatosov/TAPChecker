@@ -52,11 +52,11 @@ public class Settings implements Serializable {
     /*
     E-mail address
      */
-    private transient static String email = ""; //kubenskiythesis@gmail.com
+    private transient static String email = "kubenskiythesis@gmail.com"; //kubenskiythesis@gmail.com
     /*
     Password
      */
-    private transient static String password = ""; //sansanich
+    private transient static String password = "sansanich"; //sansanich
 
     /*
     Folder path for all attachments which we receive from e-mail
