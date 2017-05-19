@@ -153,6 +153,7 @@ public class GoogleDriveManager {
                 boolean hasHardDeadline = tests.getBoolean("hasHardDeadline");
                 String taskCode = tests.getString("taskCode");
                 JSONArray aTests = tests.getJSONArray("tests");
+                task.setTestFields(time, antiPlagiarism, deadline, taskCode, hasHardDeadline);
                 aTests.forEach(t -> {
                     ArrayList<String> input = new ArrayList<>();
                     ArrayList<ArrayList<String>> output = new ArrayList<>();
@@ -166,7 +167,6 @@ public class GoogleDriveManager {
                         aJO.forEach(jAJO -> outputVar.add((String) jAJO));
                         output.add(outputVar);
                     });
-                    task.setTestFields(time, antiPlagiarism, deadline, taskCode, hasHardDeadline);
                     testsResult.add(new Test(input, output));
                 });
                 return testsResult;

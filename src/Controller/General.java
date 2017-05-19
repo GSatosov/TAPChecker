@@ -40,6 +40,7 @@ public class General {
     }
 
     private static Date startDate;
+    private static ArrayList<String> tasksThatShouldBeCheckedOnAntiPlagiarism;
 
     static Date getStartDate() {
         if (startDate == null) startDate = new Date();
@@ -53,6 +54,7 @@ public class General {
             onExit.call();
             return;
         }
+        tasksThatShouldBeCheckedOnAntiPlagiarism = new ArrayList<>();
         latch = new CountDownLatch(2);
         startDate = new Date();
         ArrayList<Result> results = new ArrayList<>();
@@ -68,16 +70,23 @@ public class General {
             }
         })).start();
         (new Thread(() -> {
+            boolean startedHaskellTesting = false;
             while (tGroup.activeCount() > 0 || !haskellTasksQueue.isEmpty()) {
                 if (!getHaskellTasksQueue().isEmpty()) {
                     Task task = getHaskellTasksQueue().poll();
-                    if (!applier.startedHaskellTesting())
-                        applier.startHaskellTesting();
+                    if (!startedHaskellTesting)
+                        if (!applier.startHaskellTesting())
+                            break;
+                    startedHaskellTesting = true;
                     Result haskellResult;
                     if (task.getReceivedDate().getTime() > task.getDeadline().getTime() && task.hasHardDeadline())
                         haskellResult = new Result("DL", task);
                     else
                         haskellResult = applier.handleHaskellTask(task);
+                    if (haskellResult.getMessage().contains("OK")
+                            && task.shouldBeCheckedForAntiPlagiarism()
+                            && !tasksThatShouldBeCheckedOnAntiPlagiarism.contains(task.getName()))
+                        tasksThatShouldBeCheckedOnAntiPlagiarism.add(task.getName());
                     results.add(haskellResult);
                     System.out.println(haskellResult);
                 } else {
@@ -88,22 +97,29 @@ public class General {
                     }
                 }
             }
-            if (applier.startedHaskellTesting())
+            if (startedHaskellTesting)
                 applier.finishHaskellTesting();
             System.out.println("Haskell task applier closed: " + (new Date().getTime() - startDate.getTime() + " ms."));
             latch.countDown();
         })).start();
         (new Thread(() -> {
+            boolean startedJavaTesting = false;
             while (tGroup.activeCount() > 0 || !javaTasksQueue.isEmpty()) {
                 if (!getJavaTasksQueue().isEmpty()) {
                     Task task = getJavaTasksQueue().poll();
-                    if (!applier.startedJavaTesting())
+                    if (!startedJavaTesting) {
                         applier.startJavaTesting();
+                        startedJavaTesting = true;
+                    }
                     Result javaResult;
                     if (task.getReceivedDate().getTime() > task.getDeadline().getTime() && task.hasHardDeadline())
                         javaResult = new Result("DL", task);
                     else
                         javaResult = applier.handleJavaTask(task);
+                    if (javaResult.getMessage().contains("OK")
+                            && task.shouldBeCheckedForAntiPlagiarism()
+                            && !tasksThatShouldBeCheckedOnAntiPlagiarism.contains(task.getName()))
+                        tasksThatShouldBeCheckedOnAntiPlagiarism.add(task.getName());
                     results.add(javaResult);
                     System.out.println(javaResult);
                 } else {
@@ -123,7 +139,10 @@ public class General {
                 latch.await();
                 System.out.println("Running thread for results sender...");
                 List<Result> classSystem = Collections.synchronizedList(new ArrayList<Result>());
-                (new Thread(new ResultsSender(results, () -> {tableLatch.countDown(); onExit.call();}, classSystem, () -> startAntiplagiarismTesting(classSystem)))).start();
+                (new Thread(new ResultsSender(results, () -> {
+                    tableLatch.countDown();
+                    onExit.call();
+                }, classSystem, () -> startAntiplagiarismTesting(classSystem)))).start();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -140,13 +159,12 @@ public class General {
     }
 
     private static void startAntiplagiarismTesting(List<Result> classSystem) {
-        ArrayList<String> taskNames = new ArrayList<>();
         List<ArrayList<Task>> tasksForPlagiarismCheck = Collections.synchronizedList(new ArrayList<ArrayList<Task>>());
         ArrayList<Task> tasks = classSystem.stream().filter(result -> result.getMessage().contains("OK")).map(Result::getTask).collect(Collectors.toCollection(ArrayList::new));
         System.out.println("Parsing file system.");
         tasks.forEach(task -> {
-            if (!taskNames.contains(task.getName()) && task.shouldBeCheckedForAntiPlagiarism() && tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).count() > 1) {
-                taskNames.add(task.getName());
+            if (tasksThatShouldBeCheckedOnAntiPlagiarism.contains(task.getName()) && tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).count() > 1) {
+                tasksThatShouldBeCheckedOnAntiPlagiarism.remove(task.getName());
                 tasksForPlagiarismCheck.add(tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).collect(Collectors.toCollection(ArrayList::new)));
             }
         });

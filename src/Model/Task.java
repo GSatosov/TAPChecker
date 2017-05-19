@@ -13,6 +13,7 @@ public class Task {
     private ArrayList<Test> testContents;
     private Student author;
     private Date receivedDate;
+
     private String taskCode;
     private long timeInMS;
     private boolean antiPlagiarism;

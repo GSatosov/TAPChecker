@@ -10,6 +10,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,20 +21,10 @@ class TestsApplier {
     private volatile boolean notInterrupted;
     private volatile ArrayList<String> haskellOutput;
     private Process haskellProcess;
-    private boolean startedHaskellTesting;
-    private boolean startedJavaTesting;
     private PrintStream haskellProcessInput;
     private JavaCompiler compiler;
     private BufferedWriter haskellOutputWriter;
     private BufferedWriter javaOutputWriter;
-
-    boolean startedHaskellTesting() {
-        return this.startedHaskellTesting;
-    }
-
-    boolean startedJavaTesting() {
-        return this.startedJavaTesting;
-    }
 
     private Thread cmdOutput(InputStream stream) {
         haskellOutput = new ArrayList<>();
@@ -78,8 +69,9 @@ class TestsApplier {
         return new Result(response, task);
     }
 
-    void startHaskellTesting() {
+    boolean startHaskellTesting() {
         notInterrupted = true;
+        Date startDate = new Date();
         try {
             haskellProcess = new ProcessBuilder("ghci").redirectErrorStream(true).start();
             haskellProcessInput = new PrintStream(haskellProcess.getOutputStream());
@@ -91,17 +83,23 @@ class TestsApplier {
                         break;
                     if (haskellOutput.get(0).startsWith("'ghci' is not"))
                         throw new IOException();
+                    if (new Date().getTime() > startDate.getTime()) {
+                        System.out.println("Something is wrong with your ghc.");
+                        return false;
+                    }
                     Thread.sleep(10);
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            //       e.printStackTrace();
             System.out.println("Add ghci to your path before proceeding.");
+            return false;
         } catch (InterruptedException e) {
             e.printStackTrace();
+            return false;
         }
-        System.out.println("(Re)Started ghci process.");
-        startedHaskellTesting = true;
+        System.out.println("Started ghci process.");
+        return true;
     }
 
     Result handleHaskellTask(Task task) {
@@ -221,11 +219,11 @@ class TestsApplier {
         }
         haskellProcess.destroy();
         haskellProcessInput.close();
+        System.out.println("Closed ghc process.");
     }
 
     void startJavaTesting() {
         compiler = ToolProvider.getSystemJavaCompiler();
-        startedJavaTesting = true;
     }
 
     private void removePackageStatementInJavaTasks(Task task) {
