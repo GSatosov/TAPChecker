@@ -13,12 +13,45 @@ public class Task {
     private ArrayList<Test> testContents;
     private Student author;
     private Date receivedDate;
+    private String taskCode;
+    private long timeInMS;
+    private boolean antiPlagiarism;
+    private Date deadline;
+    private boolean hardDeadline;
+
+    public void setTestFields(long timeInMS, boolean antiPlagiarism, Date deadline, String taskCode, boolean hardDeadline) {
+        this.timeInMS = timeInMS;
+        this.antiPlagiarism = antiPlagiarism;
+        this.deadline = deadline;
+        this.taskCode = taskCode;
+        this.hardDeadline = hardDeadline;
+    }
+
+    public boolean hasHardDeadline() {
+        return this.hardDeadline;
+    }
+
+    public long getTimeInMS() {
+        return this.timeInMS;
+    }
+
+    public Date getDeadline() {
+        return this.deadline;
+    }
+
+    public String getTaskCode() {
+        return taskCode;
+    }
+
+    public boolean shouldBeCheckedForAntiPlagiarism() {
+        return this.antiPlagiarism;
+    }
 
     public void setAuthor(Student author) {
         this.author = author;
     }
 
-    public Student getAuthor() {
+    Student getAuthor() {
         return this.author;
     }
 
@@ -64,5 +97,11 @@ public class Task {
     @Override
     public String toString() {
         return "{" + this.name + ", " + this.subjectName + ", " + getStudent() + ", " + getReceivedDate() + ", " + this.sourcePath + "}";
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        Task task = (Task) obj;
+        return this.getName().equals(task.getName());
     }
 }

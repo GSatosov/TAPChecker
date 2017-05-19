@@ -11,15 +11,7 @@ import java.util.Date;
 public class Test {
     private ArrayList<String> input;
     private ArrayList<ArrayList<String>> outputVariants;
-    private long time;
-    private boolean antiPlagiarism;
-    private Date deadline;
 
-    public boolean hasHardDeadline() {
-        return this.hardDeadline;
-    }
-
-    private boolean hardDeadline;
 
     public ArrayList<String> getInput() {
         return this.input;
@@ -29,25 +21,10 @@ public class Test {
         return this.outputVariants;
     }
 
-    public long getTime() {
-        return this.time;
-    }
 
-    public Date getDeadline() {
-        return this.deadline;
-    }
-
-    public boolean getAntiPlagiarism() {
-        return this.antiPlagiarism;
-    }
-
-    public Test(ArrayList<String> input, ArrayList<ArrayList<String>> outputVariants, long time, Date deadline, boolean antiPlagiarism, boolean hardDeadline) {
+    public Test(ArrayList<String> input, ArrayList<ArrayList<String>> outputVariants) {
         this.input = input;
         this.outputVariants = outputVariants;
-        this.time = time;
-        this.antiPlagiarism = antiPlagiarism;
-        this.deadline = deadline;
-        this.hardDeadline = hardDeadline;
     }
 
     public void logOutputVariants(BufferedWriter writer) {
@@ -77,8 +54,7 @@ public class Test {
 
     @Override
     public String toString() {
-        return "{input: " + this.input + ", output: " + this.outputVariants + ", maximumOperatingTimeInMS: " + this.time +
-                ", deadline: " + deadline + ", hasHardDeadline: " + hardDeadline + ", antiPlagiarism: " + antiPlagiarism + "}";
+        return "{input: " + this.input + ", output: " + this.outputVariants + "}";
     }
 }
 
