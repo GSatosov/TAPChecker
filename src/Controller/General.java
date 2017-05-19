@@ -69,7 +69,7 @@ public class General {
                     if (!applier.startedHaskellTesting())
                         applier.startHaskellTesting();
                     Result haskellResult;
-                    if (task.getReceivedDate().getTime() > task.getTestContents().get(0).getDeadline().getTime() && task.getTestContents().get(0).hasHardDeadline())
+                    if (task.getReceivedDate().getTime() > task.getDeadline().getTime() && task.hasHardDeadline())
                         haskellResult = new Result("DL", task);
                     else
                         haskellResult = applier.handleHaskellTask(task);
@@ -95,7 +95,7 @@ public class General {
                     if (!applier.startedJavaTesting())
                         applier.startJavaTesting();
                     Result javaResult;
-                    if (task.getReceivedDate().getTime() > task.getTestContents().get(0).getDeadline().getTime() && task.getTestContents().get(0).hasHardDeadline())
+                    if (task.getReceivedDate().getTime() > task.getDeadline().getTime() && task.hasHardDeadline())
                         javaResult = new Result("DL", task);
                     else
                         javaResult = applier.handleJavaTask(task);
@@ -130,7 +130,7 @@ public class General {
         ArrayList<Task> tasks = classSystem.stream().filter(result -> result.getMessage().contains("OK")).map(Result::getTask).collect(Collectors.toCollection(ArrayList::new));
         System.out.println("Parsing file system.");
         tasks.forEach(task -> {
-            if (!taskNames.contains(task.getName()) && tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).count() > 1) {
+            if (!taskNames.contains(task.getName()) && task.shouldBeCheckedForAntiPlagiarism() && tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).count() > 1) {
                 taskNames.add(task.getName());
                 tasksForPlagiarismCheck.add(tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).collect(Collectors.toCollection(ArrayList::new)));
             }
