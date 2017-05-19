@@ -73,7 +73,7 @@ class TestsApplier {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        if (task.getReceivedDate().getTime() > task.getTestContents().get(0).getDeadline().getTime())
+        if (task.getReceivedDate().getTime() > task.getDeadline().getTime() && task.hasHardDeadline())
             return new Result("DL " + response, task);
         return new Result(response, task);
     }
@@ -100,6 +100,7 @@ class TestsApplier {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        System.out.println("(Re)Started ghci process.");
         startedHaskellTesting = true;
     }
 
@@ -173,7 +174,7 @@ class TestsApplier {
             int computationTime = 0;
             while (true) {
                 if (this.haskellOutput.size() > 0) break;
-                if (computationTime >= test.getTime()) {
+                if (computationTime >= task.getTimeInMS()) {
                     haskellProcessInput.close();
                     finishHaskellTesting();
                     Test.logList(haskellOutputWriter, this.haskellOutput);
@@ -261,7 +262,7 @@ class TestsApplier {
             if (br.readLine() != null) {
                 br.close();
                 javaOutputWriter.close();
-                if (task.getReceivedDate().getTime() > task.getTestContents().get(0).getDeadline().getTime())
+                if (task.getReceivedDate().getTime() > task.getDeadline().getTime() && task.hasHardDeadline())
                     return new Result("DL CE", task);
                 return new Result("CE", task);
             }
@@ -317,7 +318,7 @@ class TestsApplier {
                 javaOutputWriter.newLine();
                 test.logOutputVariants(javaOutputWriter);
                 while (javaProcess.isAlive()) {
-                    if (computationTime >= test.getTime()) {
+                    if (computationTime >= task.getTimeInMS()) {
                         File jpsFile = new File(parentFolder + File.separator + taskName + "Jps.txt");
                         jpsFile.createNewFile();
                         ProcessBuilder jpsProcess = new ProcessBuilder("jps");
@@ -369,7 +370,7 @@ class TestsApplier {
         inputFile.delete();
         outputFile.delete();
         new File(task.getSourcePath().substring(0, task.getSourcePath().length() - 4) + "class").delete();
-        if (task.getReceivedDate().getTime() > task.getTestContents().get(0).getDeadline().getTime())
+        if (task.getReceivedDate().getTime() > task.getDeadline().getTime() && task.hasHardDeadline())
             return new Result("DL " + response, task);
         return new Result(response, task);
     }

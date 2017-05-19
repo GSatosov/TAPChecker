@@ -13,12 +13,10 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
 
 /**
  * Created by Alexander Baranov on 03.03.2017.
@@ -154,8 +152,14 @@ public class EmailReceiver {
                         try {
                             ArrayList<Task> attachments = saveMessageAttachments(message);
                             attachments.forEach(att -> (new Thread(Thread.currentThread().getThreadGroup(), () -> {
-                                if (localTests.containsKey(att.getName())) {
-                                    att.setTestContents(localTests.get(att.getName()));
+                                if (localTests.containsKey(att)) {
+                                    att.setTestContents(localTests.get(att));
+                                    Task auxiliaryTask = localTests.keySet().stream().filter(key -> key.equals(att)).collect(Collectors.toList()).get(0);
+                                    att.setTestFields(auxiliaryTask.getTimeInMS(),
+                                            auxiliaryTask.shouldBeCheckedForAntiPlagiarism(),
+                                            auxiliaryTask.getDeadline(),
+                                            auxiliaryTask.getTaskCode(),
+                                            auxiliaryTask.hasHardDeadline());
                                     if (att.getName().endsWith(".hs")) {
                                         General.getHaskellTasksQueue().add(att);
                                     } else {
@@ -165,7 +169,7 @@ public class EmailReceiver {
                                 } else {
                                     ExponentialBackOff.execute(() -> {
                                         ArrayList<Test> cTests = GoogleDriveManager.getTests(att);
-                                        localTests.put(att.getName(), cTests);
+                                        localTests.put(att, cTests);
                                         att.setTestContents(cTests);
                                         System.out.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " s).");
                                         if (att.getName().endsWith(".hs")) {
@@ -196,7 +200,7 @@ public class EmailReceiver {
 
     private static CountDownLatch downloadedMessagesCount;
 
-    private static ConcurrentHashMap<String, ArrayList<Test>> localTests;
+    private static ConcurrentHashMap<Task, ArrayList<Test>> localTests;
 
     /*
     Retrieve attachments from message
