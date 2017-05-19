@@ -76,12 +76,11 @@ public class ResultsSender implements Runnable {
         this.onClassSystemReady = onClassSystemReady;
     }
 
-
     ResultsSender(ArrayList<Result> rs, Callback onExit, @NotNull List<Result> classSystem, Callback onClassSystemReady) {
         this(rs, onExit, true, classSystem, onClassSystemReady);
     }
 
-    public ResultsSender(Callback onExit, @NotNull List<Result> classSystem, Callback onClassSystemReady) {
+    ResultsSender(Callback onExit, @NotNull List<Result> classSystem, Callback onClassSystemReady) {
         this(null, onExit, false, classSystem, onClassSystemReady);
     }
 
@@ -290,6 +289,7 @@ public class ResultsSender implements Runnable {
         results.forEach(result -> {
             Task task = new Task(result.getTask().getName(), result.getSubject(), result.getTask().getSourcePath(), result.getTask().getReceivedDate());
             task.setAuthor(new Student(result.getStudent().getName(), result.getStudent().getGroupName()));
+            task.setTestFields(result.getTask().getTimeInMS(), result.getTask().shouldBeCheckedForAntiPlagiarism(), result.getTask().getDeadline(), result.getTask().getTaskCode(), result.getTask().hasHardDeadline());
             fileSystem.add(new Result(result.getMessage(), task));
         });
         return fileSystem;
