@@ -64,8 +64,6 @@ class TestsApplier {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        if (task.getReceivedDate().getTime() > task.getDeadline().getTime() && task.hasHardDeadline())
-            return new Result("DL " + response, task);
         return new Result(response, task);
     }
 
@@ -260,8 +258,6 @@ class TestsApplier {
             if (br.readLine() != null) {
                 br.close();
                 javaOutputWriter.close();
-                if (task.getReceivedDate().getTime() > task.getDeadline().getTime() && task.hasHardDeadline())
-                    return new Result("DL CE", task);
                 return new Result("CE", task);
             }
             errorFile.createNewFile();
@@ -368,8 +364,6 @@ class TestsApplier {
         inputFile.delete();
         outputFile.delete();
         new File(task.getSourcePath().substring(0, task.getSourcePath().length() - 4) + "class").delete();
-        if (task.getReceivedDate().getTime() > task.getDeadline().getTime() && task.hasHardDeadline())
-            return new Result("DL " + response, task);
         return new Result(response, task);
     }
 }

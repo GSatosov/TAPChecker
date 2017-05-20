@@ -81,9 +81,6 @@ public class General {
                             break;
                     startedHaskellTesting = true;
                     Result haskellResult;
-                    if (task.getReceivedDate().getTime() > task.getDeadline().getTime() && task.hasHardDeadline())
-                        haskellResult = new Result("DL", task);
-                    else
                         haskellResult = applier.handleHaskellTask(task);
                     if (haskellResult.getMessage().contains("OK")
                             && task.shouldBeCheckedForAntiPlagiarism()
@@ -114,9 +111,6 @@ public class General {
                         startedJavaTesting = true;
                     }
                     Result javaResult;
-                    if (task.getReceivedDate().getTime() > task.getDeadline().getTime() && task.hasHardDeadline())
-                        javaResult = new Result("DL", task);
-                    else
                         javaResult = applier.handleJavaTask(task);
                     if (javaResult.getMessage().contains("OK")
                             && task.shouldBeCheckedForAntiPlagiarism()
