@@ -43,7 +43,7 @@ public class MainController implements Initializable {
         return settingsFrame;
     }
 
-    public void showResults(ArrayList<Result> results) {
+    public void showResults(List<Result> results) {
         resultsTable.getTabs().clear();
         HashMap<String, ArrayList<Result>> resultsSplitSubjects = new HashMap<>();
         results.stream().forEach(r -> {
@@ -115,7 +115,11 @@ public class MainController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         tests.setOnAction(event -> {
             tests.setDisable(true);
-            General.getResults(() -> tests.setDisable(false), this);
+            try {
+                General.getResults(() -> tests.setDisable(false), this);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         });
 
         switchTables.setOnAction(event -> {
@@ -138,7 +142,7 @@ public class MainController implements Initializable {
 
             settingsFrame.initModality(Modality.WINDOW_MODAL);
             settingsFrame.initOwner(MainFrame.getPrimaryStage());
-            settingsFrame.setTitle("Settings");
+            settingsFrame.setTitle("GlobalSettings");
             settingsFrame.setResizable(false);
             settingsFrame.show();
         });

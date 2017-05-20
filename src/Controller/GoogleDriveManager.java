@@ -1,6 +1,6 @@
 package Controller;
 
-import Model.Settings;
+import Model.GlobalSettings;
 import Model.Task;
 import Model.Test;
 import com.google.api.client.auth.oauth2.Credential;
@@ -49,7 +49,7 @@ public class GoogleDriveManager {
     static {
         try {
             HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-            DATA_STORE_FACTORY = new FileDataStoreFactory(Settings.getCredentialsStoreDir());
+            DATA_STORE_FACTORY = new FileDataStoreFactory(GlobalSettings.getCredentialsStoreDir());
         } catch (Throwable t) {
             t.printStackTrace();
             System.exit(1);
@@ -70,7 +70,7 @@ public class GoogleDriveManager {
         tScopes.add(DriveScopes.DRIVE_FILE);
         tScopes.add(DriveScopes.DRIVE_READONLY);
         Set<String> SCOPES = Collections.unmodifiableSet(tScopes);
-        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY, Settings.getClientId(), Settings.getClientSecret(), SCOPES).setDataStoreFactory(DATA_STORE_FACTORY).setAccessType("offline").build();
+        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY, GlobalSettings.getClientId(), GlobalSettings.getClientSecret(), SCOPES).setDataStoreFactory(DATA_STORE_FACTORY).setAccessType("offline").build();
         return new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
     }
 
@@ -85,7 +85,7 @@ public class GoogleDriveManager {
             Credential credential = authorize();
             service = new Drive.Builder(
                     HTTP_TRANSPORT, JSON_FACTORY, credential)
-                    .setApplicationName(Settings.getApplicationName())
+                    .setApplicationName(GlobalSettings.getApplicationName())
                     .build();
         }
         return service;

@@ -1,7 +1,7 @@
 package View;
 
 import Controller.EmailReceiver;
-import Model.Settings;
+import Model.GlobalSettings;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -40,8 +40,8 @@ public class LoginController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         loginIndicator.setVisible(false);
-        if (!Settings.getInstance().getEmail().isEmpty())
-            emailField.setText(getHostName(Settings.getInstance().getEmail()));
+        if (!GlobalSettings.getInstance().getEmail().isEmpty())
+            emailField.setText(getHostName(GlobalSettings.getInstance().getEmail()));
         mailServer.setItems(FXCollections.observableArrayList("@gmail.com", "@mail.ru"));
         mailServer.setValue(mailServer.getItems().get(0));
 
@@ -68,19 +68,12 @@ public class LoginController implements Initializable {
                     loginIndicator.setVisible(false);
                     return;
                 }
-                Settings.setEmail(email);
-                Settings.setPassword(password);
-                try {
-                    Settings.getInstance().saveSettings();
-                    pwField.clear();
-                    loginIndicator.setVisible(false);
-                    login.setDisable(false);
-                    Platform.runLater(() -> MainFrame.setStagetoMain());
-                } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IOException e) {
-                    loginIndicator.setVisible(false);
-                    login.setDisable(false);
-                    e.printStackTrace();
-                }
+                GlobalSettings.setEmail(email);
+                GlobalSettings.setPassword(password);
+                pwField.clear();
+                loginIndicator.setVisible(false);
+                login.setDisable(false);
+                Platform.runLater(() -> MainFrame.setStagetoMain());
             }).start();
         });
     }

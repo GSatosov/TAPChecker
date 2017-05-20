@@ -1,6 +1,7 @@
 package Controller;
 
 import Model.Callback;
+import Model.LocalSettings;
 import Model.Result;
 import Model.Task;
 import View.MainController;
@@ -29,7 +30,7 @@ public class General {
 
     private static ConcurrentLinkedQueue<Task> haskellTasksQueue;
     private static ConcurrentLinkedQueue<Task> javaTasksQueue;
-    private static CountDownLatch latch;
+    private static CountDownLatch latchForTaskAppliers;
 
     static ConcurrentLinkedQueue<Task> getHaskellTasksQueue() {
         return haskellTasksQueue;
@@ -47,7 +48,7 @@ public class General {
         return startDate;
     }
 
-    public static void getResults(Callback onExit, MainController mainController) {
+    public static void getResults(Callback onExit, MainController mainController) throws InterruptedException {
         try {
             GoogleDriveManager.authorize();
         } catch (IOException e) {
@@ -55,9 +56,9 @@ public class General {
             return;
         }
         tasksThatShouldBeCheckedOnAntiPlagiarism = new ArrayList<>();
-        latch = new CountDownLatch(2);
+        latchForTaskAppliers = new CountDownLatch(2);
         startDate = new Date();
-        ArrayList<Result> results = new ArrayList<>();
+        List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
         haskellTasksQueue = new ConcurrentLinkedQueue<>();
         javaTasksQueue = new ConcurrentLinkedQueue<>();
         TestsApplier applier = new TestsApplier();
@@ -69,6 +70,7 @@ public class General {
                 e.printStackTrace();
             }
         })).start();
+
         (new Thread(() -> {
             boolean startedHaskellTesting = false;
             while (tGroup.activeCount() > 0 || !haskellTasksQueue.isEmpty()) {
@@ -100,7 +102,7 @@ public class General {
             if (startedHaskellTesting)
                 applier.finishHaskellTesting();
             System.out.println("Haskell task applier closed: " + (new Date().getTime() - startDate.getTime() + " ms."));
-            latch.countDown();
+            latchForTaskAppliers.countDown();
         })).start();
         (new Thread(() -> {
             boolean startedJavaTesting = false;
@@ -131,36 +133,37 @@ public class General {
                 }
             }
             System.out.println("Java task applier closed: " + (new Date().getTime() - startDate.getTime() + " ms."));
-            latch.countDown();
+            latchForTaskAppliers.countDown();
         })).start();
+
+        latchForTaskAppliers.await();
+
+        LocalSettings.getInstance().getResults().addAll(results);
+        startAntiplagiarismTesting();
+
         CountDownLatch tableLatch = new CountDownLatch(1);
         (new Thread(() -> {
-            try {
-                latch.await();
-                System.out.println("Running thread for results sender...");
-                List<Result> classSystem = Collections.synchronizedList(new ArrayList<Result>());
-                (new Thread(new ResultsSender(results, () -> {
-                    tableLatch.countDown();
-                    onExit.call();
-                }, classSystem, () -> startAntiplagiarismTesting(classSystem)))).start();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            System.out.println("Running thread for results sender...");
+            (new Thread(new ResultsSender(results))).start();
         })).start();
         Platform.runLater(() -> {
             try {
                 tableLatch.await();
                 System.out.println("Sending results to table");
-                Platform.runLater((new Thread(() -> mainController.showResults(results))));
+                Platform.runLater((new Thread(() -> {
+                    mainController.showResults(results);
+                })));
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         });
+        tableLatch.countDown();
+        onExit.call();
     }
 
-    private static void startAntiplagiarismTesting(List<Result> classSystem) {
+    private static void startAntiplagiarismTesting() {
         List<ArrayList<Task>> tasksForPlagiarismCheck = Collections.synchronizedList(new ArrayList<ArrayList<Task>>());
-        ArrayList<Task> tasks = classSystem.stream().filter(result -> result.getMessage().contains("OK")).map(Result::getTask).collect(Collectors.toCollection(ArrayList::new));
+        ArrayList<Task> tasks = LocalSettings.getInstance().getResults().stream().filter(result -> result.getMessage().contains("OK")).map(Result::getTask).collect(Collectors.toCollection(ArrayList::new));
         System.out.println("Parsing file system.");
         tasks.forEach(task -> {
             if (tasksThatShouldBeCheckedOnAntiPlagiarism.contains(task.getName()) && tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).count() > 1) {

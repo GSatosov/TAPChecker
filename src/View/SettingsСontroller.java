@@ -1,6 +1,6 @@
 package View;
 
-import Model.Settings;
+import Model.GlobalSettings;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -36,12 +36,7 @@ public class SettingsСontroller implements Initializable {
             //
         });
         logout.setOnAction(event -> {
-            Settings.getInstance().setPassword("");
-            try {
-                Settings.getInstance().saveSettings();
-            } catch (InvalidKeyException | IOException | NoSuchPaddingException | NoSuchAlgorithmException e) {
-                e.printStackTrace();
-            }
+            GlobalSettings.getInstance().setPassword("");
             MainController.getSettingsFrame().close();
             MainFrame.setStageToLogin();
         });

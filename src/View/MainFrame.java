@@ -1,7 +1,7 @@
 package View;
 
 import Controller.EmailReceiver;
-import Model.Settings;
+import Model.GlobalSettings;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -64,8 +64,8 @@ public class MainFrame extends Application {
         setLoginScene(new Scene(FXMLLoader.load(getClass().getResource("Login.fxml")), 430, 180));
         setMainScene(new Scene(FXMLLoader.load(getClass().getResource("Main.fxml")), 640, 480));
 
-        if (((Settings.getInstance().getEmail().isEmpty())&(Settings.getInstance().getPassword().isEmpty())) ||
-                (!EmailReceiver.validate(Settings.getInstance().getEmail(),Settings.getInstance().getPassword()))) {
+        if (((GlobalSettings.getInstance().getEmail().isEmpty())&(GlobalSettings.getInstance().getPassword().isEmpty())) ||
+                (!EmailReceiver.validate(GlobalSettings.getInstance().getEmail(), GlobalSettings.getInstance().getPassword()))) {
             setStageToLogin();
         } else {
             primaryStage.setScene(mainScene);

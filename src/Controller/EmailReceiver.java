@@ -1,9 +1,6 @@
 package Controller;
 
-import Model.Settings;
-import Model.Student;
-import Model.Task;
-import Model.Test;
+import Model.*;
 
 import javax.crypto.NoSuchPaddingException;
 import javax.mail.*;
@@ -56,7 +53,7 @@ public class EmailReceiver {
         try {
             Store store = session.getStore();
             System.out.println("Credentials validation: Trying to connect...");
-            store.connect(Settings.getHostByEmail(email), email, password);
+            store.connect(GlobalSettings.getHostByEmail(email), email, password);
         } catch (MessagingException e) {
             System.out.println("Credentials validation: Failed!");
             return false;
@@ -99,7 +96,7 @@ public class EmailReceiver {
             for (int i = 0; i < multiPart.getCount(); i++) {
                 MimeBodyPart part = (MimeBodyPart) multiPart.getBodyPart(i);
                 if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
-                    String folder = Settings.getDataFolder() + "/" + Transliteration.cyr2lat(subject[2]) + "/" + Transliteration.cyr2lat(subject[1]) + "/" + Transliteration.cyr2lat(subject[0]) + "/" + (new SimpleDateFormat(Settings.getSourcesDateFormat())).format(message.getReceivedDate());
+                    String folder = GlobalSettings.getDataFolder() + "/" + Transliteration.cyr2lat(subject[2]) + "/" + Transliteration.cyr2lat(subject[1]) + "/" + Transliteration.cyr2lat(subject[0]) + "/" + (new SimpleDateFormat(GlobalSettings.getSourcesDateFormat())).format(message.getReceivedDate());
                     File dir = new File(folder);
                     dir.mkdirs();
                     File f = new File(folder + "/" + part.getFileName());
@@ -121,11 +118,10 @@ public class EmailReceiver {
         props.put("mail.store.protocol", "imaps");
         Session session = Session.getInstance(props);
         Store store = session.getStore();
-        store.connect(Settings.getInstance().getHost(), Settings.getEmail(), Settings.getPassword());
+        store.connect(GlobalSettings.getInstance().getHost(), GlobalSettings.getEmail(), GlobalSettings.getPassword());
         Folder inbox = store.getFolder("INBOX");
         Message[] messages = receiveEmails(inbox);
-        Date lastDateEmailChecking = Settings.getInstance().getLastDateEmailChecked();
-        System.out.println(lastDateEmailChecking.toString());
+        Date lastDateEmailChecking = LocalSettings.getInstance().getLastDateEmailChecked();
         Date newDateEmailChecking = new Date();
         downloadedMessagesCount = new CountDownLatch(messages.length);
         localTests = new ConcurrentHashMap<>();
@@ -167,8 +163,17 @@ public class EmailReceiver {
                             })).start());
                             downloadedMessagesCount.countDown();
                             if (downloadedMessagesCount.getCount() == 0) {
-                                Settings.getInstance().setLastDateEmailChecked(new Date(0L));  // Left this way for testing purposes.
-                                Settings.getInstance().saveSettings();
+                                // TODO Delete this block before deploy
+                                {
+                                    // Left this way for testing purposes.
+                                    LocalSettings.getInstance().setLastDateEmailChecked(new Date(0L));
+                                    LocalSettings.getInstance().getResults().clear();
+                                }
+                                /*
+                                TODO uncomment this before deploy
+                                LocalSettings.getInstance().setLastDateEmailChecked(newDateEmailChecking);
+                                 */
+                                LocalSettings.getInstance().saveSettings();
                                 inbox.close(false);
                             }
                         } catch (IOException | MessagingException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException e) {

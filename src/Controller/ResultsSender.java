@@ -23,10 +23,6 @@ import java.util.stream.Collectors;
 public class ResultsSender implements Runnable {
 
     private HashMap<String, ArrayList<Result>> results;
-    private Callback onExit;
-    private Callback onClassSystemReady;
-    private boolean updateTable;
-    private List<Result> classSystem;
 
     private boolean deleteDirectory(File file) {
         File[] contents = file.listFiles();
@@ -41,7 +37,7 @@ public class ResultsSender implements Runnable {
         return flag && file.delete();
     }
 
-    private ResultsSender(ArrayList<Result> rs, Callback onExit, boolean updateTable, @NotNull List<Result> classSystem, Callback onClassSystemReady) {
+    public ResultsSender(List<Result> rs) {
         this.results = new HashMap<>();
         if (rs != null) {
             rs.sort((r1, r2) -> r2.getTask().getReceivedDate().compareTo(r1.getTask().getReceivedDate()));
@@ -70,30 +66,18 @@ public class ResultsSender implements Runnable {
                 results.put(key, res);
             });
         }
-        this.onExit = onExit;
-        this.updateTable = updateTable;
-        this.classSystem = classSystem;
-        this.onClassSystemReady = onClassSystemReady;
-    }
-
-    ResultsSender(ArrayList<Result> rs, Callback onExit, @NotNull List<Result> classSystem, Callback onClassSystemReady) {
-        this(rs, onExit, true, classSystem, onClassSystemReady);
-    }
-
-    ResultsSender(Callback onExit, @NotNull List<Result> classSystem, Callback onClassSystemReady) {
-        this(null, onExit, false, classSystem, onClassSystemReady);
     }
 
     @Override
     public void run() {
-        if (Settings.getInstance().getResultsTableURL().isEmpty()) {
+        /*if (GlobalSettings.getInstance().getResultsTableURL().isEmpty()) {
             onExit.call();
             throw new RuntimeException("There is no table for results!");
         }
         try {
             this.classSystem.clear();
             Sheets service = GoogleSheetsManager.getService();
-            String spreadsheetId = Settings.getInstance().getResultsTableURL();
+            String spreadsheetId = GlobalSettings.getInstance().getResultsTableURL();
             final Spreadsheet responseAllSheets = service.spreadsheets().get(spreadsheetId).execute();
             responseAllSheets.getSheets().forEach(sheet -> {
                 if (!results.containsKey(sheet.getProperties().getTitle())) {
@@ -152,14 +136,14 @@ public class ResultsSender implements Runnable {
                                                 if (!result.isEmpty() && v.stream().noneMatch(r -> r.getTask().getName().split("\\.")[0].toLowerCase().equals(tasks.get(index - 1).toLowerCase()) && r.getStudent().getName().equals(name) && r.getGroup().equals(group))) {
                                                     String taskName = tasks.get(index - 1);
 
-                                                    Optional<Path> path = Files.find(Paths.get(Settings.getDataFolder() + "/" + Transliteration.cyr2lat(subject.replaceAll(" ", "_")) + "/" + Transliteration.cyr2lat(group) + "/" + Transliteration.cyr2lat(name.replaceAll(" ", "_"))), Integer.MAX_VALUE,
+                                                    Optional<Path> path = Files.find(Paths.get(GlobalSettings.getDataFolder() + "/" + Transliteration.cyr2lat(subject.replaceAll(" ", "_")) + "/" + Transliteration.cyr2lat(group) + "/" + Transliteration.cyr2lat(name.replaceAll(" ", "_"))), Integer.MAX_VALUE,
                                                             (filePath, fileAttr) -> !fileAttr.isDirectory() && filePath.getFileName().toString().split("\\.")[0].toLowerCase().equals(taskName.toLowerCase()))
                                                             .sorted((f1, f2) -> f2.getParent().getFileName().compareTo(f1.getParent().getFileName())).findFirst();
                                                     if (!path.isPresent()) {
                                                         onExit.call();
                                                         throw new RuntimeException("There is no file with source code: " + name + ", " + taskName);
                                                     }
-                                                    Task downloadedTask = new Task(path.get().getFileName().toString(), subject, path.get().toAbsolutePath().toString(), new SimpleDateFormat(Settings.getSourcesDateFormat(), Locale.ENGLISH).parse(path.get().getParent().getFileName().toString()));
+                                                    Task downloadedTask = new Task(path.get().getFileName().toString(), subject, path.get().toAbsolutePath().toString(), new SimpleDateFormat(GlobalSettings.getSourcesDateFormat(), Locale.ENGLISH).parse(path.get().getParent().getFileName().toString()));
                                                     Student downloadedStudent = new Student(studentName, group);
                                                     downloadedTask.setAuthor(downloadedStudent);
                                                     Result downloadedResult = new Result(result, downloadedTask);
@@ -281,7 +265,7 @@ public class ResultsSender implements Runnable {
         }
         if (updateTable) System.out.println("Results successfully loaded to Google spreadsheet!");
         onExit.call();
-        onClassSystemReady.call();
+        onClassSystemReady.call();*/
     }
 
     private List<Result> getFileSystem(ArrayList<Result> results) {
