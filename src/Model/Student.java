@@ -1,10 +1,12 @@
 package Model;
 
 
+import java.io.Serializable;
+
 /**
  * Created by GSatosov on 3/3/2017.
  */
-public class Student {
+public class Student implements Serializable {
     private String name;
     private String groupName;
 

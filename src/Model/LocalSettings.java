@@ -28,6 +28,7 @@ public class LocalSettings implements Serializable {
                             instance = (LocalSettings) ois.readObject();
                         } catch (IOException | ClassNotFoundException e) {
                             instance = new LocalSettings();
+                            settingsFile.delete();
                             e.printStackTrace();
                         }
                     } else {
@@ -57,15 +58,12 @@ public class LocalSettings implements Serializable {
         return results;
     }
 
-
-    private HashMap<String, ArrayList<String>> subjectsAndGroups = new HashMap<>();
-
-    public HashMap<String, ArrayList<String>> getSubjectsAndGroups() {
-        return subjectsAndGroups;
+    public void setResults(List<Result> results) {
+        this.results = Collections.synchronizedList(results);
     }
 
 
-    public void saveSettings() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
+    public static void saveSettings() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
         (new File(GlobalSettings.getDataFolder())).mkdirs();
         FileOutputStream fout = new FileOutputStream(GlobalSettings.getDataFolder() + "/" + GlobalSettings.getLocalSettingsFileName());
         ObjectOutputStream oos = new ObjectOutputStream(fout);

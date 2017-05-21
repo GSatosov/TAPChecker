@@ -8,6 +8,7 @@ import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInsta
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.FileContent;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
@@ -24,6 +25,7 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -62,7 +64,7 @@ public class GoogleDriveManager {
      * @return an authorized Credential object.
      * @throws IOException
      */
-    static Credential authorize() throws IOException {
+    public static Credential authorize() throws IOException {
         // Build flow and trigger user authorization request.
         HashSet tScopes = new HashSet();
         tScopes.addAll(SheetsScopes.all());
@@ -96,7 +98,7 @@ public class GoogleDriveManager {
             synchronized (Sheets.class) {
                 if (service == null) {
                     Credential credential = authorize();
-                    service = new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).build();
+                    service = new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).setApplicationName(GlobalSettings.getApplicationName()).build();
                 }
             }
         }
@@ -104,6 +106,43 @@ public class GoogleDriveManager {
     }
 
     private static volatile Drive service;
+
+    public static ByteArrayOutputStream getGlobalSettings() throws IOException {
+        Drive service = getDriveService();
+        Optional<File> result = service.files().list()
+                .setQ("name contains '" + GlobalSettings.getGlobalSettingsFileName() + "' and trashed = false")
+                .execute().getFiles().stream().findFirst();
+        if (result.isPresent()) {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            service.files().get(result.get().getId())
+                    .executeMediaAndDownloadTo(byteArrayOutputStream);
+            return byteArrayOutputStream;
+        }
+        return null;
+    }
+
+    public static void saveGlobalSettings() throws IOException {
+        Drive service = getDriveService();
+        FileList result = service.files().list()
+                .setQ("name contains '" + GlobalSettings.getGlobalSettingsFileName() + "' and trashed = false")
+                .execute();
+        result.getFiles().forEach(file -> {
+            try {
+                service.files().delete(file.getId()).execute();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        com.google.api.services.drive.model.File fileMetadata = new com.google.api.services.drive.model.File();
+        fileMetadata.setName(GlobalSettings.getGlobalSettingsFileName());
+        java.io.File filePath = new java.io.File(GlobalSettings.getDataFolder() + "/" + GlobalSettings.getGlobalSettingsFileName());
+        FileContent mediaContent = new FileContent(Files.probeContentType(filePath.toPath()), filePath);
+        com.google.api.services.drive.model.File file = GoogleDriveManager.getService().files().create(fileMetadata, mediaContent)
+                .setFields("id")
+                .execute();
+    }
+
 
     static ArrayList<Test> getTests(Task task) throws IOException, ParseException {
         Drive service = getDriveService();

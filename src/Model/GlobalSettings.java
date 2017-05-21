@@ -1,10 +1,17 @@
 package Model;
 
+import Controller.GoogleDriveManager;
+import com.google.api.client.http.FileContent;
+import com.google.api.services.drive.model.*;
+
 import javax.crypto.NoSuchPaddingException;
 import java.io.*;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Date;
+import java.util.*;
 
 /**
  * Created by Alexander Baranov on 03.03.2017.
@@ -18,18 +25,19 @@ public class GlobalSettings implements Serializable {
         if (instance == null) {
             synchronized (GlobalSettings.class) {
                 if (instance == null) {
-                    File settingsFile = new File(getDataFolder() + "/" + getGlobalSettingsFileName());
-                    if (settingsFile.exists()) {
-                        try {
-                            FileInputStream fin = new FileInputStream(getDataFolder() + "/" + getGlobalSettingsFileName());
-                            ObjectInputStream ois = new ObjectInputStream(fin);
-                            instance = (GlobalSettings) ois.readObject();
-                        } catch (IOException | ClassNotFoundException e) {
-                            instance = new GlobalSettings();
-                            e.printStackTrace();
+                    try {
+                        ByteArrayOutputStream outputStream = GoogleDriveManager.getGlobalSettings();
+                        if (outputStream != null) {
+                            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(outputStream.toByteArray());
+                            ObjectInput in = new ObjectInputStream(byteArrayInputStream);
+                            instance = (GlobalSettings) in.readObject();
                         }
-                    } else {
+                        else {
+                            instance = new GlobalSettings();
+                        }
+                    } catch (IOException | ClassNotFoundException e) {
                         instance = new GlobalSettings();
+                        e.printStackTrace();
                     }
                 }
             }
@@ -41,10 +49,25 @@ public class GlobalSettings implements Serializable {
     Serializable variables
      */
 
-    private String resultsTableURL = "1cIg4hbegIKJfiy7-CM0lzXqRss8AgyxYlWFGT3hxZE8";
+    private String resultsTableURL = "https://docs.google.com/spreadsheets/d/1cIg4hbegIKJfiy7-CM0lzXqRss8AgyxYlWFGT3hxZE8/edit#gid=0";
 
     public String getResultsTableURL() {
         return resultsTableURL;
+    }
+
+
+    private HashMap<String, List<String>> subjectsAndGroups = new HashMap<>();
+
+    public HashMap<String, List<String>> getSubjectsAndGroups() {
+        return subjectsAndGroups;
+    }
+
+    // TODO Delete that block
+    {
+        List<String> java = Arrays.asList("A3400", "A3401", "A3402", "A3403");
+        List<String> haskell = Arrays.asList("A3300", "A3301", "A3400", "A3401", "A3402", "A3403");
+        getSubjectsAndGroups().put("Java", java);
+        getSubjectsAndGroups().put("Функциональное программирование", haskell);
     }
 
 
@@ -136,8 +159,23 @@ public class GlobalSettings implements Serializable {
 
     private transient static final String globalSettingsFileName = "globalSettings.dat";
 
-    private static String getGlobalSettingsFileName() {
+    public static String getGlobalSettingsFileName() {
         return globalSettingsFileName;
+    }
+
+    public static void saveFile() throws IOException {
+        (new File(GlobalSettings.getDataFolder())).mkdirs();
+        FileOutputStream fout = new FileOutputStream(getDataFolder() + "/" + getGlobalSettingsFileName());
+        ObjectOutputStream oos = new ObjectOutputStream(fout);
+        oos.writeObject(getInstance());
+        oos.close();
+        fout.close();
+
+        GoogleDriveManager.saveGlobalSettings();
+
+        File globalSettings = new File(getDataFolder() + "/" + getGlobalSettingsFileName());
+        globalSettings.delete();
+
     }
 
 }

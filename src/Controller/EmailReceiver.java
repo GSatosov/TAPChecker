@@ -163,14 +163,14 @@ public class EmailReceiver {
                             })).start());
                             downloadedMessagesCount.countDown();
                             if (downloadedMessagesCount.getCount() == 0) {
-                                // TODO Delete this block before deploy
+                                // TODO Delete that block before deploy
                                 {
                                     // Left this way for testing purposes.
                                     LocalSettings.getInstance().setLastDateEmailChecked(new Date(0L));
                                     LocalSettings.getInstance().getResults().clear();
                                 }
                                 /*
-                                TODO uncomment this before deploy
+                                TODO uncomment that before deploy
                                 LocalSettings.getInstance().setLastDateEmailChecked(newDateEmailChecking);
                                  */
                                 LocalSettings.getInstance().saveSettings();

@@ -1,6 +1,7 @@
 package View;
 
 import Controller.EmailReceiver;
+import Controller.GoogleDriveManager;
 import Model.GlobalSettings;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -68,6 +69,7 @@ public class MainFrame extends Application {
                 (!EmailReceiver.validate(GlobalSettings.getInstance().getEmail(), GlobalSettings.getInstance().getPassword()))) {
             setStageToLogin();
         } else {
+            GoogleDriveManager.authorize();
             primaryStage.setScene(mainScene);
         }
 

@@ -1,12 +1,13 @@
 package Model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 
 /**
  * Created by GSatosov on 3/3/2017.
  */
-public class Task {
+public class Task implements Serializable {
     private String subjectName;
     private String name;
     private String sourcePath;

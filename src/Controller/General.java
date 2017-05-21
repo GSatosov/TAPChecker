@@ -1,9 +1,6 @@
 package Controller;
 
-import Model.Callback;
-import Model.LocalSettings;
-import Model.Result;
-import Model.Task;
+import Model.*;
 import View.MainController;
 import javafx.application.Platform;
 
@@ -13,12 +10,10 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
@@ -49,109 +44,128 @@ public class General {
     }
 
     public static void getResults(Callback onExit, MainController mainController) throws InterruptedException {
-        try {
-            GoogleDriveManager.authorize();
-        } catch (IOException e) {
-            onExit.call();
-            return;
-        }
-        tasksThatShouldBeCheckedOnAntiPlagiarism = new ArrayList<>();
-        latchForTaskAppliers = new CountDownLatch(2);
         startDate = new Date();
+
+        latchForTaskAppliers = new CountDownLatch(2);
+        ThreadGroup tGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), "Tasks Receivers");
+        (new Thread(tGroup, () -> {
+                try {
+                    EmailReceiver.retrieveMessagesData();
+                } catch (IOException | MessagingException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException e) {
+                    e.printStackTrace();
+                }
+            })).start();
+
         List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
         haskellTasksQueue = new ConcurrentLinkedQueue<>();
         javaTasksQueue = new ConcurrentLinkedQueue<>();
-        TestsApplier applier = new TestsApplier();
-        ThreadGroup tGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), "Tasks Receivers");
-        (new Thread(tGroup, () -> {
-            try {
-                EmailReceiver.retrieveMessagesData();
-            } catch (IOException | MessagingException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException e) {
-                e.printStackTrace();
-            }
-        })).start();
-
-        (new Thread(() -> {
-            boolean startedHaskellTesting = false;
-            while (tGroup.activeCount() > 0 || !haskellTasksQueue.isEmpty()) {
-                if (!getHaskellTasksQueue().isEmpty()) {
-                    Task task = getHaskellTasksQueue().poll();
-                    if (!startedHaskellTesting)
-                        if (!applier.startHaskellTesting())
-                            break;
-                    startedHaskellTesting = true;
-                    Result haskellResult;
+        tasksThatShouldBeCheckedOnAntiPlagiarism = new ArrayList<>();
+        {
+            TestsApplier applier = new TestsApplier();
+            (new Thread(() -> {
+                boolean startedHaskellTesting = false;
+                while (tGroup.activeCount() > 0 || !haskellTasksQueue.isEmpty()) {
+                    if (!getHaskellTasksQueue().isEmpty()) {
+                        Task task = getHaskellTasksQueue().poll();
+                        if (!startedHaskellTesting)
+                            if (!applier.startHaskellTesting())
+                                break;
+                        startedHaskellTesting = true;
+                        Result haskellResult;
                         haskellResult = applier.handleHaskellTask(task);
-                    if (haskellResult.getMessage().contains("OK")
-                            && task.shouldBeCheckedForAntiPlagiarism()
-                            && !tasksThatShouldBeCheckedOnAntiPlagiarism.contains(task.getName()))
-                        tasksThatShouldBeCheckedOnAntiPlagiarism.add(task.getName());
-                    results.add(haskellResult);
-                    System.out.println(haskellResult);
-                } else {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        if (haskellResult.getMessage().contains("OK")
+                                && task.shouldBeCheckedForAntiPlagiarism()
+                                && !tasksThatShouldBeCheckedOnAntiPlagiarism.contains(task.getName()))
+                            tasksThatShouldBeCheckedOnAntiPlagiarism.add(task.getName());
+                        results.add(haskellResult);
+                        System.out.println(haskellResult);
+                    } else {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
-            }
-            if (startedHaskellTesting)
-                applier.finishHaskellTesting();
-            System.out.println("Haskell task applier closed: " + (new Date().getTime() - startDate.getTime() + " ms."));
-            latchForTaskAppliers.countDown();
-        })).start();
-        (new Thread(() -> {
-            boolean startedJavaTesting = false;
-            while (tGroup.activeCount() > 0 || !javaTasksQueue.isEmpty()) {
-                if (!getJavaTasksQueue().isEmpty()) {
-                    Task task = getJavaTasksQueue().poll();
-                    if (!startedJavaTesting) {
-                        applier.startJavaTesting();
-                        startedJavaTesting = true;
-                    }
-                    Result javaResult;
+                if (startedHaskellTesting)
+                    applier.finishHaskellTesting();
+                System.out.println("Haskell task applier closed: " + (new Date().getTime() - startDate.getTime() + " ms."));
+                latchForTaskAppliers.countDown();
+            })).start();
+            (new Thread(() -> {
+                boolean startedJavaTesting = false;
+                while (tGroup.activeCount() > 0 || !javaTasksQueue.isEmpty()) {
+                    if (!getJavaTasksQueue().isEmpty()) {
+                        Task task = getJavaTasksQueue().poll();
+                        if (!startedJavaTesting) {
+                            applier.startJavaTesting();
+                            startedJavaTesting = true;
+                        }
+                        Result javaResult;
                         javaResult = applier.handleJavaTask(task);
-                    if (javaResult.getMessage().contains("OK")
-                            && task.shouldBeCheckedForAntiPlagiarism()
-                            && !tasksThatShouldBeCheckedOnAntiPlagiarism.contains(task.getName()))
-                        tasksThatShouldBeCheckedOnAntiPlagiarism.add(task.getName());
-                    results.add(javaResult);
-                    System.out.println(javaResult);
-                } else {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        if (javaResult.getMessage().contains("OK")
+                                && task.shouldBeCheckedForAntiPlagiarism()
+                                && !tasksThatShouldBeCheckedOnAntiPlagiarism.contains(task.getName()))
+                            tasksThatShouldBeCheckedOnAntiPlagiarism.add(task.getName());
+                        results.add(javaResult);
+                        System.out.println(javaResult);
+                    } else {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
-            }
-            System.out.println("Java task applier closed: " + (new Date().getTime() - startDate.getTime() + " ms."));
-            latchForTaskAppliers.countDown();
-        })).start();
+                System.out.println("Java task applier closed: " + (new Date().getTime() - startDate.getTime() + " ms."));
+                latchForTaskAppliers.countDown();
+            })).start();
+        }
 
         latchForTaskAppliers.await();
 
-        LocalSettings.getInstance().getResults().addAll(results);
-        startAntiplagiarismTesting();
-
-        CountDownLatch tableLatch = new CountDownLatch(1);
-        (new Thread(() -> {
-            System.out.println("Running thread for results sender...");
-            (new Thread(new ResultsSender(results))).start();
-        })).start();
-        Platform.runLater(() -> {
+        // Putting results in class system and save it
+        {
+            LocalSettings.getInstance().getResults().addAll(results);
+            List<Result> filteredResults = Collections.synchronizedList(new ArrayList<Result>());
+            LocalSettings.getInstance().getResults().stream().forEach(result -> {
+                Optional<Result> firstResult = filteredResults.stream().filter(r -> r.getStudent().getName().equals(result.getStudent().getName()) && r.getTask().getName().equals(result.getTask().getName()) && r.getGroup().equals(result.getStudent().getGroupName())).findFirst();
+                if (firstResult.isPresent()) {
+                    Result old = firstResult.get();
+                    if (old.compareTo(result) < 0) {
+                        filteredResults.remove(old);
+                        File dir = Paths.get(old.getTask().getSourcePath()).getParent().toFile();
+                        if (!deleteDirectory(dir)) {
+                            throw new RuntimeException("Please, delete the directory: " + dir.getAbsolutePath());
+                        } else {
+                            System.out.println("Result successfully deleted: " + old);
+                        }
+                        filteredResults.add(result);
+                    }
+                } else {
+                    filteredResults.add(result);
+                }
+            });
+            LocalSettings.getInstance().setResults(filteredResults);
+            LocalSettings.getInstance().getResults().sort((r1, r2) -> r2.getTask().getReceivedDate().compareTo(r1.getTask().getReceivedDate()));
             try {
-                tableLatch.await();
-                System.out.println("Sending results to table");
-                Platform.runLater((new Thread(() -> {
-                    mainController.showResults(results);
-                })));
-            } catch (InterruptedException e) {
+                LocalSettings.saveSettings();
+            } catch (InvalidKeyException | NoSuchAlgorithmException | IOException | NoSuchPaddingException e) {
                 e.printStackTrace();
             }
-        });
-        tableLatch.countDown();
+        }
+
+        // Antiplagiarism Checking
+        startAntiplagiarismTesting();
+
+        // Sending results to Google spreadsheet
+        (new Thread(new ResultsSender())).start();
+
+        // Filling local table with results
+        Platform.runLater((new Thread(() -> {
+            System.out.println("Sending results to table");
+            mainController.showResults(results);
+        })));
         onExit.call();
     }
 
@@ -184,4 +198,18 @@ public class General {
         }
         System.out.println("Plagiarism check has been concluded. The results lie in PlagiarismResult.txt file.");
     }
+
+    private static boolean deleteDirectory(File file) {
+        File[] contents = file.listFiles();
+        boolean flag = true;
+        if (contents != null) {
+            for (File f : contents) {
+                if (flag) {
+                    flag = deleteDirectory(f);
+                }
+            }
+        }
+        return flag && file.delete();
+    }
+
 }

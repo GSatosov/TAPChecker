@@ -1,6 +1,7 @@
 package View;
 
 import Controller.EmailReceiver;
+import Controller.GoogleDriveManager;
 import Model.GlobalSettings;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -64,6 +65,14 @@ public class LoginController implements Initializable {
                 String password = pwField.getText();
                 if (!EmailReceiver.validate(email, password)) {
                     System.out.println("Failed: " + email + ", " + password);
+                    login.setDisable(false);
+                    loginIndicator.setVisible(false);
+                    return;
+                }
+                try {
+                    GoogleDriveManager.authorize();
+                } catch (IOException e) {
+                    System.out.println("Failed: Google credentials required.");
                     login.setDisable(false);
                     loginIndicator.setVisible(false);
                     return;

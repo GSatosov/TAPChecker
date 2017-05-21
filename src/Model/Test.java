@@ -2,12 +2,13 @@ package Model;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
  * Created by GSatosov on 3/18/2017.
  */
-public class Test {
+public class Test implements Serializable {
     private ArrayList<String> input;
     private ArrayList<ArrayList<String>> outputVariants;
 

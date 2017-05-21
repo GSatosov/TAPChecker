@@ -15,6 +15,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -22,54 +24,65 @@ import java.util.stream.Collectors;
  */
 public class ResultsSender implements Runnable {
 
-    private HashMap<String, ArrayList<Result>> results;
-
-    private boolean deleteDirectory(File file) {
-        File[] contents = file.listFiles();
-        boolean flag = true;
-        if (contents != null) {
-            for (File f : contents) {
-                if (flag) {
-                    flag = deleteDirectory(f);
-                }
-            }
-        }
-        return flag && file.delete();
-    }
-
-    public ResultsSender(List<Result> rs) {
-        this.results = new HashMap<>();
-        if (rs != null) {
-            rs.sort((r1, r2) -> r2.getTask().getReceivedDate().compareTo(r1.getTask().getReceivedDate()));
-            rs.forEach(result -> {
-                String key = result.getSubject();
-                ArrayList<Result> res = results.get(key);
-                if (res == null) {
-                    res = new ArrayList<>();
-                }
-                Optional<Result> firstResult = res.stream().filter(r -> r.getStudent().getName().equals(result.getStudent().getName()) && r.getTask().getName().equals(result.getTask().getName()) && r.getGroup().equals(result.getStudent().getGroupName())).findFirst();
-                if (firstResult.isPresent()) {
-                    Result old = firstResult.get();
-                    if (old.compareTo(result) < 0) {
-                        res.remove(old);
-                        File dir = Paths.get(old.getTask().getSourcePath()).getParent().toFile();
-                        if (!deleteDirectory(dir)) {
-                            throw new RuntimeException("Please, delete the directory: " + dir.getAbsolutePath());
-                        } else {
-                            System.out.println("Result successfully deleted: " + old);
-                        }
-                        res.add(result);
-                    }
-                } else {
-                    res.add(result);
-                }
-                results.put(key, res);
-            });
-        }
-    }
-
     @Override
     public void run() {
+        System.out.println("Running thread for results sender...");
+        try {
+            final Sheets service = GoogleSheetsManager.getService();
+            String spreadsheetId;
+            Pattern pattern = Pattern.compile("/spreadsheets/d/([a-zA-Z0-9-_]+)");
+            Matcher matcher = pattern.matcher(GlobalSettings.getInstance().getResultsTableURL());
+            if (matcher.find())
+            {
+                spreadsheetId = matcher.group().replace("/spreadsheets/d/", "");
+                // grouping results by subjects
+                LocalSettings.getInstance().getResults().stream().collect(Collectors.groupingBy(Result::getSubject)).forEach((subject, subjectResults) -> {
+                    ValueRange response;
+                    // get or create sheet for subject
+                    try {
+                        response = service.spreadsheets().values().get(spreadsheetId, subject).execute();
+                    } catch (IOException e) {
+                        BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(
+                                Arrays.asList(new Request().setAddSheet(new AddSheetRequest().setProperties(
+                                        new SheetProperties().setTitle(subject)))));
+                        try {
+                            BatchUpdateSpreadsheetResponse responseCreate = service.spreadsheets().batchUpdate(spreadsheetId, body).execute();
+                            response = service.spreadsheets().values().get(spreadsheetId, subject).execute();
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                    // grouping subject results by groups
+                    subjectResults.stream().collect(Collectors.groupingBy(Result::getGroup)).forEach((group, groupResults) -> {
+
+                    });
+                });
+            }
+            else {
+                throw new IllegalArgumentException("Wrong table url format!");
+            }
+
+            // Delete all redundant sheets
+            Spreadsheet responseAllSheets = service.spreadsheets().get(spreadsheetId).execute();
+            responseAllSheets.getSheets().forEach(sheet -> {
+                if (LocalSettings.getInstance().getResults().stream().noneMatch(result -> result.getSubject().equals(sheet.getProperties().getTitle()))) {
+                    BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(
+                            Arrays.asList(new Request().setDeleteSheet(new DeleteSheetRequest().setSheetId(sheet.getProperties().getSheetId())))
+                    );
+                    try {
+                        service.spreadsheets().batchUpdate(spreadsheetId, body).execute();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            });
+
+        } catch (IOException | IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+
         /*if (GlobalSettings.getInstance().getResultsTableURL().isEmpty()) {
             onExit.call();
             throw new RuntimeException("There is no table for results!");
