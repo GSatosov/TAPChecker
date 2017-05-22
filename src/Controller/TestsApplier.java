@@ -79,8 +79,10 @@ class TestsApplier {
                 if (!haskellOutput.isEmpty()) {
                     if (haskellOutput.contains("Prelude>"))
                         break;
-                    if (haskellOutput.get(0).startsWith("'ghci' is not"))
-                        throw new IOException();
+                    if (haskellOutput.get(0).startsWith("'ghci' is not")) {
+                        System.out.println("Add ghci to your path before proceeding.");
+                        return false;
+                    }
                 }
                 if (new Date().getTime() > startDate.getTime() + 2000) {
                     System.out.println("Something is wrong with your ghc.");
@@ -88,8 +90,7 @@ class TestsApplier {
                 }
             }
         } catch (IOException e) {
-            //       e.printStackTrace();
-            System.out.println("Add ghci to your path before proceeding.");
+            e.printStackTrace();
             return false;
         }
         System.out.println("Started ghci process.");
