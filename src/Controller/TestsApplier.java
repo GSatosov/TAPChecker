@@ -81,19 +81,15 @@ class TestsApplier {
                         break;
                     if (haskellOutput.get(0).startsWith("'ghci' is not"))
                         throw new IOException();
-                    if (new Date().getTime() > startDate.getTime()) {
-                        System.out.println("Something is wrong with your ghc.");
-                        return false;
-                    }
-                    Thread.sleep(10);
+                }
+                if (new Date().getTime() > startDate.getTime() + 2000) {
+                    System.out.println("Something is wrong with your ghc.");
+                    return false;
                 }
             }
         } catch (IOException e) {
             //       e.printStackTrace();
             System.out.println("Add ghci to your path before proceeding.");
-            return false;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
             return false;
         }
         System.out.println("Started ghci process.");
