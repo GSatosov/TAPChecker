@@ -17,13 +17,16 @@ public class Test implements Serializable {
     }
 
 
-
     public void setInput(ArrayList<String> input) {
         this.input = input;
     }
 
     public void setOutputVariant(ArrayList<String> outputVariant, int outputVariantIndex) {
         this.outputVariants.set(outputVariantIndex, outputVariant);
+    }
+
+    public void addOutputVariant(ArrayList<String> outputVariant) {
+        this.outputVariants.add(outputVariant);
     }
 
     public ArrayList<String> getInput() {

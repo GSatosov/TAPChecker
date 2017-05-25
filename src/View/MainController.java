@@ -216,16 +216,32 @@ public class MainController implements Initializable {
             outputField.setPrefHeight(200);
             inputField.setPrefHeight(200);
             ArrayList<Test> newTests = new ArrayList<>();
-            newTests.add(new Test(new ArrayList<>(), new ArrayList<>()));
+            ArrayList<ArrayList<String>> outputVariants = new ArrayList<>();
+            outputVariants.add(new ArrayList<>());
+            newTests.add(new Test(new ArrayList<>(), outputVariants));
             Button saveTests = new Button("Save Tests");
             saveTests.setOnAction(event1 -> {
                 fillCurrentTest(newTests, inputField, outputField);
-                newTests.add(new Test(new ArrayList<>(), new ArrayList<>()));
+                ArrayList<ArrayList<String>> newOutputVariants = new ArrayList<>();
+                newOutputVariants.add(new ArrayList<>());
+                newTests.add(new Test(new ArrayList<>(), newOutputVariants));
                 testsPane.setTop(showTestButtons(newTests, inputField, outputField, testsPane));
+                previouslyPressedOutputButton = 0;
             });
             inputField.setPrefWidth(200);
             testsPane.setTop(showTestButtons(newTests, inputField, outputField, testsPane));
-            testsPane.setBottom(saveTests);
+            BorderPane testButtonsPane = new BorderPane();
+            Button saveOutputVariantButton = new Button("Save Output");
+            saveOutputVariantButton.setOnAction(event1 -> {
+                ArrayList<String> outputVariant = Arrays.stream(outputField.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new));
+                newTests.get(previouslyPressedInputButton).setOutputVariant(outputVariant, previouslyPressedOutputButton);
+                newTests.get(previouslyPressedInputButton).addOutputVariant(new ArrayList<>());
+                testsPane.setRight(showOutputVariantsButtons(outputField, newTests.get(previouslyPressedInputButton)));
+            });
+            testButtonsPane.setRight(saveOutputVariantButton);
+            testButtonsPane.setCenter(saveTests);
+            testsPane.setBottom(testButtonsPane);
+            testsPane.setRight(showOutputVariantsButtons(outputField, newTests.get(previouslyPressedInputButton)));
             testsGridPane.add(inputField, 0, 1);
             testsGridPane.add(outputField, 1, 1);
             pane.setCenter(tasksBorderPane);
@@ -270,7 +286,8 @@ public class MainController implements Initializable {
                 testToBeUpdated.setOutputVariant(Arrays.stream(output.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)),
                         previouslyPressedOutputButton);
                 input.setText(test.getInput().stream().reduce("", (a, b) -> a.concat(b + System.getProperty("line.separator"))));
-                pane.setRight(showOutputVariantsButtons(test.getOutputVariants(), output, test));
+                output.setText(test.getOutputVariants().get(0).stream().reduce("", (a, b) -> a.concat(b + System.getProperty("line.separator"))));
+                pane.setRight(showOutputVariantsButtons(output, test));
                 previouslyPressedInputButton = Integer.parseInt(testButton.getText()) - 1;
             });
             buttons.add(testButton);
@@ -279,14 +296,15 @@ public class MainController implements Initializable {
         return testButtons;
     }
 
-    private VBox showOutputVariantsButtons(ArrayList<ArrayList<String>> outputVariants, TextField output, Test test) {
+    private VBox showOutputVariantsButtons(TextField output, Test test) {
         VBox outputButtons = new VBox();
         ArrayList<Button> buttons = new ArrayList<>();
+        ArrayList<ArrayList<String>> outputVariants = test.getOutputVariants();
         for (int i = 0; i < outputVariants.size(); i++) {
             Button button = new Button(Integer.toString(i + 1));
-            ArrayList<String> outputVariant = outputVariants.get(i);
             button.setOnAction(event -> {
-                output.setText(outputVariant.stream().reduce("", (a, b) -> a.concat(b + System.getProperty("line.separator"))));
+                ArrayList<String> outputVariant = Arrays.stream(output.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new));
+                output.setText(outputVariants.get(Integer.parseInt(button.getText()) - 1).stream().reduce("", (a, b) -> a.concat(b + System.getProperty(System.lineSeparator()))));
                 test.setOutputVariant(outputVariant, previouslyPressedOutputButton);
                 previouslyPressedOutputButton = Integer.parseInt(button.getText()) - 1;
             });
