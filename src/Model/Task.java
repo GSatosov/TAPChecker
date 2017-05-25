@@ -10,6 +10,7 @@ import java.util.Date;
 public class Task implements Serializable {
     private String subjectName;
     private String name;
+
     private String sourcePath;
     private ArrayList<Test> testContents;
     private Student author;
@@ -20,6 +21,10 @@ public class Task implements Serializable {
     private boolean antiPlagiarism;
     private Date deadline;
     private boolean hardDeadline;
+
+    public Task() {
+
+    }
 
     public void setTestFields(long timeInMS, boolean antiPlagiarism, Date deadline, String taskCode, boolean hardDeadline) {
         this.timeInMS = timeInMS;

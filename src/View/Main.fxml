@@ -16,6 +16,7 @@
         <Button fx:id="tests" text="Run" />
         <Button fx:id="switchTables" text="Switch tables"/>
         <Button fx:id="settings" text="Settings"/>
+        <Button fx:id="editTests" text="Edit Tests"/>
     </HBox>
     <TabPane fx:id="resultsTable"
                AnchorPane.topAnchor="40" AnchorPane.rightAnchor="5" AnchorPane.leftAnchor="5"

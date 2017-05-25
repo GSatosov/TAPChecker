@@ -12,6 +12,19 @@ public class Test implements Serializable {
     private ArrayList<String> input;
     private ArrayList<ArrayList<String>> outputVariants;
 
+    public void setOutputVariants(ArrayList<ArrayList<String>> outputVariants) {
+        this.outputVariants = outputVariants;
+    }
+
+
+
+    public void setInput(ArrayList<String> input) {
+        this.input = input;
+    }
+
+    public void setOutputVariant(ArrayList<String> outputVariant, int outputVariantIndex) {
+        this.outputVariants.set(outputVariantIndex, outputVariant);
+    }
 
     public ArrayList<String> getInput() {
         return this.input;
@@ -20,7 +33,6 @@ public class Test implements Serializable {
     public ArrayList<ArrayList<String>> getOutputVariants() {
         return this.outputVariants;
     }
-
 
     public Test(ArrayList<String> input, ArrayList<ArrayList<String>> outputVariants) {
         this.input = input;

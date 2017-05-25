@@ -2,21 +2,28 @@ package View;
 
 import Controller.General;
 import Model.Result;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+import Model.Task;
+import Model.Test;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
 import javafx.scene.control.cell.MapValueFactory;
+import javafx.scene.layout.*;
+import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.net.URL;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -36,10 +43,13 @@ public class MainController implements Initializable {
     private Button switchTables;
     @FXML
     private Button settings;
-
+    @FXML
+    private Button editTests;
+    private Integer previouslyPressedInputButton;
+    private Integer previouslyPressedOutputButton;
     private static Stage settingsFrame;
 
-    static Stage getSettingsFrame(){
+    static Stage getSettingsFrame() {
         return settingsFrame;
     }
 
@@ -146,5 +156,143 @@ public class MainController implements Initializable {
             settingsFrame.setResizable(false);
             settingsFrame.show();
         });
+        editTests.setOnAction(event -> {
+            Stage testEditorStage = new Stage();
+            GridPane taskPane = new GridPane();
+            BorderPane pane = new BorderPane();
+            GridPane testsGridPane = new GridPane();
+            TextField taskCodeField = new TextField();
+            TextField timeLimitField = new TextField();
+            CheckBox antiPlagiarismCheckBox = new CheckBox();
+            CheckBox hardDeadlineCheckbox = new CheckBox();
+            DatePicker deadlinePicker = new DatePicker();
+            deadlinePicker.setConverter(new StringConverter<LocalDate>() {
+                DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+
+                @Override
+                public String toString(LocalDate date) {
+                    if (date != null) {
+                        return dateFormatter.format(date);
+                    } else {
+                        return "";
+                    }
+                }
+
+                @Override
+                public LocalDate fromString(String string) {
+                    if (string != null && !string.isEmpty()) {
+                        return LocalDate.parse(string, dateFormatter);
+                    } else {
+                        return null;
+                    }
+                }
+            });
+            previouslyPressedInputButton = 0;
+            previouslyPressedOutputButton = 0;
+            BorderPane tasksBorderPane = new BorderPane();
+            BorderPane testsPane = new BorderPane();
+            TextField taskNameField = new TextField();
+            TextField taskSubjectField = new TextField();
+            taskPane.add(new Text("Enter the name of the function to check"), 0, 1);
+            taskPane.add(taskNameField, 1, 1);
+            taskPane.add(new Text("Enter the name of the subject"), 0, 2);
+            taskPane.add(taskSubjectField, 1, 2);
+            tasksBorderPane.setCenter(taskPane);
+            tasksBorderPane.setBottom(testsPane);
+            testsPane.setCenter(testsGridPane);
+            taskPane.add(new Text("Enter the code for this task:"), 0, 3);
+            taskPane.add(taskCodeField, 1, 3);
+            taskPane.add(new Text("Enter the time limit in ms:"), 0, 4);
+            taskPane.add(timeLimitField, 1, 4);
+            taskPane.add(new Text("Enter the deadline for this task:"), 0, 5);
+            taskPane.add(deadlinePicker, 1, 5);
+            taskPane.add(new Text("If the deadline has not been met, will the task net 0 points?"), 0, 6);
+            taskPane.add(hardDeadlineCheckbox, 1, 6);
+            taskPane.add(new Text("Check the task on plagiarism?"), 0, 7);
+            taskPane.add(antiPlagiarismCheckBox, 1, 7);
+            TextField inputField = new TextField();
+            TextField outputField = new TextField();
+            outputField.setPrefWidth(200);
+            outputField.setPrefHeight(200);
+            inputField.setPrefHeight(200);
+            ArrayList<Test> newTests = new ArrayList<>();
+            newTests.add(new Test(new ArrayList<>(), new ArrayList<>()));
+            Button saveTests = new Button("Save Tests");
+            saveTests.setOnAction(event1 -> {
+                fillCurrentTest(newTests, inputField, outputField);
+                newTests.add(new Test(new ArrayList<>(), new ArrayList<>()));
+                testsPane.setTop(showTestButtons(newTests, inputField, outputField, testsPane));
+            });
+            inputField.setPrefWidth(200);
+            testsPane.setTop(showTestButtons(newTests, inputField, outputField, testsPane));
+            testsPane.setBottom(saveTests);
+            testsGridPane.add(inputField, 0, 1);
+            testsGridPane.add(outputField, 1, 1);
+            pane.setCenter(tasksBorderPane);
+            Button saveTask = new Button("Save Task");
+            saveTask.setOnAction(event1 -> {
+                Task task = new Task();
+                task.setTestFields(Long.parseLong(timeLimitField.getCharacters().toString()),
+                        antiPlagiarismCheckBox.isSelected(),
+                        java.sql.Date.valueOf(deadlinePicker.getValue()),
+                        taskCodeField.getCharacters().toString(),
+                        hardDeadlineCheckbox.isSelected());
+                fillCurrentTest(newTests, inputField, outputField);
+                task.setTestContents(newTests);
+            });
+            pane.setBottom(saveTask);
+            testEditorStage.setScene(new Scene(pane, 500, 450));
+            testEditorStage.setTitle("Task Editor");
+            testEditorStage.show();
+        });
+    }
+
+    private void fillCurrentTest(ArrayList<Test> newTests, TextField inputField, TextField outputField) {
+        newTests.get(previouslyPressedInputButton).setInput(Arrays.stream(inputField.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)));
+        if (newTests.get(previouslyPressedInputButton).getOutputVariants().size() == 0) {
+            ArrayList<ArrayList<String>> outputVariants = new ArrayList<>();
+            outputVariants.add(Arrays.stream(outputField.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)));
+            newTests.get(previouslyPressedInputButton).setOutputVariants(outputVariants);
+        } else
+            newTests.get(previouslyPressedInputButton).setOutputVariant(Arrays.stream(outputField.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)),
+                    previouslyPressedOutputButton);
+    }
+
+    private HBox showTestButtons(ArrayList<Test> tests, TextField input, TextField output, BorderPane pane) {
+        HBox testButtons = new HBox();
+        ArrayList<Button> buttons = new ArrayList<>();
+        for (int i = 0; i < tests.size(); i++) {
+            Test test = tests.get(i);
+            Button testButton = new Button(Integer.toString(i + 1));
+            testButton.setOnAction(event -> {
+                Test testToBeUpdated = tests.get(previouslyPressedInputButton);
+                testToBeUpdated.setInput(Arrays.stream(input.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)));
+                testToBeUpdated.setOutputVariant(Arrays.stream(output.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)),
+                        previouslyPressedOutputButton);
+                input.setText(test.getInput().stream().reduce("", (a, b) -> a.concat(b + System.getProperty("line.separator"))));
+                pane.setRight(showOutputVariantsButtons(test.getOutputVariants(), output, test));
+                previouslyPressedInputButton = Integer.parseInt(testButton.getText()) - 1;
+            });
+            buttons.add(testButton);
+        }
+        testButtons.getChildren().addAll(buttons);
+        return testButtons;
+    }
+
+    private VBox showOutputVariantsButtons(ArrayList<ArrayList<String>> outputVariants, TextField output, Test test) {
+        VBox outputButtons = new VBox();
+        ArrayList<Button> buttons = new ArrayList<>();
+        for (int i = 0; i < outputVariants.size(); i++) {
+            Button button = new Button(Integer.toString(i + 1));
+            ArrayList<String> outputVariant = outputVariants.get(i);
+            button.setOnAction(event -> {
+                output.setText(outputVariant.stream().reduce("", (a, b) -> a.concat(b + System.getProperty("line.separator"))));
+                test.setOutputVariant(outputVariant, previouslyPressedOutputButton);
+                previouslyPressedOutputButton = Integer.parseInt(button.getText()) - 1;
+            });
+            buttons.add(button);
+        }
+        outputButtons.getChildren().addAll(buttons);
+        return outputButtons;
     }
 }
