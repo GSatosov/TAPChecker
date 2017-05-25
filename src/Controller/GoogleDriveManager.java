@@ -25,6 +25,7 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -211,6 +212,60 @@ public class GoogleDriveManager {
                 return testsResult;
             }
         }
+    }
+
+    public static HashMap<String, ArrayList<String>> getTaskNumbersForSubjects() throws IOException {
+        HashMap<String, ArrayList<String>> taskNumbersForSubjects = new HashMap<>();
+        Set<String> subjects = GlobalSettings.getInstance().getSubjectsAndGroups().keySet();
+        Drive service = getDriveService();
+        subjects.forEach(subject -> {
+
+        });
+        FileList getFolders = service.files().list().setQ("mimeType = 'application/vnd.google-apps.folder'").execute();
+        getFolders.getFiles().stream().filter(file -> subjects.contains(file.getName().replace("_", " "))).forEach(subjectFile -> {
+            try {
+                String subjectName = subjectFile.getName().replace("_", " ");
+                FileList files = service.files().list()
+                        .setQ("'" + subjectFile.getId() + "' in parents and " +
+                                "mimeType != 'application/vnd.google-apps.folder' and " +
+                                "mimeType != 'application/vnd.google-apps.audio' and " +
+                                "mimeType != 'application/vnd.google-apps.drawing' and " +
+                                "mimeType != 'application/vnd.google-apps.file' and " +
+                                "mimeType != 'application/vnd.google-apps.folder' and " +
+                                "mimeType != 'application/vnd.google-apps.form' and " +
+                                "mimeType != 'application/vnd.google-apps.fusiontable' and " +
+                                "mimeType != 'application/vnd.google-apps.map' and " +
+                                "mimeType != 'application/vnd.google-apps.photo' and " +
+                                "mimeType != 'application/vnd.google-apps.presentation' and " +
+                                "mimeType != 'application/vnd.google-apps.script' and " +
+                                "mimeType != 'application/vnd.google-apps.sites' and " +
+                                "mimeType != 'application/vnd.google-apps.spreadsheet' and " +
+                                "mimeType != 'application/vnd.google-apps.unknown' and " +
+                                "mimeType != 'application/vnd.google-apps.video' and " +
+                                "mimeType != 'application/vnd.google-apps.drive-sdk' and " +
+                                "mimeType != 'application/vnd.google-apps.document' and trashed = false")
+                        .setFields("nextPageToken, files(id, name)")
+                        .execute();
+                ArrayList<String> taskNumbers = new ArrayList<>();
+                files.getFiles().forEach(file -> {
+                    String fileId = file.getId();
+                    OutputStream outputStream = new ByteArrayOutputStream();
+                    try {
+                        service.files().get(fileId).executeMediaAndDownloadTo(outputStream);
+                        JSONObject tests = new JSONObject(outputStream.toString());
+                        taskNumbers.add(tests.getString("taskCode"));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                });
+                taskNumbers.sort(String::compareTo);
+                taskNumbersForSubjects.put(subjectName, taskNumbers);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        return taskNumbersForSubjects;
     }
 
 }
