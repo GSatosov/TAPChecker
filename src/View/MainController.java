@@ -219,7 +219,7 @@ public class MainController implements Initializable {
             ArrayList<ArrayList<String>> outputVariants = new ArrayList<>();
             outputVariants.add(new ArrayList<>());
             newTests.add(new Test(new ArrayList<>(), outputVariants));
-            Button saveTests = new Button("Save Tests");
+            Button saveTests = new Button("Save Test");
             saveTests.setOnAction(event1 -> {
                 fillCurrentTest(newTests, inputField, outputField);
                 ArrayList<ArrayList<String>> newOutputVariants = new ArrayList<>();
@@ -304,7 +304,7 @@ public class MainController implements Initializable {
             Button button = new Button(Integer.toString(i + 1));
             button.setOnAction(event -> {
                 ArrayList<String> outputVariant = Arrays.stream(output.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new));
-                output.setText(outputVariants.get(Integer.parseInt(button.getText()) - 1).stream().reduce("", (a, b) -> a.concat(b + System.getProperty(System.lineSeparator()))));
+                output.setText(outputVariants.get(Integer.parseInt(button.getText()) - 1).stream().reduce("", (a, b) -> a.concat(b + System.getProperty("line.separator"))));
                 test.setOutputVariant(outputVariant, previouslyPressedOutputButton);
                 previouslyPressedOutputButton = Integer.parseInt(button.getText()) - 1;
             });
