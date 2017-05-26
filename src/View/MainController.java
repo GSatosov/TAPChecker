@@ -230,7 +230,7 @@ public class MainController implements Initializable {
             pane.setCenter(tasksBorderPane);
             Button saveTask = new Button("Save Task");
             saveTask.setOnAction(event1 -> {
-                if (checkFieldsOnSaving(timeLimitField, deadlinePicker, taskCodeField) == 0) {
+                if (fieldsAreReady(timeLimitField, deadlinePicker, taskCodeField)) {
                     Task task = new Task();
                     task.setTestFields(Long.parseLong(timeLimitField.getCharacters().toString()),
                             antiPlagiarismCheckBox.isSelected(),
@@ -248,28 +248,28 @@ public class MainController implements Initializable {
         });
     }
 
-    private int checkFieldsOnSaving(TextField timeLimit, DatePicker picker, TextField taskCode) {
+    private boolean fieldsAreReady(TextField timeLimit, DatePicker picker, TextField taskCode) {
         if (taskCode.getText().isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.ERROR, "Field for task code is empty.");
             alert.showAndWait();
-            return 1;
+            return false;
         }
         if (timeLimit.getText().isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.ERROR, "Field for time limit is empty.");
             alert.showAndWait();
-            return 1;
+            return false;
         }
         if (!timeLimit.getText().matches("[0-9]+")) {
             Alert alert = new Alert(Alert.AlertType.ERROR, "Field for time limit contains literals.");
             alert.showAndWait();
-            return 1;
+            return false;
         }
         if (picker.getValue() == null) {
             Alert alert = new Alert(Alert.AlertType.ERROR, "You have not picked a deadline");
             alert.showAndWait();
-            return 1;
+            return false;
         }
-        return 0;
+        return true;
     }
 
     //Updates color of pressed button and previously pressed button.
