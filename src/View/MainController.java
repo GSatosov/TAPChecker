@@ -230,7 +230,7 @@ public class MainController implements Initializable {
             pane.setCenter(tasksBorderPane);
             Button saveTask = new Button("Save Task");
             saveTask.setOnAction(event1 -> {
-                if (fieldsAreReady(timeLimitField, deadlinePicker, taskCodeField)) {
+                if (fieldsAreReady(timeLimitField, deadlinePicker, taskCodeField, taskNameField, taskSubjectField)) {
                     Task task = new Task();
                     task.setTestFields(Long.parseLong(timeLimitField.getCharacters().toString()),
                             antiPlagiarismCheckBox.isSelected(),
@@ -248,7 +248,17 @@ public class MainController implements Initializable {
         });
     }
 
-    private boolean fieldsAreReady(TextField timeLimit, DatePicker picker, TextField taskCode) {
+    private boolean fieldsAreReady(TextField timeLimit, DatePicker picker, TextField taskCode, TextField taskName, TextField taskSubjectName) {
+        if (taskName.getText().isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Field for task name is empty.");
+            alert.showAndWait();
+            return false;
+        }
+        if (taskSubjectName.getText().isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Field for task subject is empty.");
+            alert.showAndWait();
+            return false;
+        }
         if (taskCode.getText().isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.ERROR, "Field for task code is empty.");
             alert.showAndWait();
