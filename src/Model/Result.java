@@ -76,7 +76,6 @@ public class Result implements Comparable, Serializable {
             }
             else {
                 List<String> results = Arrays.asList("CE", "RE", "TL", "WA", "DL CE", "DL RE", "DL TL", "DL WA", "DL OK", "OK");
-                System.out.println(Integer.compare(results.indexOf(errorACode), results.indexOf(errorBCode)) + " " + errorACode + " " + errorBCode);
                 return Integer.compare(results.indexOf(errorACode), results.indexOf(errorBCode));
             }
         }
