@@ -45,8 +45,8 @@ public class MainController implements Initializable {
     private Button settings;
     @FXML
     private Button editTests;
-    private Integer previouslyPressedInputButton;
-    private Integer previouslyPressedOutputButton;
+    private Integer currentTest;
+    private Integer currentOutputVariant;
     private static Stage settingsFrame;
 
     static Stage getSettingsFrame() {
@@ -160,13 +160,13 @@ public class MainController implements Initializable {
             Stage testEditorStage = new Stage();
             GridPane taskPane = new GridPane();
             BorderPane pane = new BorderPane();
-            GridPane testsGridPane = new GridPane();
+            GridPane testsGridPane = new GridPane(); //P
             TextField taskCodeField = new TextField();
             TextField timeLimitField = new TextField();
             CheckBox antiPlagiarismCheckBox = new CheckBox();
             CheckBox hardDeadlineCheckbox = new CheckBox();
             DatePicker deadlinePicker = new DatePicker();
-            deadlinePicker.setConverter(new StringConverter<LocalDate>() {
+            deadlinePicker.setConverter(new StringConverter<LocalDate>() { //Ensuring that we will get format we need, regardless of local settings.
                 DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
                 @Override
@@ -187,8 +187,7 @@ public class MainController implements Initializable {
                     }
                 }
             });
-            previouslyPressedInputButton = 0;
-            previouslyPressedOutputButton = 0;
+
             BorderPane tasksBorderPane = new BorderPane();
             BorderPane testsPane = new BorderPane();
             TextField taskNameField = new TextField();
@@ -215,46 +214,32 @@ public class MainController implements Initializable {
             outputField.setPrefWidth(200);
             outputField.setPrefHeight(200);
             inputField.setPrefHeight(200);
+            inputField.setPrefWidth(200);
+
+            currentTest = 0;
+            currentOutputVariant = 0;
             ArrayList<Test> newTests = new ArrayList<>();
             ArrayList<ArrayList<String>> outputVariants = new ArrayList<>();
             outputVariants.add(new ArrayList<>());
-            newTests.add(new Test(new ArrayList<>(), outputVariants));
-            Button saveTests = new Button("Save Test");
-            saveTests.setOnAction(event1 -> {
-                fillCurrentTest(newTests, inputField, outputField);
-                ArrayList<ArrayList<String>> newOutputVariants = new ArrayList<>();
-                newOutputVariants.add(new ArrayList<>());
-                newTests.add(new Test(new ArrayList<>(), newOutputVariants));
-                testsPane.setTop(showTestButtons(newTests, inputField, outputField, testsPane));
-                previouslyPressedOutputButton = 0;
-            });
-            inputField.setPrefWidth(200);
+
+            newTests.add(new Test(new ArrayList<>(), outputVariants)); //Creates list containing one empty test.
             testsPane.setTop(showTestButtons(newTests, inputField, outputField, testsPane));
-            BorderPane testButtonsPane = new BorderPane();
-            Button saveOutputVariantButton = new Button("Save Output");
-            saveOutputVariantButton.setOnAction(event1 -> {
-                ArrayList<String> outputVariant = Arrays.stream(outputField.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new));
-                newTests.get(previouslyPressedInputButton).setOutputVariant(outputVariant, previouslyPressedOutputButton);
-                newTests.get(previouslyPressedInputButton).addOutputVariant(new ArrayList<>());
-                testsPane.setRight(showOutputVariantsButtons(outputField, newTests.get(previouslyPressedInputButton)));
-            });
-            testButtonsPane.setRight(saveOutputVariantButton);
-            testButtonsPane.setCenter(saveTests);
-            testsPane.setBottom(testButtonsPane);
-            testsPane.setRight(showOutputVariantsButtons(outputField, newTests.get(previouslyPressedInputButton)));
+            testsPane.setRight(showOutputVariantsButtons(outputField, newTests.get(currentTest)));
             testsGridPane.add(inputField, 0, 1);
             testsGridPane.add(outputField, 1, 1);
             pane.setCenter(tasksBorderPane);
             Button saveTask = new Button("Save Task");
             saveTask.setOnAction(event1 -> {
-                Task task = new Task();
-                task.setTestFields(Long.parseLong(timeLimitField.getCharacters().toString()),
-                        antiPlagiarismCheckBox.isSelected(),
-                        java.sql.Date.valueOf(deadlinePicker.getValue()),
-                        taskCodeField.getCharacters().toString(),
-                        hardDeadlineCheckbox.isSelected());
-                fillCurrentTest(newTests, inputField, outputField);
-                task.setTestContents(newTests);
+                if (checkFieldsOnSaving(timeLimitField, deadlinePicker, taskCodeField) == 0) {
+                    Task task = new Task();
+                    task.setTestFields(Long.parseLong(timeLimitField.getCharacters().toString()),
+                            antiPlagiarismCheckBox.isSelected(),
+                            java.sql.Date.valueOf(deadlinePicker.getValue()),
+                            taskCodeField.getCharacters().toString(),
+                            hardDeadlineCheckbox.isSelected());
+                    fillCurrentTest(newTests, inputField, outputField);
+                    task.setTestContents(newTests);
+                }
             });
             pane.setBottom(saveTask);
             testEditorStage.setScene(new Scene(pane, 500, 450));
@@ -263,53 +248,123 @@ public class MainController implements Initializable {
         });
     }
 
+    private int checkFieldsOnSaving(TextField timeLimit, DatePicker picker, TextField taskCode) {
+        if (taskCode.getText().isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Field for task code is empty.");
+            alert.showAndWait();
+            return 1;
+        }
+        if (timeLimit.getText().isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Field for time limit is empty.");
+            alert.showAndWait();
+            return 1;
+        }
+        if (!timeLimit.getText().matches("[0-9]+")) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Field for time limit contains literals.");
+            alert.showAndWait();
+            return 1;
+        }
+        if (picker.getValue() == null) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, "You have not picked a deadline");
+            alert.showAndWait();
+            return 1;
+        }
+        return 0;
+    }
+
+    //Updates color of pressed button and previously pressed button.
+    private void updateButtonStyles(Pane box, int previousIndex, int currentIndex) {
+        box.getChildren().get(previousIndex).setStyle("-fx-base: #ffffff;");
+        box.getChildren().get(currentIndex).setStyle("-fx-base: #b6e7c9;");
+    }
+
+    //Fills tests with content found in input fields.
     private void fillCurrentTest(ArrayList<Test> newTests, TextField inputField, TextField outputField) {
-        newTests.get(previouslyPressedInputButton).setInput(Arrays.stream(inputField.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)));
-        if (newTests.get(previouslyPressedInputButton).getOutputVariants().size() == 0) {
+        newTests.get(currentTest).setInput(Arrays.stream(inputField.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)));
+        if (newTests.get(currentTest).getOutputVariants().size() == 0) {
             ArrayList<ArrayList<String>> outputVariants = new ArrayList<>();
             outputVariants.add(Arrays.stream(outputField.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)));
-            newTests.get(previouslyPressedInputButton).setOutputVariants(outputVariants);
+            newTests.get(currentTest).setOutputVariants(outputVariants);
         } else
-            newTests.get(previouslyPressedInputButton).setOutputVariant(Arrays.stream(outputField.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)),
-                    previouslyPressedOutputButton);
+            newTests.get(currentTest).setOutputVariant(Arrays.stream(outputField.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)),
+                    currentOutputVariant);
+    }
+
+    //Buttons that show input of each test.
+    private Button inputButton(HBox testButtons, ArrayList<Test> tests, int i, TextField input, TextField output, BorderPane pane) {
+        Test test = tests.get(i);
+        Button inputButton = new Button(Integer.toString(i + 1));
+        inputButton.setOnAction(event -> {
+            Test testToBeUpdated = tests.get(currentTest);
+            testToBeUpdated.setInput(Arrays.stream(input.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)));
+            testToBeUpdated.setOutputVariant(Arrays.stream(output.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)),
+                    currentOutputVariant);
+            input.setText(test.getInput().stream().reduce("", (a, b) -> a.concat(b + System.getProperty("line.separator"))));
+            output.setText(test.getOutputVariants().get(0).stream().reduce("", (a, b) -> a.concat(b + System.getProperty("line.separator"))));
+            pane.setRight(showOutputVariantsButtons(output, test));
+            updateButtonStyles(testButtons, currentTest, currentTest = Integer.parseInt(inputButton.getText()) - 1);
+            currentOutputVariant = 0;
+        });
+        inputButton.setStyle("-fx-base: #ffffff;");
+        return inputButton;
     }
 
     private HBox showTestButtons(ArrayList<Test> tests, TextField input, TextField output, BorderPane pane) {
         HBox testButtons = new HBox();
         ArrayList<Button> buttons = new ArrayList<>();
-        for (int i = 0; i < tests.size(); i++) {
-            Test test = tests.get(i);
-            Button testButton = new Button(Integer.toString(i + 1));
-            testButton.setOnAction(event -> {
-                Test testToBeUpdated = tests.get(previouslyPressedInputButton);
-                testToBeUpdated.setInput(Arrays.stream(input.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)));
-                testToBeUpdated.setOutputVariant(Arrays.stream(output.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)),
-                        previouslyPressedOutputButton);
-                input.setText(test.getInput().stream().reduce("", (a, b) -> a.concat(b + System.getProperty("line.separator"))));
-                output.setText(test.getOutputVariants().get(0).stream().reduce("", (a, b) -> a.concat(b + System.getProperty("line.separator"))));
-                pane.setRight(showOutputVariantsButtons(output, test));
-                previouslyPressedInputButton = Integer.parseInt(testButton.getText()) - 1;
-            });
-            buttons.add(testButton);
-        }
+        for (int i = 0; i < tests.size(); i++)
+            buttons.add(inputButton(testButtons, tests, i, input, output, pane));
+        Button newTestButton = new Button("+");
+        newTestButton.setOnAction(event -> {
+            ArrayList<ArrayList<String>> newOutputVariants = new ArrayList<>();
+            newOutputVariants.add(new ArrayList<>());
+            tests.add(new Test(new ArrayList<>(), newOutputVariants));
+            testButtons.getChildren().get(currentTest).setStyle("-fx-base: #ffffff;");
+            currentTest = testButtons.getChildren().size() - 1;
+            currentOutputVariant = 0;
+            testButtons.getChildren().add(currentTest, inputButton(testButtons, tests, currentTest, input, output, pane));
+            testButtons.getChildren().get(currentTest).setStyle("-fx-base: #b6e7c9;");
+            pane.setRight(showOutputVariantsButtons(output, tests.get(currentTest)));
+        });
+        newTestButton.setStyle("-fx-base: #ffffff;");
+        buttons.add(newTestButton);
+        buttons.get(0).setStyle("-fx-base: #b6e7c9;");
         testButtons.getChildren().addAll(buttons);
         return testButtons;
+    }
+
+    //Buttons that show output of each test.
+    private Button outputVariantButton(VBox outputButtons, Test test, int i, TextField output) {
+        Button outputVariantButton = new Button(Integer.toString(i + 1));
+        outputVariantButton.setOnAction(event -> {
+            ArrayList<String> outputVariant = Arrays.stream(output.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new));
+            output.setText(test.getOutputVariants().get(Integer.parseInt(outputVariantButton.getText()) - 1).stream().reduce("", (a, b) -> a.concat(b + System.getProperty("line.separator"))));
+            test.setOutputVariant(outputVariant, currentOutputVariant);
+            updateButtonStyles(outputButtons, currentOutputVariant, currentOutputVariant = Integer.parseInt(outputVariantButton.getText()) - 1);
+        });
+        outputVariantButton.setStyle("-fx-base: #ffffff;");
+        return outputVariantButton;
     }
 
     private VBox showOutputVariantsButtons(TextField output, Test test) {
         VBox outputButtons = new VBox();
         ArrayList<Button> buttons = new ArrayList<>();
         ArrayList<ArrayList<String>> outputVariants = test.getOutputVariants();
-        for (int i = 0; i < outputVariants.size(); i++) {
-            Button button = new Button(Integer.toString(i + 1));
-            button.setOnAction(event -> {
-                ArrayList<String> outputVariant = Arrays.stream(output.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new));
-                output.setText(outputVariants.get(Integer.parseInt(button.getText()) - 1).stream().reduce("", (a, b) -> a.concat(b + System.getProperty("line.separator"))));
-                test.setOutputVariant(outputVariant, previouslyPressedOutputButton);
-                previouslyPressedOutputButton = Integer.parseInt(button.getText()) - 1;
-            });
-            buttons.add(button);
-        }
+        for (int i = 0; i < outputVariants.size(); i++)
+            buttons.add(outputVariantButton(outputButtons, test, i, output));
+        Button newOutputVariantButton = new Button("+");
+        newOutputVariantButton.setOnAction(event -> {
+            test.addOutputVariant(new ArrayList<>());
+            test.setOutputVariant(Arrays.stream(output.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)), currentOutputVariant);
+            outputButtons.getChildren().get(currentOutputVariant).setStyle("-fx-base: #ffffff;");
+            currentOutputVariant = test.getOutputVariants().size() - 1;
+            outputButtons.getChildren().add(currentOutputVariant, outputVariantButton(outputButtons, test, currentOutputVariant, output));
+            outputButtons.getChildren().get(currentOutputVariant).setStyle("-fx-base: #b6e7c9;");
+            output.setText("");
+        });
+        newOutputVariantButton.setStyle("-fx-base: #ffffff;");
+        buttons.add(newOutputVariantButton);
+        buttons.get(0).setStyle("-fx-base: #b6e7c9;");
         outputButtons.getChildren().addAll(buttons);
         return outputButtons;
     }
