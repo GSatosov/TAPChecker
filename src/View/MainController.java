@@ -209,8 +209,8 @@ public class MainController implements Initializable {
             taskPane.add(hardDeadlineCheckbox, 1, 6);
             taskPane.add(new Text("Check the task on plagiarism?"), 0, 7);
             taskPane.add(antiPlagiarismCheckBox, 1, 7);
-            TextField inputField = new TextField();
-            TextField outputField = new TextField();
+            TextArea inputField = new TextArea();
+            TextArea outputField = new TextArea();
             outputField.setPrefWidth(200);
             outputField.setPrefHeight(200);
             inputField.setPrefHeight(200);
@@ -289,7 +289,7 @@ public class MainController implements Initializable {
     }
 
     //Fills tests with content found in input fields.
-    private void fillCurrentTest(ArrayList<Test> newTests, TextField inputField, TextField outputField) {
+    private void fillCurrentTest(ArrayList<Test> newTests, TextArea inputField, TextArea outputField) {
         newTests.get(currentTest).setInput(Arrays.stream(inputField.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)));
         if (newTests.get(currentTest).getOutputVariants().size() == 0) {
             ArrayList<ArrayList<String>> outputVariants = new ArrayList<>();
@@ -301,7 +301,7 @@ public class MainController implements Initializable {
     }
 
     //Buttons that show input of each test.
-    private Button inputButton(HBox testButtons, ArrayList<Test> tests, int i, TextField input, TextField output, BorderPane pane) {
+    private Button inputButton(HBox testButtons, ArrayList<Test> tests, int i, TextArea input, TextArea output, BorderPane pane) {
         Test test = tests.get(i);
         Button inputButton = new Button(Integer.toString(i + 1));
         inputButton.setOnAction(event -> {
@@ -319,7 +319,7 @@ public class MainController implements Initializable {
         return inputButton;
     }
 
-    private HBox showTestButtons(ArrayList<Test> tests, TextField input, TextField output, BorderPane pane) {
+    private HBox showTestButtons(ArrayList<Test> tests, TextArea input, TextArea output, BorderPane pane) {
         HBox testButtons = new HBox();
         ArrayList<Button> buttons = new ArrayList<>();
         for (int i = 0; i < tests.size(); i++)
@@ -332,6 +332,8 @@ public class MainController implements Initializable {
             testButtons.getChildren().get(currentTest).setStyle("-fx-base: #ffffff;");
             currentTest = testButtons.getChildren().size() - 1;
             currentOutputVariant = 0;
+            input.setText("");
+            output.setText("");
             testButtons.getChildren().add(currentTest, inputButton(testButtons, tests, currentTest, input, output, pane));
             testButtons.getChildren().get(currentTest).setStyle("-fx-base: #b6e7c9;");
             pane.setRight(showOutputVariantsButtons(output, tests.get(currentTest)));
@@ -344,19 +346,19 @@ public class MainController implements Initializable {
     }
 
     //Buttons that show output of each test.
-    private Button outputVariantButton(VBox outputButtons, Test test, int i, TextField output) {
+    private Button outputVariantButton(VBox outputButtons, Test test, int i, TextArea output) {
         Button outputVariantButton = new Button(Integer.toString(i + 1));
         outputVariantButton.setOnAction(event -> {
             ArrayList<String> outputVariant = Arrays.stream(output.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new));
-            output.setText(test.getOutputVariants().get(Integer.parseInt(outputVariantButton.getText()) - 1).stream().reduce("", (a, b) -> a.concat(b + System.getProperty("line.separator"))));
             test.setOutputVariant(outputVariant, currentOutputVariant);
+            output.setText(test.getOutputVariants().get(Integer.parseInt(outputVariantButton.getText()) - 1).stream().reduce("", (a, b) -> a.concat(b + System.getProperty("line.separator"))));
             updateButtonStyles(outputButtons, currentOutputVariant, currentOutputVariant = Integer.parseInt(outputVariantButton.getText()) - 1);
         });
         outputVariantButton.setStyle("-fx-base: #ffffff;");
         return outputVariantButton;
     }
 
-    private VBox showOutputVariantsButtons(TextField output, Test test) {
+    private VBox showOutputVariantsButtons(TextArea output, Test test) {
         VBox outputButtons = new VBox();
         ArrayList<Button> buttons = new ArrayList<>();
         ArrayList<ArrayList<String>> outputVariants = test.getOutputVariants();
