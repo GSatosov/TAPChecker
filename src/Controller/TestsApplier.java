@@ -10,6 +10,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -339,6 +340,18 @@ class TestsApplier {
                     Test.logList(javaOutputWriter, new ArrayList<>(Files.readAllLines(Paths.get(errorFile.getPath()))));
                     return javaResult("RE " + (i + 1), task, testInputFile, testOutputFile, errorFile); //Runtime Error
                 }
+                if (test.getAdditionalTest() != null) {
+                    switch (performAnAdditionalTest(test.getAdditionalTest(), testOutputFile, taskName, test.getOutputVariants())) {
+                        case 0:
+                            continue;
+                        case 1:
+                            return javaResult("WA " + (i + 1), task, testInputFile, testOutputFile, errorFile);
+                        case 2: {
+                            System.out.println("Your code for additional test is invalid.");
+                            continue;
+                        }
+                    }
+                }
                 ArrayList<String> testOutput = new ArrayList<>(Files.readAllLines(Paths.get(testOutputFile.getPath())));
                 Test.logList(javaOutputWriter, testOutput);
                 if (!test.getOutputVariants().contains(testOutput))
@@ -350,6 +363,59 @@ class TestsApplier {
         return javaResult("OK", task, testInputFile, testOutputFile, errorFile);
     }
 
+    private int performAnAdditionalTest(String code, File outputFile, String taskName, ArrayList<ArrayList<String>> outputVariants) {
+        File testInputFile = new File(outputFile.getParent() + File.separator + taskName + "Test.java");
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(testInputFile));
+            writer.write(code);
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        File testErrorFile = new File(outputFile.getParent() + File.separator + taskName + "AdditionalError.txt");
+        try {
+            compiler.run(null, null, new FileOutputStream(testErrorFile), testInputFile.getPath());
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        if (testErrorFile.length() > 0)
+            return 2; //Got an error while compiling the test; undesirable outcome.
+        ArrayList<String> commands = new ArrayList<>();
+        commands.add("java");
+        commands.add("-cp");
+        commands.add(outputFile.getParent());
+        commands.add(taskName + "Test");
+        ProcessBuilder pb = new ProcessBuilder(commands);
+        File testOutputFile = new File(outputFile.getParent() + File.separator + taskName + "AdditionalOutput.txt");
+        pb.redirectError(testErrorFile);
+        pb.redirectOutput(testOutputFile);
+        pb.redirectInput(outputFile);
+        try {
+            Process p = pb.start();
+            p.waitFor();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        if (testErrorFile.length() > 0) {
+            try {
+                javaOutputWriter.write("Additional test runtime error:");
+                javaOutputWriter.newLine();
+                Test.logList(javaOutputWriter, new ArrayList<>(Files.readAllLines(Paths.get(testErrorFile.getPath()))));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return 1; //RE in additional test.
+        }
+        try {
+            ArrayList<String> output = new ArrayList<>(Files.readAllLines(Paths.get(testOutputFile.getPath())));
+            Test.logList(javaOutputWriter, output);
+            if (outputVariants.contains(output))
+                return 0; //Everything is fine.
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return 1; //WA in additional test.
+    }
 
     private Result javaResult(String response, Task task, File inputFile, File outputFile, File errorFile) {
         try {
