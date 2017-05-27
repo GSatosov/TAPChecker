@@ -10,7 +10,6 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -374,8 +373,10 @@ class TestsApplier {
         }
         File testErrorFile = new File(outputFile.getParent() + File.separator + taskName + "AdditionalError.txt");
         try {
-            compiler.run(null, null, new FileOutputStream(testErrorFile), testInputFile.getPath());
-        } catch (FileNotFoundException e) {
+            FileOutputStream errorStream = new FileOutputStream(testErrorFile);
+            compiler.run(null, null, errorStream, testInputFile.getPath());
+            errorStream.close();
+        } catch (IOException e) {
             e.printStackTrace();
         }
         if (testErrorFile.length() > 0)
@@ -406,9 +407,13 @@ class TestsApplier {
             }
             return 1; //RE in additional test.
         }
+        new File(outputFile.getParent() + File.separator + taskName + "Test.class").delete();
+        testInputFile.delete();
+        testErrorFile.delete();
         try {
             ArrayList<String> output = new ArrayList<>(Files.readAllLines(Paths.get(testOutputFile.getPath())));
             Test.logList(javaOutputWriter, output);
+            testOutputFile.delete();
             if (outputVariants.contains(output))
                 return 0; //Everything is fine.
         } catch (IOException e) {
