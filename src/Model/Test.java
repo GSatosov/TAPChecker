@@ -12,6 +12,10 @@ public class Test implements Serializable {
     private ArrayList<String> input;
     private ArrayList<ArrayList<String>> outputVariants;
 
+    public void removeOutputVariant(int i) {
+        this.outputVariants.remove(i);
+    }
+
     public String getAdditionalTest() {
         return additionalTest;
     }

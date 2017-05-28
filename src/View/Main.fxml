@@ -13,7 +13,7 @@
 
     <HBox AnchorPane.topAnchor="5" AnchorPane.rightAnchor="5" AnchorPane.leftAnchor="5"
           spacing="10">
-        <Button fx:id="tests" text="Run" />
+        <Button fx:id="runTests" text="Run" />
         <Button fx:id="switchTables" text="Switch tables"/>
         <Button fx:id="settings" text="Settings"/>
         <Button fx:id="editTests" text="Edit Tests"/>

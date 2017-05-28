@@ -38,7 +38,7 @@ public class MainController implements Initializable {
     private TabPane plagiary;
 
     @FXML
-    private Button tests;
+    private Button runTests;
     @FXML
     private Button switchTables;
     @FXML
@@ -123,10 +123,10 @@ public class MainController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        tests.setOnAction(event -> {
-            tests.setDisable(true);
+        runTests.setOnAction(event -> {
+            runTests.setDisable(true);
             try {
-                General.getResults(() -> tests.setDisable(false), this);
+                General.getResults(() -> runTests.setDisable(false), this);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -158,9 +158,14 @@ public class MainController implements Initializable {
         });
         editTests.setOnAction(event -> {
             Stage testEditorStage = new Stage();
+            ArrayList<Test> newTests = new ArrayList<>();
+            ArrayList<ArrayList<String>> outputVariants = new ArrayList<>();
+            outputVariants.add(new ArrayList<>());
+            newTests.add(new Test(new ArrayList<>(), outputVariants)); //Created test with one empty output variant.
+
             GridPane taskPane = new GridPane();
-            BorderPane pane = new BorderPane();
-            GridPane testsGridPane = new GridPane(); //P
+            BorderPane mainPane = new BorderPane();
+            GridPane testsGridPane = new GridPane();
             TextField taskCodeField = new TextField();
             TextField timeLimitField = new TextField();
             CheckBox antiPlagiarismCheckBox = new CheckBox();
@@ -188,17 +193,12 @@ public class MainController implements Initializable {
                 }
             });
 
-            BorderPane tasksBorderPane = new BorderPane();
-            BorderPane testsPane = new BorderPane();
             TextField taskNameField = new TextField();
             TextField taskSubjectField = new TextField();
             taskPane.add(new Text("Enter the name of the function to check"), 0, 1);
             taskPane.add(taskNameField, 1, 1);
             taskPane.add(new Text("Enter the name of the subject"), 0, 2);
             taskPane.add(taskSubjectField, 1, 2);
-            tasksBorderPane.setCenter(taskPane);
-            tasksBorderPane.setBottom(testsPane);
-            testsPane.setCenter(testsGridPane);
             taskPane.add(new Text("Enter the code for this task:"), 0, 3);
             taskPane.add(taskCodeField, 1, 3);
             taskPane.add(new Text("Enter the time limit in ms:"), 0, 4);
@@ -215,19 +215,48 @@ public class MainController implements Initializable {
             outputField.setPrefHeight(200);
             inputField.setPrefHeight(200);
             inputField.setPrefWidth(200);
-
             currentTest = 0;
             currentOutputVariant = 0;
-            ArrayList<Test> newTests = new ArrayList<>();
-            ArrayList<ArrayList<String>> outputVariants = new ArrayList<>();
-            outputVariants.add(new ArrayList<>());
 
-            newTests.add(new Test(new ArrayList<>(), outputVariants)); //Creates list containing one empty test.
-            testsPane.setTop(showTestButtons(newTests, inputField, outputField, testsPane));
-            testsPane.setRight(showOutputVariantsButtons(outputField, newTests.get(currentTest)));
-            testsGridPane.add(inputField, 0, 1);
-            testsGridPane.add(outputField, 1, 1);
-            pane.setCenter(tasksBorderPane);
+            BorderPane testsPane = new BorderPane(); //Pane with test/output variants buttons and input/output text areas.
+            GridPane bottomPane = new GridPane();
+
+            bottomPane.add(new Text("Enter an additional test:"), 0, 1);
+            TextField additionalTestField = new TextField();
+            bottomPane.add(additionalTestField, 1, 1);
+            Button saveAdditionalTestButton = new Button("Save Additional Test");
+            saveAdditionalTestButton.setOnAction(event1 -> newTests.get(currentTest).setAdditionalTest(additionalTestField.getText()));
+            bottomPane.add(saveAdditionalTestButton, 2, 1);
+            Button deleteTestButton = new Button("Delete Test");
+            deleteTestButton.setOnAction(event1 -> {
+                if (newTests.size() == 1) { //Clearing first test.
+                    outputVariants.clear();
+                    outputVariants.add(new ArrayList<>());
+                    newTests.get(currentTest).setOutputVariants(outputVariants);
+                    newTests.get(currentTest).setInput(new ArrayList<>());
+                } else {
+                    newTests.remove((int) currentTest);
+                    if (currentTest == newTests.size())
+                        currentTest--;
+                }
+                currentOutputVariant = 0;
+                testsPane.setTop(showTestButtons(newTests, inputField, outputField, testsPane, additionalTestField));
+                testsPane.setRight(showOutputVariantsButtons(outputField, newTests.get(currentTest)));
+            });
+            Button deleteOutputVariantButton = new Button("Delete Output Variant");
+            deleteOutputVariantButton.setOnAction(event1 -> {
+                if (newTests.get(currentTest).getOutputVariants().size() == 1) {
+                    outputVariants.clear();
+                    outputVariants.add(new ArrayList<>());
+                    newTests.get(currentTest).setOutputVariants(outputVariants);
+                    showOutputVariantsButtons(outputField, newTests.get(currentTest));
+                } else {
+                    newTests.get(currentTest).removeOutputVariant(currentOutputVariant);
+                    if (currentOutputVariant == newTests.get(currentTest).getOutputVariants().size())
+                        currentOutputVariant--;
+                    testsPane.setRight(showOutputVariantsButtons(outputField, newTests.get(currentTest)));
+                }
+            });
             Button saveTask = new Button("Save Task");
             saveTask.setOnAction(event1 -> {
                 if (fieldsAreReady(timeLimitField, deadlinePicker, taskCodeField, taskNameField, taskSubjectField)) {
@@ -241,8 +270,21 @@ public class MainController implements Initializable {
                     task.setTestContents(newTests);
                 }
             });
-            pane.setBottom(saveTask);
-            testEditorStage.setScene(new Scene(pane, 500, 450));
+            bottomPane.add(saveTask, 0, 2);
+            bottomPane.add(deleteTestButton, 1, 2);
+            bottomPane.add(deleteOutputVariantButton, 2, 2);
+
+            BorderPane tasksBorderPane = new BorderPane();
+            tasksBorderPane.setCenter(taskPane);
+            tasksBorderPane.setBottom(testsPane);
+            testsPane.setCenter(testsGridPane);
+            testsPane.setTop(showTestButtons(newTests, inputField, outputField, testsPane, additionalTestField));
+            testsPane.setRight(showOutputVariantsButtons(outputField, newTests.get(currentTest)));
+            testsGridPane.add(inputField, 0, 1);
+            testsGridPane.add(outputField, 1, 1);
+            mainPane.setCenter(tasksBorderPane);
+            mainPane.setBottom(bottomPane);
+            testEditorStage.setScene(new Scene(mainPane, 500, 450));
             testEditorStage.setTitle("Task Editor");
             testEditorStage.show();
         });
@@ -288,10 +330,10 @@ public class MainController implements Initializable {
         box.getChildren().get(currentIndex).setStyle("-fx-base: #b6e7c9;");
     }
 
-    //Fills tests with content found in input fields.
+    //Fills runTests with content found in input fields. Rewrite.
     private void fillCurrentTest(ArrayList<Test> newTests, TextArea inputField, TextArea outputField) {
         newTests.get(currentTest).setInput(Arrays.stream(inputField.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)));
-        if (newTests.get(currentTest).getOutputVariants().size() == 0) {
+        if (newTests.get(currentTest).getOutputVariants().size() == 1) {
             ArrayList<ArrayList<String>> outputVariants = new ArrayList<>();
             outputVariants.add(Arrays.stream(outputField.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)));
             newTests.get(currentTest).setOutputVariants(outputVariants);
@@ -300,47 +342,66 @@ public class MainController implements Initializable {
                     currentOutputVariant);
     }
 
+    private void updateCurrentTest(ArrayList<Test> tests, TextArea input, TextArea output) {
+        Test testToBeUpdated = tests.get(currentTest);
+        testToBeUpdated.setInput(Arrays.stream(input.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)));
+        testToBeUpdated.setOutputVariant(Arrays.stream(output.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)), currentOutputVariant);
+    }
+
+    private void fillTextAreaWithConcatenatedList(ArrayList<String> list, TextArea area) {
+        if (list.isEmpty())
+            area.clear();
+        else {
+            String identity = list.get(0);
+            if (list.size() == 1)
+                area.setText(identity);
+            else {
+                area.setText(list.subList(1, list.size()).stream().reduce(identity, (a, b) -> a.concat(System.getProperty("line.separator").concat(b))));
+            }
+        }
+    }
+
     //Buttons that show input of each test.
-    private Button inputButton(HBox testButtons, ArrayList<Test> tests, int i, TextArea input, TextArea output, BorderPane pane) {
+    private Button inputButton(HBox testButtons, ArrayList<Test> tests, int i, TextArea input, TextArea output, BorderPane pane, TextField additionalTestField) {
         Test test = tests.get(i);
         Button inputButton = new Button(Integer.toString(i + 1));
         inputButton.setOnAction(event -> {
-            Test testToBeUpdated = tests.get(currentTest);
-            testToBeUpdated.setInput(Arrays.stream(input.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)));
-            testToBeUpdated.setOutputVariant(Arrays.stream(output.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)),
-                    currentOutputVariant);
-            input.setText(test.getInput().stream().reduce("", (a, b) -> a.concat(b + System.getProperty("line.separator"))));
-            output.setText(test.getOutputVariants().get(0).stream().reduce("", (a, b) -> a.concat(b + System.getProperty("line.separator"))));
+            updateCurrentTest(tests, input, output);
+            currentOutputVariant = 0; //You switch to another test and first output variant is ready to be edited.
+            fillTextAreaWithConcatenatedList(test.getInput(), input);
+            fillTextAreaWithConcatenatedList(test.getOutputVariants().get(currentOutputVariant), output);
             pane.setRight(showOutputVariantsButtons(output, test));
             updateButtonStyles(testButtons, currentTest, currentTest = Integer.parseInt(inputButton.getText()) - 1);
-            currentOutputVariant = 0;
+            additionalTestField.setText(test.getAdditionalTest());
         });
         inputButton.setStyle("-fx-base: #ffffff;");
         return inputButton;
     }
 
-    private HBox showTestButtons(ArrayList<Test> tests, TextArea input, TextArea output, BorderPane pane) {
+    private HBox showTestButtons(ArrayList<Test> tests, TextArea input, TextArea output, BorderPane pane, TextField additionalTestField) {
         HBox testButtons = new HBox();
         ArrayList<Button> buttons = new ArrayList<>();
         for (int i = 0; i < tests.size(); i++)
-            buttons.add(inputButton(testButtons, tests, i, input, output, pane));
+            buttons.add(inputButton(testButtons, tests, i, input, output, pane, additionalTestField));
         Button newTestButton = new Button("+");
         newTestButton.setOnAction(event -> {
             ArrayList<ArrayList<String>> newOutputVariants = new ArrayList<>();
             newOutputVariants.add(new ArrayList<>());
             tests.add(new Test(new ArrayList<>(), newOutputVariants));
             testButtons.getChildren().get(currentTest).setStyle("-fx-base: #ffffff;");
+            updateCurrentTest(tests, input, output);
             currentTest = testButtons.getChildren().size() - 1;
             currentOutputVariant = 0;
-            input.setText("");
-            output.setText("");
-            testButtons.getChildren().add(currentTest, inputButton(testButtons, tests, currentTest, input, output, pane));
+            input.clear();
+            output.clear();
+            additionalTestField.setText(tests.get(currentTest).getAdditionalTest());
+            testButtons.getChildren().add(currentTest, inputButton(testButtons, tests, currentTest, input, output, pane, additionalTestField));
             testButtons.getChildren().get(currentTest).setStyle("-fx-base: #b6e7c9;");
             pane.setRight(showOutputVariantsButtons(output, tests.get(currentTest)));
         });
         newTestButton.setStyle("-fx-base: #ffffff;");
         buttons.add(newTestButton);
-        buttons.get(0).setStyle("-fx-base: #b6e7c9;");
+        buttons.get(currentTest).setStyle("-fx-base: #b6e7c9;");
         testButtons.getChildren().addAll(buttons);
         return testButtons;
     }
@@ -349,9 +410,8 @@ public class MainController implements Initializable {
     private Button outputVariantButton(VBox outputButtons, Test test, int i, TextArea output) {
         Button outputVariantButton = new Button(Integer.toString(i + 1));
         outputVariantButton.setOnAction(event -> {
-            ArrayList<String> outputVariant = Arrays.stream(output.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new));
-            test.setOutputVariant(outputVariant, currentOutputVariant);
-            output.setText(test.getOutputVariants().get(Integer.parseInt(outputVariantButton.getText()) - 1).stream().reduce("", (a, b) -> a.concat(b + System.getProperty("line.separator"))));
+            test.setOutputVariant(Arrays.stream(output.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)), currentOutputVariant);
+            fillTextAreaWithConcatenatedList(test.getOutputVariants().get(Integer.parseInt(outputVariantButton.getText()) - 1), output);
             updateButtonStyles(outputButtons, currentOutputVariant, currentOutputVariant = Integer.parseInt(outputVariantButton.getText()) - 1);
         });
         outputVariantButton.setStyle("-fx-base: #ffffff;");
@@ -372,11 +432,11 @@ public class MainController implements Initializable {
             currentOutputVariant = test.getOutputVariants().size() - 1;
             outputButtons.getChildren().add(currentOutputVariant, outputVariantButton(outputButtons, test, currentOutputVariant, output));
             outputButtons.getChildren().get(currentOutputVariant).setStyle("-fx-base: #b6e7c9;");
-            output.setText("");
+            output.clear();
         });
         newOutputVariantButton.setStyle("-fx-base: #ffffff;");
         buttons.add(newOutputVariantButton);
-        buttons.get(0).setStyle("-fx-base: #b6e7c9;");
+        buttons.get(currentOutputVariant).setStyle("-fx-base: #b6e7c9;");
         outputButtons.getChildren().addAll(buttons);
         return outputButtons;
     }
