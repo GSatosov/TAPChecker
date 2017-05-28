@@ -362,35 +362,38 @@ class TestsApplier {
         return javaResult("OK", task, testInputFile, testOutputFile, errorFile);
     }
 
-    private int performAnAdditionalTest(String code, File outputFile, String taskName, ArrayList<ArrayList<String>> outputVariants) {
-        File testInputFile = new File(outputFile.getParent() + File.separator + taskName + "Test.java");
+    private int performAnAdditionalTest(String code, File inputFile, String taskName, ArrayList<ArrayList<String>> outputVariants) {
+        File codeFile = new File(inputFile.getParent() + File.separator + taskName + "Test.java");
         try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(testInputFile));
+            BufferedWriter writer = new BufferedWriter(new FileWriter(codeFile));
             writer.write(code);
             writer.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        File testErrorFile = new File(outputFile.getParent() + File.separator + taskName + "AdditionalError.txt");
+        File testErrorFile = new File(inputFile.getParent() + File.separator + taskName + "AdditionalError.txt");
         try {
             FileOutputStream errorStream = new FileOutputStream(testErrorFile);
-            compiler.run(null, null, errorStream, testInputFile.getPath());
+            compiler.run(null, null, errorStream, codeFile.getPath());
             errorStream.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        if (testErrorFile.length() > 0)
+        if (testErrorFile.length() > 0) {
+            codeFile.delete();
+            testErrorFile.delete();
             return 2; //Got an error while compiling the test; undesirable outcome.
+        }
         ArrayList<String> commands = new ArrayList<>();
         commands.add("java");
         commands.add("-cp");
-        commands.add(outputFile.getParent());
+        commands.add(inputFile.getParent());
         commands.add(taskName + "Test");
         ProcessBuilder pb = new ProcessBuilder(commands);
-        File testOutputFile = new File(outputFile.getParent() + File.separator + taskName + "AdditionalOutput.txt");
+        File testOutputFile = new File(inputFile.getParent() + File.separator + taskName + "AdditionalOutput.txt");
         pb.redirectError(testErrorFile);
         pb.redirectOutput(testOutputFile);
-        pb.redirectInput(outputFile);
+        pb.redirectInput(inputFile);
         try {
             Process p = pb.start();
             p.waitFor();
@@ -405,10 +408,13 @@ class TestsApplier {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            new File(inputFile.getParent() + File.separator + taskName + "Test.class").delete();
+            codeFile.delete();
+            testErrorFile.delete();
             return 1; //RE in additional test.
         }
-        new File(outputFile.getParent() + File.separator + taskName + "Test.class").delete();
-        testInputFile.delete();
+        new File(inputFile.getParent() + File.separator + taskName + "Test.class").delete();
+        codeFile.delete();
         testErrorFile.delete();
         try {
             ArrayList<String> output = new ArrayList<>(Files.readAllLines(Paths.get(testOutputFile.getPath())));
