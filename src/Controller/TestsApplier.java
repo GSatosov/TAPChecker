@@ -339,7 +339,7 @@ class TestsApplier {
                     Test.logList(javaOutputWriter, new ArrayList<>(Files.readAllLines(Paths.get(errorFile.getPath()))));
                     return javaResult("RE " + (i + 1), task, testInputFile, testOutputFile, errorFile); //Runtime Error
                 }
-                if (test.getAdditionalTest() != null) {
+                if (test.getAdditionalTest() == null || test.getAdditionalTest().isEmpty()) {
                     switch (performAnAdditionalTest(test.getAdditionalTest(), testOutputFile, taskName, test.getOutputVariants())) {
                         case 0:
                             continue;
