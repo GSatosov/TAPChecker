@@ -22,6 +22,7 @@ import javafx.util.StringConverter;
 import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
@@ -57,7 +58,7 @@ public class MainController implements Initializable {
     public void showResults(List<Result> results) {
         resultsTable.getTabs().clear();
         HashMap<String, ArrayList<Result>> resultsSplitSubjects = new HashMap<>();
-        results.stream().forEach(r -> {
+        results.forEach(r -> {
             if (!resultsSplitSubjects.containsKey(r.getSubject())) {
                 resultsSplitSubjects.put(r.getSubject(), new ArrayList<>());
             }
@@ -159,11 +160,6 @@ public class MainController implements Initializable {
         });
         editTests.setOnAction(event -> {
             Stage testEditorStage = new Stage();
-            ArrayList<Test> newTests = new ArrayList<>();
-            ArrayList<ArrayList<String>> outputVariants = new ArrayList<>();
-            outputVariants.add(new ArrayList<>());
-            newTests.add(new Test(new ArrayList<>(), outputVariants)); //Created test with one empty output variant.
-
             GridPane taskPane = new GridPane();
             BorderPane mainPane = new BorderPane();
             GridPane testsGridPane = new GridPane();
@@ -193,7 +189,6 @@ public class MainController implements Initializable {
                     }
                 }
             });
-
             TextField taskNameField = new TextField();
             TextField taskSubjectField = new TextField();
             taskPane.add(new Text("Enter the name of the function to check"), 0, 1);
@@ -210,15 +205,18 @@ public class MainController implements Initializable {
             taskPane.add(hardDeadlineCheckbox, 1, 6);
             taskPane.add(new Text("Check the task on plagiarism?"), 0, 7);
             taskPane.add(antiPlagiarismCheckBox, 1, 7);
-            TextArea inputField = new TextArea();
-            TextArea outputField = new TextArea();
-            outputField.setPrefWidth(200);
-            outputField.setPrefHeight(200);
-            inputField.setPrefHeight(200);
-            inputField.setPrefWidth(200);
+            TextArea inputArea = new TextArea();
+            TextArea outputArea = new TextArea();
+            outputArea.setPrefWidth(200);
+            outputArea.setPrefHeight(200);
+            inputArea.setPrefHeight(200);
+            inputArea.setPrefWidth(200);
             currentTest = 0;
             currentOutputVariant = 0;
-
+            ArrayList<Test> newTests = new ArrayList<>();
+            ArrayList<ArrayList<String>> outputVariants = new ArrayList<>();
+            outputVariants.add(new ArrayList<>());
+            newTests.add(new Test(new ArrayList<>(), outputVariants)); //Created test with one empty output variant.
             BorderPane testsPane = new BorderPane(); //Pane with test/output variants buttons and input/output text areas.
             GridPane bottomPane = new GridPane();
 
@@ -241,8 +239,8 @@ public class MainController implements Initializable {
                         currentTest--;
                 }
                 currentOutputVariant = 0;
-                testsPane.setTop(showTestButtons(newTests, inputField, outputField, testsPane, additionalTestField));
-                testsPane.setRight(showOutputVariantsButtons(outputField, newTests.get(currentTest)));
+                testsPane.setTop(showTestButtons(newTests, inputArea, outputArea, testsPane, additionalTestField));
+                testsPane.setRight(showOutputVariantsButtons(outputArea, newTests.get(currentTest)));
             });
             Button deleteOutputVariantButton = new Button("Delete Output Variant");
             deleteOutputVariantButton.setOnAction(event1 -> {
@@ -250,12 +248,12 @@ public class MainController implements Initializable {
                     outputVariants.clear();
                     outputVariants.add(new ArrayList<>());
                     newTests.get(currentTest).setOutputVariants(outputVariants);
-                    showOutputVariantsButtons(outputField, newTests.get(currentTest));
+                    showOutputVariantsButtons(outputArea, newTests.get(currentTest));
                 } else {
                     newTests.get(currentTest).removeOutputVariant(currentOutputVariant);
                     if (currentOutputVariant == newTests.get(currentTest).getOutputVariants().size())
                         currentOutputVariant--;
-                    testsPane.setRight(showOutputVariantsButtons(outputField, newTests.get(currentTest)));
+                    testsPane.setRight(showOutputVariantsButtons(outputArea, newTests.get(currentTest)));
                 }
             });
             Button saveTask = new Button("Save Task");
@@ -267,7 +265,7 @@ public class MainController implements Initializable {
                             java.sql.Date.valueOf(deadlinePicker.getValue()),
                             taskCodeField.getCharacters().toString(),
                             hardDeadlineCheckbox.isSelected());
-                    fillCurrentTest(newTests, inputField, outputField);
+                    fillCurrentTest(newTests, inputArea, outputArea);
                     task.setTestContents(newTests);
                     try {
                         GoogleDriveManager.saveTask(task);
@@ -279,21 +277,101 @@ public class MainController implements Initializable {
             bottomPane.add(saveTask, 0, 2);
             bottomPane.add(deleteTestButton, 1, 2);
             bottomPane.add(deleteOutputVariantButton, 2, 2);
-
+            ComboBox<String> subjectsBox = new ComboBox<>();
+            ComboBox<String> tasksBox = new ComboBox<>();
+            try {
+                HashMap<String, ArrayList<Task>> subjectsAndTasks = GoogleDriveManager.getTasksAndSubjects();
+                ArrayList<String> subjects = new ArrayList<>(subjectsAndTasks.keySet());
+                subjectsBox.getItems().addAll(subjects);
+                subjectsBox.setOnAction(event1 -> {
+                    tasksBox.getSelectionModel().clearSelection();
+                    tasksBox.getItems().clear();
+                    if (!subjectsBox.getValue().equals("New Subject...")) {
+                        tasksBox.getItems().addAll(subjectsAndTasks.get(subjectsBox.getValue()).stream().map(Task::getName).collect(Collectors.toList()));
+                    }
+                    tasksBox.getItems().add("New Task...");
+                    fillFieldsWithTaskInformation(emptyTask(), taskCodeField, taskSubjectField, taskNameField, inputArea, outputArea, antiPlagiarismCheckBox, hardDeadlineCheckbox, deadlinePicker, timeLimitField,
+                            additionalTestField, testsPane);
+                    tasksBox.getSelectionModel().selectLast();
+                });
+                tasksBox.setOnAction(event1 -> {
+                    if (tasksBox.getValue() != null) {
+                        Task task;
+                        if (!subjectsBox.getValue().equals("New Subject...")) {
+                            if (!tasksBox.getValue().equals("New Task...")) {
+                                task = subjectsAndTasks.get(subjectsBox.getValue()).stream().filter(t -> t.getName().equals(tasksBox.getValue())).findFirst().get();
+                            } else {
+                                task = emptyTask();
+                                task.setSubjectName(subjectsBox.getValue());
+                            }
+                        } else {
+                            task = emptyTask();
+                        }
+                        fillFieldsWithTaskInformation(task, taskCodeField, taskSubjectField, taskNameField, inputArea, outputArea, antiPlagiarismCheckBox, hardDeadlineCheckbox, deadlinePicker, timeLimitField,
+                                additionalTestField, testsPane);
+                    }
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            subjectsBox.getItems().add("New Subject...");
+            tasksBox.getItems().add("New Task...");
+            subjectsBox.getSelectionModel().selectLast();
+            tasksBox.getSelectionModel().selectLast();
+            GridPane comboBoxesPane = new GridPane();
+            comboBoxesPane.add(subjectsBox, 0, 1);
+            comboBoxesPane.add(tasksBox, 1, 1);
             BorderPane tasksBorderPane = new BorderPane();
             tasksBorderPane.setCenter(taskPane);
             tasksBorderPane.setBottom(testsPane);
             testsPane.setCenter(testsGridPane);
-            testsPane.setTop(showTestButtons(newTests, inputField, outputField, testsPane, additionalTestField));
-            testsPane.setRight(showOutputVariantsButtons(outputField, newTests.get(currentTest)));
-            testsGridPane.add(inputField, 0, 1);
-            testsGridPane.add(outputField, 1, 1);
+            testsPane.setTop(showTestButtons(newTests, inputArea, outputArea, testsPane, additionalTestField));
+            testsGridPane.add(inputArea, 0, 1);
+            testsGridPane.add(outputArea, 1, 1);
+            mainPane.setTop(comboBoxesPane);
             mainPane.setCenter(tasksBorderPane);
             mainPane.setBottom(bottomPane);
-            testEditorStage.setScene(new Scene(mainPane, 500, 450));
+            testEditorStage.setScene(new Scene(mainPane, 500, 480));
             testEditorStage.setTitle("Task Editor");
             testEditorStage.show();
         });
+    }
+
+    private Task emptyTask() {
+        Task task = new Task();
+        ArrayList<Test> newTests = new ArrayList<>();
+        ArrayList<ArrayList<String>> outputVariants = new ArrayList<>();
+        outputVariants.add(new ArrayList<>());
+        newTests.add(new Test(new ArrayList<>(), outputVariants));
+        task.setTestContents(newTests);
+        return task;
+    }
+
+    private void fillFieldsWithTaskInformation(Task task, TextField taskCodeField,
+                                               TextField taskSubjectNameField, TextField taskNameField,
+                                               TextArea input, TextArea output,
+                                               CheckBox antiPlagiarism, CheckBox hasHardDeadline,
+                                               DatePicker deadlinePicker, TextField timeLimitTextField,
+                                               TextField additionalTestField,
+                                               BorderPane pane) {
+        taskSubjectNameField.setText(task.getSubjectName());
+        taskNameField.setText(task.getName());
+        taskCodeField.setText(task.getTaskCode());
+        antiPlagiarism.setSelected(task.shouldBeCheckedForAntiPlagiarism());
+        hasHardDeadline.setSelected(task.hasHardDeadline());
+        if (task.getTimeInMS() == 0)
+            timeLimitTextField.clear();
+        else
+            timeLimitTextField.setText(Long.toString(task.getTimeInMS()));
+        if (task.getDeadline() != null)
+            deadlinePicker.setValue(task.getDeadline().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+        else
+            deadlinePicker.setValue(null);
+        fillTextAreaWithConcatenatedList(task.getTestContents().get(0).getInput(), input);
+        fillTextAreaWithConcatenatedList(task.getTestContents().get(0).getOutputVariants().get(0), output);
+        additionalTestField.setText(task.getTestContents().get(0).getAdditionalTest());
+        pane.setTop(showTestButtons(task.getTestContents(), input, output, pane, additionalTestField));
+
     }
 
     private boolean fieldsAreReady(TextField timeLimit, DatePicker picker, TextField taskCode, TextField taskName, TextField taskSubjectName) {
@@ -409,6 +487,7 @@ public class MainController implements Initializable {
         buttons.add(newTestButton);
         buttons.get(currentTest).setStyle("-fx-base: #b6e7c9;");
         testButtons.getChildren().addAll(buttons);
+        pane.setRight(showOutputVariantsButtons(output, tests.get(currentTest)));
         return testButtons;
     }
 

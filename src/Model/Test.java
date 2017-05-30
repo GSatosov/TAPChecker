@@ -54,6 +54,7 @@ public class Test implements Serializable {
     public Test(ArrayList<String> input, ArrayList<ArrayList<String>> outputVariants) {
         this.input = input;
         this.outputVariants = outputVariants;
+        this.additionalTest = "";
     }
 
     public void logOutputVariants(BufferedWriter writer) {

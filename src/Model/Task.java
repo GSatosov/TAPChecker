@@ -27,6 +27,10 @@ public class Task implements Serializable {
 
     }
 
+    public void setSubjectName(String subjectName) {
+        this.subjectName = subjectName;
+    }
+
     public void setTestFields(long timeInMS, boolean antiPlagiarism, Date deadline, String taskCode, boolean hardDeadline) {
         this.timeInMS = timeInMS;
         this.antiPlagiarism = antiPlagiarism;
