@@ -44,6 +44,12 @@ public class General {
     }
 
     public static void getResults(Callback onExit, MainController mainController) throws InterruptedException {
+        try {
+            System.out.println(GoogleDriveManager.getTasksAndSubjects());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         startDate = new Date();
 
         latchForTaskAppliers = new CountDownLatch(2);

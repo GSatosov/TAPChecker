@@ -24,7 +24,7 @@ public class Test implements Serializable {
         this.additionalTest = additionalTest;
     }
 
-    private String additionalTest;
+    private String additionalTest = "";
 
     public void setOutputVariants(ArrayList<ArrayList<String>> outputVariants) {
         this.outputVariants = outputVariants;

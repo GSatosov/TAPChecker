@@ -49,20 +49,10 @@ public class Result implements Comparable, Serializable {
             String[] errorB = b.getMessage().split(" ");
             String errorACode = errorA[0], errorBCode = errorB[0];
             int errorANum = 0, errorBNum = 0;
-            if (errorACode.equals("DL")) {
-                errorACode += " " + errorA[1];
-                if (errorA.length == 3) {
-                    errorANum = Integer.parseInt(errorA[2]);
-                }
-            } else if (errorA.length == 2) {
+            if (errorA.length == 2) {
                 errorANum = Integer.parseInt(errorA[1]);
             }
-            if (errorBCode.equals("DL")) {
-                errorBCode += " " + errorB[1];
-                if (errorB.length == 3) {
-                    errorBNum = Integer.parseInt(errorB[2]);
-                }
-            } else if (errorB.length == 2) {
+            if (errorB.length == 2) {
                 errorBNum = Integer.parseInt(errorB[1]);
             }
 
@@ -75,7 +65,7 @@ public class Result implements Comparable, Serializable {
                 }
             }
             else {
-                List<String> results = Arrays.asList("CE", "RE", "TL", "WA", "DL CE", "DL RE", "DL TL", "DL WA", "DL OK", "OK");
+                List<String> results = Arrays.asList("CE", "RE", "TL", "WA", "OK");
                 return Integer.compare(results.indexOf(errorACode), results.indexOf(errorBCode));
             }
         }

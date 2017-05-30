@@ -63,6 +63,13 @@ public class ResultsSender implements Runnable {
                         Spreadsheet responseID = requestSheetId.execute();
                         Integer sheetID = responseID.getSheets().get(0).getProperties().getSheetId();
 
+                        BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(Collections.singletonList(new Request().setUpdateCells(new UpdateCellsRequest()
+                                .setRange(new GridRange().setSheetId(sheetID))
+                                .setFields("*")
+                        )));
+                        service.spreadsheets().batchUpdate(spreadsheetId, body).execute();
+
+
                         List<List<Object>> writeData = new ArrayList<>();
                         final ArrayList<Request> requests = new ArrayList<>();
                         AtomicInteger lineIndex = new AtomicInteger(0);
@@ -108,10 +115,24 @@ public class ResultsSender implements Runnable {
                                     studResults.add(studName);
                                     for (int i = 0; i < taskNumbers.size() - 1; i++) studResults.add("");
                                 }
-                                studResults.set(taskNumbers.indexOf(result.getTask().getTaskCode()), result.getMessage());
                                 studentsResults.put(studName, studResults);
                             });
-
+                            final AtomicInteger studentsRowsCounter = new AtomicInteger(currentIndex);
+                            studentsResults.keySet().stream().sorted(String::compareTo).forEach(key -> {
+                                ArrayList<Object> studResults = studentsResults.get(key);
+                                List<Result> results = groupResults.stream().filter(result1 -> result1.getStudent().getName().equals(key)).collect(Collectors.toList());
+                                results.forEach(result -> {
+                                    int columnNum = taskNumbers.indexOf(result.getTask().getTaskCode());
+                                    studResults.set(columnNum, result.getMessage());
+                                    if (result.getTask().getReceivedDate().compareTo(result.getTask().getDeadline()) > 0) {
+                                        requests.add(new Request().setRepeatCell(new RepeatCellRequest()
+                                                .setRange(new GridRange().setSheetId(sheetID).setStartRowIndex(studentsRowsCounter.get()).setEndRowIndex(studentsRowsCounter.get() + 1).setStartColumnIndex(columnNum).setEndColumnIndex(columnNum + 1))
+                                                .setCell(new CellData().setUserEnteredFormat(new CellFormat().setBackgroundColor(new Color().setRed(1.0f).setGreen(result.getTask().hasHardDeadline() ? 0 : 1.0f))))
+                                                .setFields("userEnteredFormat(backgroundColor)")));
+                                    }
+                                });
+                                studentsRowsCounter.incrementAndGet();
+                            });
                             requests.add(new Request().setRepeatCell(new RepeatCellRequest()
                                     .setRange(new GridRange().setSheetId(sheetID).setStartRowIndex(currentIndex).setEndRowIndex(lineIndex.get()).setStartColumnIndex(1))
                                     .setCell(new CellData().setUserEnteredFormat(centerFormat))

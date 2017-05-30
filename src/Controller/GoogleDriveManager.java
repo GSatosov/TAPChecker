@@ -265,8 +265,8 @@ public class GoogleDriveManager {
         return taskNumbersForSubjects;
     }
 
-    public static HashMap<String, ArrayList<String>> getTasksAndSubjects() throws IOException {
-        HashMap<String, ArrayList<String>> taskNumbersForSubjects = new HashMap<>();
+    public static HashMap<String, ArrayList<Task>> getTasksAndSubjects() throws IOException {
+        HashMap<String, ArrayList<Task>> tasksAndSubjects = new HashMap<>();
         Set<String> subjects = GlobalSettings.getInstance().getSubjectsAndGroups().keySet();
         Drive service = getDriveService();
         FileList getFolders = service.files().list().setQ("mimeType = 'application/vnd.google-apps.folder'").execute();
@@ -294,15 +294,50 @@ public class GoogleDriveManager {
                                 "mimeType != 'application/vnd.google-apps.document' and trashed = false")
                         .setFields("nextPageToken, files(id, name)")
                         .execute();
-                ArrayList<String> tasks = new ArrayList<>();
-                files.getFiles().forEach(file -> tasks.add(file.getName().substring(0, file.getName().lastIndexOf('.'))));
-                tasks.sort(String::compareTo);
-                taskNumbersForSubjects.put(subjectName, tasks);
+                ArrayList<Task> tasks = new ArrayList<>();
+                files.getFiles().forEach(file -> {
+                    Task task = new Task(file.getName().substring(0, file.getName().lastIndexOf('.')), subjectName, null, null);
+                    OutputStream outputStream = new ByteArrayOutputStream();
+                    try {
+                        service.files().get(file.getId()).executeMediaAndDownloadTo(outputStream);
+                        ArrayList<Test> testsResult = new ArrayList<>();
+                        JSONObject tests = new JSONObject(outputStream.toString());
+                        Date deadline = new SimpleDateFormat("dd.MM.yyyy").parse(tests.getString("deadline"));
+                        boolean antiPlagiarism = tests.getBoolean("antiPlagiarism");
+                        long time = tests.getLong("maximumOperatingTimeInMS");
+                        boolean hasHardDeadline = tests.getBoolean("hasHardDeadline");
+                        String taskCode = tests.getString("taskCode");
+                        JSONArray aTests = tests.getJSONArray("tests");
+                        task.setTestFields(time, antiPlagiarism, deadline, taskCode, hasHardDeadline);
+                        aTests.forEach(t -> {
+                            ArrayList<String> input = new ArrayList<>();
+                            ArrayList<ArrayList<String>> output = new ArrayList<>();
+                            JSONObject jOnj = (JSONObject) t;
+                            JSONArray jInput = jOnj.getJSONArray("input");
+                            jInput.forEach(jI -> input.add((String) jI));
+                            JSONArray jOutput = jOnj.getJSONArray("output");
+                            jOutput.forEach(jO -> {
+                                JSONArray aJO = (JSONArray) jO;
+                                ArrayList<String> outputVar = new ArrayList<>();
+                                aJO.forEach(jAJO -> outputVar.add((String) jAJO));
+                                output.add(outputVar);
+                            });
+                            testsResult.add(new Test(input, output));
+                        });
+                        task.setTestContents(testsResult);
+                        tasks.add(task);
+                    } catch (IOException | ParseException e) {
+                        e.printStackTrace();
+                    }
+
+                });
+                tasks.sort(Comparator.comparing(Task::getName));
+                tasksAndSubjects.put(subjectName, tasks);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         });
-        return taskNumbersForSubjects;
+        return tasksAndSubjects;
     }
 
 
