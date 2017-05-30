@@ -10,6 +10,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.FileContent;
 import com.google.api.client.http.HttpTransport;
+import com.google.api.client.json.Json;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
@@ -22,9 +23,7 @@ import com.google.api.services.sheets.v4.SheetsScopes;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.text.ParseException;
@@ -176,9 +175,9 @@ public class GoogleDriveManager {
                             "mimeType != 'application/vnd.google-apps.document' and trashed = false")
                     .setFields("nextPageToken, files(id, name)")
                     .execute();
-            String taskName = task.getName().split("\\.")[0];
+            String taskName = task.getName().substring(0, task.getName().lastIndexOf('.'));
 
-            Optional<File> oTests = result.getFiles().stream().filter(file -> file.getName().split("\\.")[0].equals(taskName)).findFirst();
+            Optional<File> oTests = result.getFiles().stream().filter(file -> file.getName().substring(0, task.getName().lastIndexOf('.')).startsWith(taskName)).findFirst();
             if (!oTests.isPresent()) {
                 throw new IOException("There is no tests file for: " + taskName + "/" + taskSubject);
             } else {
@@ -219,9 +218,9 @@ public class GoogleDriveManager {
         Set<String> subjects = GlobalSettings.getInstance().getSubjectsAndGroups().keySet();
         Drive service = getDriveService();
         FileList getFolders = service.files().list().setQ("mimeType = 'application/vnd.google-apps.folder'").execute();
-        getFolders.getFiles().stream().filter(file -> subjects.contains(file.getName().replace("_", " "))).forEach(subjectFile -> {
+        getFolders.getFiles().stream().filter(file -> subjects.contains(file.getName().replaceAll("_", " "))).forEach(subjectFile -> {
             try {
-                String subjectName = subjectFile.getName().replace("_", " ");
+                String subjectName = subjectFile.getName().replaceAll("_", " ");
                 FileList files = service.files().list()
                         .setQ("'" + subjectFile.getId() + "' in parents and " +
                                 "mimeType != 'application/vnd.google-apps.folder' and " +
@@ -270,9 +269,9 @@ public class GoogleDriveManager {
         Set<String> subjects = GlobalSettings.getInstance().getSubjectsAndGroups().keySet();
         Drive service = getDriveService();
         FileList getFolders = service.files().list().setQ("mimeType = 'application/vnd.google-apps.folder'").execute();
-        getFolders.getFiles().stream().filter(file -> subjects.contains(file.getName().replace("_", " "))).forEach(subjectFile -> {
+        getFolders.getFiles().stream().filter(file -> subjects.contains(file.getName().replaceAll("_", " "))).forEach(subjectFile -> {
             try {
-                String subjectName = subjectFile.getName().replace("_", " ");
+                String subjectName = subjectFile.getName().replaceAll("_", " ");
                 FileList files = service.files().list()
                         .setQ("'" + subjectFile.getId() + "' in parents and " +
                                 "mimeType != 'application/vnd.google-apps.folder' and " +
@@ -338,6 +337,87 @@ public class GoogleDriveManager {
             }
         });
         return tasksAndSubjects;
+    }
+
+    public static void saveTask(Task task) throws IOException {
+        Drive service = getDriveService();
+
+        FileList getFolders = service.files().list().setQ("mimeType = 'application/vnd.google-apps.folder'").execute();
+        Optional<File> folder = getFolders.getFiles().stream().filter(file -> task.getSubjectName().equals(file.getName().replaceAll("_", " "))).findFirst();
+        String folderId = "";
+        if (folder.isPresent()) {
+            folderId = folder.get().getId();
+        }
+        else {
+            File fileMetadata = new File();
+            fileMetadata.setName(task.getSubjectName().replaceAll(" ", "_"));
+            fileMetadata.setMimeType("application/vnd.google-apps.folder");
+
+            File folderFile = service.files().create(fileMetadata)
+                    .setFields("id")
+                    .execute();
+
+            folderId = folderFile.getId();
+        }
+
+        FileList result = service.files().list()
+                .setQ("'" + folderId + "' in parents and name contains '" + task.getName() + ".txt' and trashed = false")
+                .execute();
+        result.getFiles().forEach(file -> {
+            try {
+                service.files().delete(file.getId()).execute();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+
+        com.google.api.services.drive.model.File fileMetadata = new com.google.api.services.drive.model.File();
+        fileMetadata.setParents(Collections.singletonList(folderId));
+        fileMetadata.setName(task.getName() + ".txt");
+
+        JSONObject taskJSON = new JSONObject();
+        taskJSON.put("maximumOperatingTimeInMS", task.getTimeInMS());
+        taskJSON.put("antiPlagiarism", task.shouldBeCheckedForAntiPlagiarism());
+        taskJSON.put("deadline", new SimpleDateFormat("dd.MM.yyyy").format(task.getDeadline()));
+        taskJSON.put("hasHardDeadline", task.hasHardDeadline());
+        taskJSON.put("taskCode", task.getTaskCode());
+        JSONArray tests = new JSONArray();
+        task.getTestContents().forEach(test -> {
+            JSONObject testJSON = new JSONObject();
+
+            JSONArray testInput = new JSONArray();
+            test.getInput().forEach(testInput::put);
+            testJSON.put("input", testInput);
+
+            JSONArray testOutput = new JSONArray();
+            test.getOutputVariants().forEach(outputVar -> {
+                JSONArray outputJson = new JSONArray();
+                outputVar.forEach(outputJson::put);
+                testOutput.put(outputJson);
+            });
+            testJSON.put("output", testOutput);
+
+            tests.put(testJSON);
+        });
+        taskJSON.put("tests", tests);
+
+        try {
+            BufferedWriter out = new BufferedWriter(new FileWriter(GlobalSettings.getDataFolder() + "/" + task.getName() + ".txt"));
+            out.write(taskJSON.toString());
+            out.close();
+
+            java.io.File filePath = new java.io.File(GlobalSettings.getDataFolder() + "/" + task.getName() + ".txt");
+            FileContent mediaContent = new FileContent(Files.probeContentType(filePath.toPath()), filePath);
+            com.google.api.services.drive.model.File file = GoogleDriveManager.getService().files().create(fileMetadata, mediaContent)
+                    .setFields("id")
+                    .execute();
+
+            filePath.delete();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
 

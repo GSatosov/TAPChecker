@@ -8,6 +8,7 @@ import java.util.Date;
  * Created by GSatosov on 3/3/2017.
  */
 public class Task implements Serializable {
+
     private String subjectName;
     private String name;
 

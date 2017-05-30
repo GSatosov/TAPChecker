@@ -1,6 +1,7 @@
 package View;
 
 import Controller.General;
+import Controller.GoogleDriveManager;
 import Model.Result;
 import Model.Task;
 import Model.Test;
@@ -260,7 +261,7 @@ public class MainController implements Initializable {
             Button saveTask = new Button("Save Task");
             saveTask.setOnAction(event1 -> {
                 if (fieldsAreReady(timeLimitField, deadlinePicker, taskCodeField, taskNameField, taskSubjectField)) {
-                    Task task = new Task();
+                    Task task = new Task(taskNameField.getText(), taskSubjectField.getText(), null, null);
                     task.setTestFields(Long.parseLong(timeLimitField.getCharacters().toString()),
                             antiPlagiarismCheckBox.isSelected(),
                             java.sql.Date.valueOf(deadlinePicker.getValue()),
@@ -268,6 +269,11 @@ public class MainController implements Initializable {
                             hardDeadlineCheckbox.isSelected());
                     fillCurrentTest(newTests, inputField, outputField);
                     task.setTestContents(newTests);
+                    try {
+                        GoogleDriveManager.saveTask(task);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             });
             bottomPane.add(saveTask, 0, 2);
