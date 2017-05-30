@@ -176,8 +176,7 @@ public class GoogleDriveManager {
                     .setFields("nextPageToken, files(id, name)")
                     .execute();
             String taskName = task.getName().substring(0, task.getName().lastIndexOf('.'));
-
-            Optional<File> oTests = result.getFiles().stream().filter(file -> file.getName().substring(0, task.getName().lastIndexOf('.')).startsWith(taskName)).findFirst();
+            Optional<File> oTests = result.getFiles().stream().filter(file -> file.getName().substring(0, file.getName().lastIndexOf('.')).startsWith(taskName)).findFirst();
             if (!oTests.isPresent()) {
                 throw new IOException("There is no tests file for: " + taskName + "/" + taskSubject);
             } else {
