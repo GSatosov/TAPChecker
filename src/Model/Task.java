@@ -26,6 +26,9 @@ public class Task implements Serializable {
     public Task() {
 
     }
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public void setSubjectName(String subjectName) {
         this.subjectName = subjectName;
