@@ -432,8 +432,8 @@ public class MainController implements Initializable {
                     currentOutputVariant);
     }
 
-    private void updateCurrentTest(ArrayList<Test> tests, TextArea input, TextArea output) {
-        Test testToBeUpdated = tests.get(currentTest);
+    private void updateCurrentTest(TextArea input, TextArea output) {
+        Test testToBeUpdated = curTask.getTestContents().get(currentTest);
         testToBeUpdated.setInput(Arrays.stream(input.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)));
         testToBeUpdated.setOutputVariant(Arrays.stream(output.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)), currentOutputVariant);
     }
@@ -452,16 +452,16 @@ public class MainController implements Initializable {
     }
 
     //Buttons that show input of each test.
-    private Button inputButton(HBox testButtons, ArrayList<Test> tests, int i, TextArea input, TextArea output, BorderPane pane, TextField additionalTestField) {
-        Test test = tests.get(i);
+    private Button inputButton(HBox testButtons, int i, TextArea input, TextArea output, BorderPane pane, TextField additionalTestField) {
+        Test test = curTask.getTestContents().get(i);
         Button inputButton = new Button(Integer.toString(i + 1));
         inputButton.setOnAction(event -> {
-            updateCurrentTest(tests, input, output);
+            updateCurrentTest(input, output);
             currentOutputVariant = 0; //You switch to another test and first output variant is ready to be edited.
             fillTextAreaWithConcatenatedList(test.getInput(), input);
             fillTextAreaWithConcatenatedList(test.getOutputVariants().get(currentOutputVariant), output);
-            pane.setRight(showOutputVariantsButtons(output));
             updateButtonStyles(testButtons, currentTest, currentTest = Integer.parseInt(inputButton.getText()) - 1);
+            pane.setRight(showOutputVariantsButtons(output));
             additionalTestField.setText(test.getAdditionalTest());
         });
         inputButton.setStyle("-fx-base: #ffffff;");
@@ -473,20 +473,18 @@ public class MainController implements Initializable {
         ArrayList<Test> tests = curTask.getTestContents();
         ArrayList<Button> buttons = new ArrayList<>();
         for (int i = 0; i < tests.size(); i++)
-            buttons.add(inputButton(testButtons, tests, i, input, output, pane, additionalTestField));
+            buttons.add(inputButton(testButtons, i, input, output, pane, additionalTestField));
         Button newTestButton = new Button("+");
         newTestButton.setOnAction(event -> {
-            ArrayList<ArrayList<String>> newOutputVariants = new ArrayList<>();
-            newOutputVariants.add(new ArrayList<>());
-            tests.add(new Test(new ArrayList<>(), newOutputVariants));
+            tests.add(new Test(new ArrayList<>(), emptyOutputVariants()));
             testButtons.getChildren().get(currentTest).setStyle("-fx-base: #ffffff;");
-            updateCurrentTest(tests, input, output);
+            updateCurrentTest(input, output);
             currentTest = testButtons.getChildren().size() - 1;
             currentOutputVariant = 0;
             input.clear();
             output.clear();
             additionalTestField.setText(tests.get(currentTest).getAdditionalTest());
-            testButtons.getChildren().add(currentTest, inputButton(testButtons, tests, currentTest, input, output, pane, additionalTestField));
+            testButtons.getChildren().add(currentTest, inputButton(testButtons, currentTest, input, output, pane, additionalTestField));
             testButtons.getChildren().get(currentTest).setStyle("-fx-base: #b6e7c9;");
             pane.setRight(showOutputVariantsButtons(output));
         });
@@ -494,6 +492,7 @@ public class MainController implements Initializable {
         buttons.add(newTestButton);
         buttons.get(currentTest).setStyle("-fx-base: #b6e7c9;");
         testButtons.getChildren().addAll(buttons);
+        fillTextAreaWithConcatenatedList(curTask.getTestContents().get(currentTest).getInput(), input);
         pane.setRight(showOutputVariantsButtons(output));
         return testButtons;
     }
@@ -503,8 +502,8 @@ public class MainController implements Initializable {
         Button outputVariantButton = new Button(Integer.toString(i + 1));
         outputVariantButton.setOnAction(event -> {
             test.setOutputVariant(Arrays.stream(output.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)), currentOutputVariant);
-            fillTextAreaWithConcatenatedList(test.getOutputVariants().get(Integer.parseInt(outputVariantButton.getText()) - 1), output);
             updateButtonStyles(outputButtons, currentOutputVariant, currentOutputVariant = Integer.parseInt(outputVariantButton.getText()) - 1);
+            fillTextAreaWithConcatenatedList(test.getOutputVariants().get(currentOutputVariant), output);
         });
         outputVariantButton.setStyle("-fx-base: #ffffff;");
         return outputVariantButton;
@@ -530,7 +529,6 @@ public class MainController implements Initializable {
         newOutputVariantButton.setStyle("-fx-base: #ffffff;");
         buttons.add(newOutputVariantButton);
         buttons.get(currentOutputVariant).setStyle("-fx-base: #b6e7c9;");
-        fillTextAreaWithConcatenatedList(test.getOutputVariants().get(currentOutputVariant), output);
         outputButtons.getChildren().addAll(buttons);
         return outputButtons;
     }
