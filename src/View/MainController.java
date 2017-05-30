@@ -422,20 +422,20 @@ public class MainController implements Initializable {
     //Fills runTests with content found in input fields. Rewrite.
     private void fillCurrentTest(TextArea inputField, TextArea outputField) {
         ArrayList<Test> newTests = curTask.getTestContents();
-        newTests.get(currentTest).setInput(Arrays.stream(inputField.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)));
+        newTests.get(currentTest).setInput(Arrays.stream(inputField.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)));
         if (newTests.get(currentTest).getOutputVariants().size() == 1) {
             ArrayList<ArrayList<String>> outputVariants = new ArrayList<>();
-            outputVariants.add(Arrays.stream(outputField.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)));
+            outputVariants.add(Arrays.stream(outputField.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)));
             newTests.get(currentTest).setOutputVariants(outputVariants);
         } else
-            newTests.get(currentTest).setOutputVariant(Arrays.stream(outputField.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)),
+            newTests.get(currentTest).setOutputVariant(Arrays.stream(outputField.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)),
                     currentOutputVariant);
     }
 
     private void updateCurrentTest(ArrayList<Test> tests, TextArea input, TextArea output) {
         Test testToBeUpdated = tests.get(currentTest);
-        testToBeUpdated.setInput(Arrays.stream(input.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)));
-        testToBeUpdated.setOutputVariant(Arrays.stream(output.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)), currentOutputVariant);
+        testToBeUpdated.setInput(Arrays.stream(input.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)));
+        testToBeUpdated.setOutputVariant(Arrays.stream(output.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)), currentOutputVariant);
     }
 
     private void fillTextAreaWithConcatenatedList(ArrayList<String> list, TextArea area) {
@@ -446,7 +446,7 @@ public class MainController implements Initializable {
             if (list.size() == 1)
                 area.setText(identity);
             else {
-                area.setText(list.subList(1, list.size()).stream().reduce(identity, (a, b) -> a.concat(System.getProperty("line.separator").concat(b))));
+                area.setText(list.subList(1, list.size()).stream().reduce(identity, (a, b) -> a.concat("\n").concat(b)));
             }
         }
     }
@@ -502,7 +502,7 @@ public class MainController implements Initializable {
     private Button outputVariantButton(VBox outputButtons, Test test, int i, TextArea output) {
         Button outputVariantButton = new Button(Integer.toString(i + 1));
         outputVariantButton.setOnAction(event -> {
-            test.setOutputVariant(Arrays.stream(output.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)), currentOutputVariant);
+            test.setOutputVariant(Arrays.stream(output.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)), currentOutputVariant);
             fillTextAreaWithConcatenatedList(test.getOutputVariants().get(Integer.parseInt(outputVariantButton.getText()) - 1), output);
             updateButtonStyles(outputButtons, currentOutputVariant, currentOutputVariant = Integer.parseInt(outputVariantButton.getText()) - 1);
         });
@@ -520,7 +520,7 @@ public class MainController implements Initializable {
         Button newOutputVariantButton = new Button("+");
         newOutputVariantButton.setOnAction(event -> {
             test.addOutputVariant(new ArrayList<>());
-            test.setOutputVariant(Arrays.stream(output.getText().split(System.getProperty("line.separator"))).collect(Collectors.toCollection(ArrayList::new)), currentOutputVariant);
+            test.setOutputVariant(Arrays.stream(output.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)), currentOutputVariant);
             outputButtons.getChildren().get(currentOutputVariant).setStyle("-fx-base: #ffffff;");
             currentOutputVariant = test.getOutputVariants().size() - 1;
             outputButtons.getChildren().add(currentOutputVariant, outputVariantButton(outputButtons, test, currentOutputVariant, output));
