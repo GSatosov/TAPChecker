@@ -259,11 +259,11 @@ public class MainController implements Initializable {
                             taskCodeField.getCharacters().toString(),
                             hardDeadlineCheckbox.isSelected());
                     fillCurrentTest(inputArea, outputArea);
-                 /*   try {
-                        GoogleDriveManager.saveTask(task);
+                    try {
+                        GoogleDriveManager.saveTask(curTask);
                     } catch (IOException e) {
                         e.printStackTrace();
-                    } */
+                    }
                     System.out.println("");
                 }
             });
