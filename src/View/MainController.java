@@ -1,6 +1,7 @@
 package View;
 
 import Controller.General;
+import Model.GlobalSettings;
 import Model.LocalSettings;
 import Model.Result;
 import javafx.fxml.FXML;
@@ -14,6 +15,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
@@ -116,6 +118,7 @@ public class MainController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        new File(GlobalSettings.getDataFolder()).mkdirs();
         runTests.setOnAction(event -> {
             runTests.setDisable(true);
             try {
