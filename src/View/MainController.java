@@ -1,20 +1,28 @@
 package View;
 
 import Controller.General;
+import Controller.GoogleDriveManager;
 import Model.GlobalSettings;
 import Model.LocalSettings;
 import Model.Result;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.cell.MapValueFactory;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -49,72 +57,138 @@ public class MainController implements Initializable {
         return settingsFrame;
     }
 
-    public void showResults(List<Result> results) {
-        resultsTable.getTabs().clear();
-        HashMap<String, ArrayList<Result>> resultsSplitSubjects = new HashMap<>();
-        results.forEach(r -> {
-            if (!resultsSplitSubjects.containsKey(r.getSubject())) {
-                resultsSplitSubjects.put(r.getSubject(), new ArrayList<>());
-            }
-            resultsSplitSubjects.get(r.getSubject()).add(r);
-        });
-        resultsSplitSubjects.forEach((k, v) -> {
-            TableView currentTable = new TableView();
-            addColumn(currentTable, "ФИО");
-            for (int i = 1; i < 100; i++) {
-                addColumn(currentTable, i + "");
-            }
+    private class ResultsTableCellObject {
 
-            HashMap<String, ArrayList<Result>> groupResults = new HashMap<>();
-            v.forEach(r -> {
-                if (!groupResults.containsKey(r.getGroup())) {
-                    groupResults.put(r.getGroup(), new ArrayList<>());
-                }
-                groupResults.get(r.getGroup()).add(r);
-            });
-            groupResults.forEach((kGroup, vGroup) -> {
-                HashMap<String, String> groupHM = new HashMap<>();
-                groupHM.put("ФИО", "Группа " + kGroup);
-                ArrayList<String> tasks = new ArrayList((vGroup.stream().map(r -> r.getTask().getName()).collect(Collectors.toSet())));
-                tasks.sort(String::compareTo);
-                for (int i = 0; i < tasks.size(); i++) {
-                    groupHM.put((i + 1) + "", tasks.get(i));
-                }
-                currentTable.getItems().add(groupHM);
-                HashMap<String, ArrayList<String>> studentsResults = new HashMap<>();
-                vGroup.forEach(gR -> {
-                    ArrayList<String> resultsStudent = studentsResults.get(gR.getStudent().getName());
-                    if (!studentsResults.containsKey(gR.getStudent().getName())) {
-                        studentsResults.put(gR.getStudent().getName(), new ArrayList<String>());
-                        resultsStudent = studentsResults.get(gR.getStudent().getName());
-                        resultsStudent.add(gR.getStudent().getName());
-                        for (int i = 0; i < tasks.size(); i++) resultsStudent.add("");
-                    }
-                    resultsStudent.set(tasks.indexOf(gR.getTask().getName()) + 1, gR.getMessage());
-                });
-                studentsResults.forEach((kStudent, vStudent) -> {
-                    HashMap<String, String> studentHM = new HashMap<>();
-                    studentHM.put("ФИО", vStudent.get(0));
-                    for (int i = 1; i < vStudent.size(); i++) {
-                        studentHM.put(i + "", vStudent.get(i));
-                    }
-                    currentTable.getItems().add(studentHM);
-                });
-                HashMap<String, String> emptyHM = new HashMap<>();
-                emptyHM.put("ФИО", "");
-                currentTable.getItems().add(emptyHM);
-            });
-            Tab tab = new Tab(k, currentTable);
-            tab.setClosable(false);
-            resultsTable.getTabs().add(tab);
-        });
+        private String item;
+
+        private Result result;
+
+        public ResultsTableCellObject(String item) {
+            this.item = item;
+        }
+
+        public ResultsTableCellObject(String item, Result result) {
+            this.item = item;
+            this.result = result;
+        }
+
+        public String getItem() {
+            return this.item;
+        }
+
+        public Result getResult() {
+            return this.result;
+        }
+
+        @Override
+        public String toString() {
+            return this.getItem();
+        }
     }
 
-    private static void addColumn(TableView table, String columnTitle) {
-        TableColumn<Map, String> column = new TableColumn<>(columnTitle);
+    public void showResults() {
+        resultsTable.getTabs().clear();
+        try {
+            HashMap<String, ArrayList<String>> taskNumbersForSubjects = GoogleDriveManager.getTaskNumbersForSubjects();
+            // group by subject
+            LocalSettings.getInstance().getResults().stream().collect(Collectors.groupingBy(Result::getSubject)).forEach((String subject, List<Result> subjectResults) -> {
+                ArrayList<String> subjectTaskNumbers = taskNumbersForSubjects.get(subject);
+                TableView currentTable = new TableView();
+
+                currentTable.setColumnResizePolicy(p -> true);
+
+                currentTable.getColumns().add(getColumn("ФИО"));;
+
+                for (String subjectTaskNumber : subjectTaskNumbers) {
+                    currentTable.getColumns().add(getColumn(subjectTaskNumber));
+                }
+
+                // group by group
+                subjectResults.stream().collect(Collectors.groupingBy(Result::getGroup)).forEach((group, groupResults) -> {
+                    HashMap<String, ResultsTableCellObject> groupHM = new HashMap<>();
+                    groupHM.put("ФИО", new ResultsTableCellObject("Группа " + group));
+                    currentTable.getItems().add(groupHM);
+
+                    Set<String> studentsNames = groupResults.stream().map(r -> r.getStudent().getName()).collect(Collectors.toSet());
+                    studentsNames.stream().sorted(String::compareTo).forEach(student -> {
+                        HashMap<String, ResultsTableCellObject> studentHM = new HashMap<>();
+                        studentHM.put("ФИО", new ResultsTableCellObject(student));
+                        groupResults.stream().filter(result -> result.getStudent().getName().equals(student)).forEach(studentResult -> {
+                            studentHM.put(studentResult.getTask().getTaskCode(), new ResultsTableCellObject(studentResult.getMessage(), studentResult));
+                        });
+                        currentTable.getItems().add(studentHM);
+                    });
+
+                    HashMap<String, ResultsTableCellObject> emptyHM = new HashMap<>();
+                    emptyHM.put("ФИО", new ResultsTableCellObject(""));
+                    currentTable.getItems().add(emptyHM);
+                });
+
+                Tab tab = new Tab(subject, currentTable);
+                tab.setClosable(false);
+                resultsTable.getTabs().add(tab);
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private static TableColumn<Map, ResultsTableCellObject> getColumn(String columnTitle) {
+        TableColumn<Map, ResultsTableCellObject> column = new TableColumn<>(columnTitle);
         column.setCellValueFactory(new MapValueFactory(columnTitle));
-        column.setMinWidth(130);
-        table.getColumns().add(column);
+        column.setCellFactory(new Callback<TableColumn<Map, ResultsTableCellObject>, TableCell<Map, ResultsTableCellObject>>() {
+            @Override
+            public TableCell call(TableColumn p) {
+                TableCell cell = new TableCell<String, ResultsTableCellObject>() {
+                    @Override
+                    public void updateItem(final ResultsTableCellObject item, final boolean empty) {
+                        super.updateItem(item, empty);
+                        if (item != null) {
+                            setText(item.getItem());
+                            if (item.getItem().startsWith("Группа ")) {
+                                setStyle("-fx-font-weight:bold;");
+                            }
+                            else if (item.getResult() != null && item.getResult().getTask().getReceivedDate().compareTo(item.getResult().getTask().getDeadline()) > 0) {
+                                setStyle("-fx-background-color: " + (item.getResult().getTask().hasHardDeadline() ? "red" : "yellow") + ";");
+                            }
+                            else setStyle("");
+
+                            if (item.getResult() != null) {
+                                final ContextMenu contextMenu = new ContextMenu();
+                                MenuItem code = new MenuItem("Open " + item.getResult().getStudent().getName() + "'s code.");
+                                MenuItem log = new MenuItem("Open " + item.getResult().getStudent().getName() + "'s log.");
+                                contextMenu.getItems().addAll(code, log);
+                                code.setOnAction(event -> {
+                                    if (Desktop.isDesktopSupported())
+                                        try {
+                                            Desktop.getDesktop().open(new File(item.getResult().getTask().getSourcePath()));
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                });
+                                log.setOnAction(event -> {
+                                    if (Desktop.isDesktopSupported())
+                                        try {
+                                            String sourcePath = item.getResult().getTask().getSourcePath();
+                                            Desktop.getDesktop().open(new File(sourcePath.substring(0, sourcePath.lastIndexOf('.')) + "Output.txt"));
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
+                                });
+                                this.setContextMenu(contextMenu);
+                            }
+                        } else {
+                            setText(null);
+                            setStyle("");
+                        }
+                    }
+                };
+
+                return cell;
+            }
+        });
+        return column;
     }
 
     @Override

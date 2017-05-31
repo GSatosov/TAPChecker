@@ -163,10 +163,7 @@ public class General {
         (new Thread(new ResultsSender())).start();
 
         // Filling local table with results
-        Platform.runLater((new Thread(() -> {
-            System.out.println("Sending results to table");
-            mainController.showResults(results);
-        })));
+        Platform.runLater((new Thread(mainController::showResults)));
         onExit.call();
     }
 
