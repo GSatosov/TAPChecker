@@ -10,6 +10,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -48,13 +49,13 @@ public class General {
 
         latchForTaskAppliers = new CountDownLatch(2);
         ThreadGroup tGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), "Tasks Receivers");
-        (new Thread(tGroup, () -> {
-                try {
-                    EmailReceiver.retrieveMessagesData();
-                } catch (IOException | MessagingException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException e) {
-                    e.printStackTrace();
-                }
-            })).start();
+        new Thread(tGroup, () -> {
+            try {
+                EmailReceiver.retrieveMessagesData();
+            } catch (IOException | MessagingException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException e) {
+                e.printStackTrace();
+            }
+        }).start();
 
         List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
         haskellTasksQueue = new ConcurrentLinkedQueue<>();
@@ -148,16 +149,16 @@ public class General {
             });
             LocalSettings.getInstance().setResults(filteredResults);
             LocalSettings.getInstance().getResults().sort((r1, r2) -> r2.getTask().getReceivedDate().compareTo(r1.getTask().getReceivedDate()));
-            try {
-                LocalSettings.saveSettings();
-            } catch (InvalidKeyException | NoSuchAlgorithmException | IOException | NoSuchPaddingException e) {
-                e.printStackTrace();
-            }
         }
 
-        // Antiplagiarism Checking
+        // Plagiarism Checking
         startAntiplagiarismTesting();
 
+        try {
+            LocalSettings.saveSettings();
+        } catch (InvalidKeyException | NoSuchAlgorithmException | IOException | NoSuchPaddingException e) {
+            e.printStackTrace();
+        }
         // Sending results to Google spreadsheet
         (new Thread(new ResultsSender())).start();
 
@@ -176,15 +177,17 @@ public class General {
         tasks.forEach(task -> {
             if (tasksThatShouldBeCheckedOnAntiPlagiarism.contains(task.getName()) && tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).count() > 1) {
                 tasksThatShouldBeCheckedOnAntiPlagiarism.remove(task.getName());
-                tasksForPlagiarismCheck.add(tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).collect(Collectors.toCollection(ArrayList::new)));
+                tasksForPlagiarismCheck.add(tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).sorted(Comparator.comparingLong(o -> o.getReceivedDate().getTime())).collect(Collectors.toCollection(ArrayList::new)));
             }
         });
-        PlagiarismChecker checker = new PlagiarismChecker(tasksForPlagiarismCheck);
-        File plagiarismResultsFile = new File("PlagiarismResults.txt");
+        PlagiarismChecker checker = new PlagiarismChecker(tasksForPlagiarismCheck, LocalSettings.getInstance().getPlagiarismResults());
+        File plagiarismResultsFile = new File("data" + File.separator + "PlagiarismResults.txt");
         try {
             plagiarismResultsFile.createNewFile();
             BufferedWriter writer = new BufferedWriter(new FileWriter(plagiarismResultsFile));
-            checker.start().forEach(result -> {
+            ArrayList<PlagiarismResult> results = checker.start();
+            LocalSettings.getInstance().addPlagiarismResults(results);
+            results.forEach(result -> {
                 try {
                     writer.write(result.toString());
                     writer.newLine();

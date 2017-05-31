@@ -76,21 +76,16 @@ class TestsApplier {
             Thread haskellCmdThread = cmdOutput(haskellProcess.getInputStream());
             haskellCmdThread.start();
             while (true) { //On first launch ProcessBuilder takes a lot of time to execute first command.
-                if (!haskellOutput.isEmpty()) {
-                    if (haskellOutput.contains("Prelude>"))
-                        break;
-                    if (haskellOutput.get(0).startsWith("'ghci' is not")) {
-                        System.out.println("Add ghci to your path before proceeding.");
-                        return false;
-                    }
-                }
+                if (!haskellOutput.isEmpty() && haskellOutput.contains("Prelude>"))
+                    break;
                 if (new Date().getTime() > startDate.getTime() + 2000) {
                     System.out.println("Something is wrong with your ghc.");
                     return false;
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("The path to GHci is invalid.");
+            //     e.printStackTrace();
             return false;
         }
         System.out.println("Started ghci process.");
@@ -99,7 +94,8 @@ class TestsApplier {
 
     Result handleHaskellTask(Task task) {
         String parentFolder = new File(task.getSourcePath()).getParent();
-        File haskellOutput = new File(parentFolder + File.separator + task.getName().split("\\.")[0] + "Output.txt");
+        String taskName = task.getName().split("\\.")[0];
+        File haskellOutput = new File(parentFolder + File.separator + taskName + "Output.txt");
         try {
             haskellOutput.createNewFile();
             haskellOutputWriter = new BufferedWriter(new FileWriter(haskellOutput));
@@ -186,6 +182,25 @@ class TestsApplier {
                 return haskellResult("RE " + (i + 1), task);
             }
             String response = this.haskellOutput.get(0).split(" ", 2)[1]; // *>TaskName> Output
+            if (!test.getAdditionalTest().isEmpty()) {
+                File additionalTestInput = new File(parentFolder + File.separator + taskName);
+                try {
+                    additionalTestInput.createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                switch (performAnAdditionalTest(test.getAdditionalTest(), additionalTestInput, taskName, test.getOutputVariants())) {
+                    case 0:
+                        continue;
+                    case 1:
+                        return haskellResult("WA " + (i + 1), task);
+                    case 2: {
+                        System.out.println("Your code for additional test in " + task.getName() + ", test №" + i + " is invalid.");
+                        continue;
+                    }
+                }
+                additionalTestInput.delete();
+            }
             try {
                 haskellOutputWriter.write(response);
                 haskellOutputWriter.newLine();
@@ -339,14 +354,14 @@ class TestsApplier {
                     Test.logList(javaOutputWriter, new ArrayList<>(Files.readAllLines(Paths.get(errorFile.getPath()))));
                     return javaResult("RE " + (i + 1), task, testInputFile, testOutputFile, errorFile); //Runtime Error
                 }
-                if (test.getAdditionalTest() == null || test.getAdditionalTest().isEmpty()) {
+                if (!test.getAdditionalTest().isEmpty()) {
                     switch (performAnAdditionalTest(test.getAdditionalTest(), testOutputFile, taskName, test.getOutputVariants())) {
                         case 0:
                             continue;
                         case 1:
                             return javaResult("WA " + (i + 1), task, testInputFile, testOutputFile, errorFile);
                         case 2: {
-                            System.out.println("Your code for additional test is invalid.");
+                            System.out.println("Your code for additional test in " + task.getName() + ", test №" + i + " is invalid.");
                             continue;
                         }
                     }

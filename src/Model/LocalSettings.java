@@ -2,6 +2,7 @@ package Model;
 
 import javax.crypto.NoSuchPaddingException;
 import java.io.*;
+import java.lang.reflect.Array;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -53,6 +54,15 @@ public class LocalSettings implements Serializable {
 
 
     private List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
+    private ArrayList<PlagiarismResult> plagiarismResults = new ArrayList<>();
+
+    public ArrayList<PlagiarismResult> getPlagiarismResults() {
+        return plagiarismResults;
+    }
+
+    public void addPlagiarismResults(ArrayList<PlagiarismResult> results) {
+        this.plagiarismResults.addAll(results);
+    }
 
     public List<Result> getResults() {
         return results;

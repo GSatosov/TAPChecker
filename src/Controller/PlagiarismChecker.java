@@ -1,6 +1,7 @@
 package Controller;
 
 import Model.PlagiarismResult;
+import Model.Result;
 import Model.Task;
 
 import java.io.IOException;
@@ -15,9 +16,11 @@ import java.util.concurrent.CountDownLatch;
  */
 class PlagiarismChecker {
     private List<ArrayList<Task>> taskList;
+    private ArrayList<PlagiarismResult> plagiarismResults;
 
-    PlagiarismChecker(List<ArrayList<Task>> tasks) {
+    PlagiarismChecker(List<ArrayList<Task>> tasks, ArrayList<PlagiarismResult> results) {
         this.taskList = tasks;
+        this.plagiarismResults = results;
     }
 
     ArrayList<PlagiarismResult> start() {
@@ -41,11 +44,12 @@ class PlagiarismChecker {
         for (int i = 0; i < tasks.size() - 1; i++) {
             Task taskToCheck = tasks.get(i);
             for (int j = i + 1; j < tasks.size(); j++) {
-                try {
-                    results.add(calculatePlagiarismProbability(taskToCheck, tasks.get(j)));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                if (!plagiarismResults.contains(new PlagiarismResult(taskToCheck, tasks.get(j))))
+                    try {
+                        results.add(calculatePlagiarismProbability(taskToCheck, tasks.get(j)));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
             }
         }
         System.out.println(tasks.get(0).getName() + " has been checked for plagiarism");
