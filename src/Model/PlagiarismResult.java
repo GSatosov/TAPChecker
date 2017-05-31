@@ -9,17 +9,19 @@ public class PlagiarismResult implements Serializable {
     private String result;
     private Task taskFromFirstStudent;
     private Task taskFromSecondStudent;
+
+    public String getResult() {
+        return result;
+    }
+
     public Task getTaskFromFirstStudent() {
         return taskFromFirstStudent;
     }
 
 
-
     public Task getTaskFromSecondStudent() {
         return taskFromSecondStudent;
     }
-
-
 
     public PlagiarismResult(String result, Task task1, Task task2) {
         this.result = result;

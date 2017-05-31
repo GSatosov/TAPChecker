@@ -26,6 +26,7 @@ public class Task implements Serializable {
     public Task() {
 
     }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -66,7 +67,7 @@ public class Task implements Serializable {
         this.author = author;
     }
 
-    Student getAuthor() {
+    public Student getAuthor() {
         return this.author;
     }
 

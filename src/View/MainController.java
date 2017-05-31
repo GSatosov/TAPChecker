@@ -36,13 +36,14 @@ public class MainController implements Initializable {
     @FXML
     private Button runTests;
     @FXML
-    private Button switchTables;
+    private Button plagiarismResults;
     @FXML
     private Button settings;
     @FXML
     private Button editTasks;
     private static Stage settingsFrame;
     private int plagiarismListSize = -1; //H A C K S
+    private Stage plagiarismStage;
 
     static Stage getSettingsFrame() {
         return settingsFrame;
@@ -127,17 +128,18 @@ public class MainController implements Initializable {
                 e.printStackTrace();
             }
         });
-        switchTables.setOnAction(event -> {
-            if (LocalSettings.getInstance().getPlagiarismResults().size() > plagiarismListSize) {
-                plagiarism = new PlagiarismTableController(LocalSettings.getInstance().getPlagiarismResults()).getPane();
-                plagiarismListSize = LocalSettings.getInstance().getPlagiarismResults().size();
-            }
-            if (resultsTable.isVisible()) {
-                resultsTable.setVisible(false);
-                plagiarism.setVisible(true);
+        plagiarismResults.setOnAction(event -> {
+            if (LocalSettings.getInstance().getPlagiarismResults().size() > 0) {
+                if (LocalSettings.getInstance().getPlagiarismResults().size() > plagiarismListSize) {
+                    plagiarism = new PlagiarismTableController(LocalSettings.getInstance().getPlagiarismResults()).getPane();
+                    plagiarismListSize = LocalSettings.getInstance().getPlagiarismResults().size();
+                    plagiarismStage = new Stage();
+                    plagiarismStage.setScene(new Scene(plagiarism, 500, 480));
+                    plagiarismStage.show();
+                } else plagiarismStage.show();
             } else {
-                resultsTable.setVisible(true);
-                plagiarism.setVisible(false);
+                Alert alert = new Alert(Alert.AlertType.ERROR, "No plagiarism results have been acquired. Run tests to get them.");
+                alert.showAndWait();
             }
         });
         settings.setOnAction(event -> {
@@ -147,7 +149,6 @@ public class MainController implements Initializable {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
             settingsFrame.initModality(Modality.WINDOW_MODAL);
             settingsFrame.initOwner(MainFrame.getPrimaryStage());
             settingsFrame.setTitle("GlobalSettings");

@@ -27,4 +27,10 @@ public class Student implements Serializable {
     public String toString() {
         return this.name + " from group " + this.groupName;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        Student student = (Student) obj;
+        return this.name.equals(student.getName()) && this.groupName.equals(student.getGroupName());
+    }
 }
