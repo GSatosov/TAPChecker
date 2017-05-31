@@ -5,8 +5,6 @@ import Controller.GoogleDriveManager;
 import Model.GlobalSettings;
 import Model.LocalSettings;
 import Model.Result;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -15,8 +13,6 @@ import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.cell.MapValueFactory;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -37,7 +33,8 @@ public class MainController implements Initializable {
 
     @FXML
     private TabPane resultsTable;
-
+    @FXML
+    private Button runLocalTests;
     @FXML
     private BorderPane plagiarism;
 
@@ -97,7 +94,7 @@ public class MainController implements Initializable {
 
                 currentTable.setColumnResizePolicy(p -> true);
 
-                currentTable.getColumns().add(getColumn("ФИО"));;
+                currentTable.getColumns().add(getColumn("ФИО"));
 
                 for (String subjectTaskNumber : subjectTaskNumbers) {
                     currentTable.getColumns().add(getColumn(subjectTaskNumber));
@@ -148,11 +145,9 @@ public class MainController implements Initializable {
                             setText(item.getItem());
                             if (item.getItem().startsWith("Группа ")) {
                                 setStyle("-fx-font-weight:bold;");
-                            }
-                            else if (item.getResult() != null && item.getResult().getTask().getReceivedDate().compareTo(item.getResult().getTask().getDeadline()) > 0) {
+                            } else if (item.getResult() != null && item.getResult().getTask().getReceivedDate().compareTo(item.getResult().getTask().getDeadline()) > 0) {
                                 setStyle("-fx-background-color: " + (item.getResult().getTask().hasHardDeadline() ? "red" : "yellow") + ";");
-                            }
-                            else setStyle("");
+                            } else setStyle("");
 
                             if (item.getResult() != null) {
                                 final ContextMenu contextMenu = new ContextMenu();
@@ -201,6 +196,10 @@ public class MainController implements Initializable {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        });
+        runLocalTests.setOnAction(event -> {
+            runLocalTests.setDisable(true);
+            General.runLocalTests(() -> runLocalTests.setDisable(false), this);
         });
         plagiarismResults.setOnAction(event -> {
             if (LocalSettings.getInstance().getPlagiarismResults().size() > 0) {

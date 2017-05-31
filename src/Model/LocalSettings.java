@@ -13,6 +13,10 @@ import java.util.*;
 public class LocalSettings implements Serializable {
 
     private static volatile LocalSettings instance;
+    private List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
+    private Date lastDateEmailChecked = new Date(0L);
+    private ArrayList<PlagiarismResult> plagiarismResults = new ArrayList<>();
+    private ArrayList<Task> failedTasks = new ArrayList<>();
 
     private LocalSettings() {
     }
@@ -42,8 +46,6 @@ public class LocalSettings implements Serializable {
     }
 
 
-    private Date lastDateEmailChecked = new Date(0L);
-
     public Date getLastDateEmailChecked() {
         return this.lastDateEmailChecked;
     }
@@ -52,9 +54,13 @@ public class LocalSettings implements Serializable {
         this.lastDateEmailChecked = date;
     }
 
+    public ArrayList<Task> getFailedTasks() {
+        return failedTasks;
+    }
 
-    private List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
-    private ArrayList<PlagiarismResult> plagiarismResults = new ArrayList<>();
+    public void addFailedTasks(ArrayList<Task> tasks) {
+        failedTasks.addAll(tasks);
+    }
 
     public ArrayList<PlagiarismResult> getPlagiarismResults() {
         return plagiarismResults;

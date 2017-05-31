@@ -78,14 +78,13 @@ class TestsApplier {
             while (true) { //On first launch ProcessBuilder takes a lot of time to execute first command.
                 if (!haskellOutput.isEmpty() && haskellOutput.contains("Prelude>"))
                     break;
-                if (new Date().getTime() > startDate.getTime() + 2000) {
+                if (new Date().getTime() > startDate.getTime() + 4000) { //Four seconds to boot ghci.
                     System.out.println("Something is wrong with your ghc.");
                     return false;
                 }
             }
         } catch (IOException e) {
-            System.out.println("The path to GHci is invalid.");
-            //     e.printStackTrace();
+            System.out.println("The path to ghci is invalid.");
             return false;
         }
         System.out.println("Started ghci process.");

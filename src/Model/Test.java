@@ -86,5 +86,11 @@ public class Test implements Serializable {
     public String toString() {
         return "{input: " + this.input + ", output: " + this.outputVariants + "}";
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        Test otherTest = (Test) obj;
+        return otherTest.getInput().equals(this.getInput()) && this.getOutputVariants().equals(otherTest.getOutputVariants());
+    }
 }
 
