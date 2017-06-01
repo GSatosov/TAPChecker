@@ -3,8 +3,10 @@ package View;
 import Controller.GoogleDriveManager;
 import Model.Task;
 import Model.Test;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
@@ -94,31 +96,6 @@ class TaskEditorController {
         Button saveAdditionalTestButton = new Button("Save Additional Test");
         saveAdditionalTestButton.setOnAction(event1 -> curTask.getTestContents().get(currentTest).setAdditionalTest(additionalTestField.getText()));
         bottomPane.add(saveAdditionalTestButton, 2, 1);
-        Button deleteTestButton = new Button("Delete Test");
-        deleteTestButton.setOnAction(event1 -> {
-            if (curTask.getTestContents().size() == 1) { //Clearing first test.
-                curTask.getTestContents().get(currentTest).setOutputVariants(emptyOutputVariants());
-                curTask.getTestContents().get(currentTest).setInput(new ArrayList<>());
-            } else {
-                curTask.getTestContents().remove((int) currentTest);
-                if (currentTest == curTask.getTestContents().size())
-                    currentTest--;
-            }
-            currentOutputVariant = 0;
-            testsPane.setTop(showTestButtons(inputArea, outputArea, testsPane, additionalTestField));
-        });
-        Button deleteOutputVariantButton = new Button("Delete Output Variant");
-        deleteOutputVariantButton.setOnAction(event1 -> {
-            outputArea.clear();
-            if (curTask.getTestContents().get(currentTest).getOutputVariants().size() == 1) {
-                curTask.getTestContents().get(currentTest).setOutputVariants(emptyOutputVariants());
-            } else {
-                curTask.getTestContents().get(currentTest).removeOutputVariant(currentOutputVariant);
-                if (currentOutputVariant == curTask.getTestContents().get(currentTest).getOutputVariants().size())
-                    currentOutputVariant--;
-                testsPane.setRight(showOutputVariantsButtons(outputArea));
-            }
-        });
         Button saveTask = new Button("Save Task");
         saveTask.setOnAction(event1 -> {
             if (fieldsAreReady(timeLimitField, deadlinePicker, taskCodeField, taskNameField, taskSubjectField)) {
@@ -138,8 +115,17 @@ class TaskEditorController {
             }
         });
         bottomPane.add(saveTask, 0, 2);
-        bottomPane.add(deleteTestButton, 1, 2);
-        bottomPane.add(deleteOutputVariantButton, 2, 2);
+        Button deleteTaskButton = new Button("Delete Task");
+        deleteTaskButton.setOnAction(event -> {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    //TODO write method here
+                    System.out.println("Bang!");
+                }
+            });
+        });
+        bottomPane.add(deleteTaskButton, 4, 2);
         ComboBox<String> subjectsBox = new ComboBox<>();
         ComboBox<String> tasksBox = new ComboBox<>();
         try {
@@ -153,7 +139,7 @@ class TaskEditorController {
                 }
                 tasksBox.getItems().add("New Task...");
                 fillFieldsWithTaskInformation(emptyTask(), taskCodeField, taskSubjectField, taskNameField, inputArea, outputArea, antiPlagiarismCheckBox, hardDeadlineCheckbox, deadlinePicker, timeLimitField,
-                        additionalTestField, testsPane);
+                        additionalTestField, testsPane, testsGridPane);
                 tasksBox.getSelectionModel().selectLast();
             });
             tasksBox.setOnAction(event1 -> {
@@ -179,7 +165,7 @@ class TaskEditorController {
                     currentOutputVariant = 0;
                     currentTest = 0;
                     fillFieldsWithTaskInformation(task, taskCodeField, taskSubjectField, taskNameField, inputArea, outputArea, antiPlagiarismCheckBox, hardDeadlineCheckbox, deadlinePicker, timeLimitField,
-                            additionalTestField, testsPane);
+                            additionalTestField, testsPane, testsGridPane);
                 }
             });
         } catch (IOException e) {
@@ -195,8 +181,8 @@ class TaskEditorController {
         BorderPane tasksBorderPane = new BorderPane();
         tasksBorderPane.setCenter(taskPane);
         tasksBorderPane.setBottom(testsPane);
+        testsPane.setTop(showTestButtons(inputArea, outputArea, testsGridPane, additionalTestField, testsPane));
         testsPane.setCenter(testsGridPane);
-        testsPane.setTop(showTestButtons(inputArea, outputArea, testsPane, additionalTestField));
         testsGridPane.add(inputArea, 0, 1);
         testsGridPane.add(outputArea, 1, 1);
         mainPane.setTop(comboBoxesPane);
@@ -227,8 +213,8 @@ class TaskEditorController {
                                                TextArea input, TextArea output,
                                                CheckBox antiPlagiarism, CheckBox hasHardDeadline,
                                                DatePicker deadlinePicker, TextField timeLimitTextField,
-                                               TextField additionalTestField,
-                                               BorderPane pane) {
+                                               TextField additionalTestField, BorderPane mainPane,
+                                               GridPane testsPane) {
         taskSubjectNameField.setText(task.getSubjectName());
         taskNameField.setText(task.getName());
         taskCodeField.setText(task.getTaskCode());
@@ -245,7 +231,7 @@ class TaskEditorController {
         fillTextAreaWithConcatenatedList(task.getTestContents().get(0).getInput(), input);
         fillTextAreaWithConcatenatedList(task.getTestContents().get(0).getOutputVariants().get(0), output);
         additionalTestField.setText(task.getTestContents().get(0).getAdditionalTest());
-        pane.setTop(showTestButtons(input, output, pane, additionalTestField));
+        mainPane.setTop(showTestButtons(input, output, testsPane, additionalTestField, mainPane));
     }
 
     private boolean fieldsAreReady(TextField timeLimit, DatePicker picker, TextField taskCode, TextField taskName, TextField taskSubjectName) {
@@ -309,28 +295,45 @@ class TaskEditorController {
     }
 
     //Buttons that getPane input of each test.
-    private Button inputButton(HBox testButtons, int i, TextArea input, TextArea output, BorderPane pane, TextField additionalTestField) {
+    private Button inputButton(HBox testButtons, int i, TextArea input, TextArea output, GridPane rightPane, TextField additionalTestField, BorderPane pane) {
         Test test = curTask.getTestContents().get(i);
         Button inputButton = new Button(Integer.toString(i + 1));
-        inputButton.setOnAction(event -> {
-            updateCurrentTest(input, output);
-            currentOutputVariant = 0; //You switch to another test and first output variant is ready to be edited.
-            fillTextAreaWithConcatenatedList(test.getInput(), input);
-            fillTextAreaWithConcatenatedList(test.getOutputVariants().get(currentOutputVariant), output);
-            updateButtonStyles(testButtons, currentTest, currentTest = Integer.parseInt(inputButton.getText()) - 1);
-            pane.setRight(showOutputVariantsButtons(output));
-            additionalTestField.setText(test.getAdditionalTest());
+        inputButton.setOnMouseClicked(event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                updateCurrentTest(input, output);
+                currentOutputVariant = 0; //You switch to another test and first output variant is ready to be edited.
+                fillTextAreaWithConcatenatedList(test.getInput(), input);
+                fillTextAreaWithConcatenatedList(test.getOutputVariants().get(currentOutputVariant), output);
+                updateButtonStyles(testButtons, currentTest, currentTest = Integer.parseInt(inputButton.getText()) - 1);
+                rightPane.add(showOutputVariantsButtons(output, rightPane), 2, 1);
+                additionalTestField.setText(test.getAdditionalTest());
+            } else if (event.getButton() == MouseButton.SECONDARY) {
+                if (curTask.getTestContents().size() == 1) { //Clearing first test.
+                    curTask.getTestContents().get(currentTest).setOutputVariants(emptyOutputVariants());
+                    curTask.getTestContents().get(currentTest).setInput(new ArrayList<>());
+                } else {
+                    updateCurrentTest(input, output);
+                    curTask.getTestContents().remove(Integer.parseInt(inputButton.getText()) - 1);
+                    if (currentTest == curTask.getTestContents().size())
+                        currentTest--;
+                }
+                currentOutputVariant = 0;
+                pane.setTop(showTestButtons(input, output, rightPane, additionalTestField, pane));
+            }
         });
         inputButton.setStyle("-fx-base: #ffffff;");
+        inputButton.setPrefHeight(30);
+        inputButton.setPrefWidth(30);
         return inputButton;
     }
 
-    private HBox showTestButtons(TextArea input, TextArea output, BorderPane pane, TextField additionalTestField) {
+    private ScrollPane showTestButtons(TextArea input, TextArea output, GridPane mainPane, TextField additionalTestField, BorderPane curPane) {
+        ScrollPane pane = new ScrollPane();
         HBox testButtons = new HBox();
         ArrayList<Test> tests = curTask.getTestContents();
         ArrayList<Button> buttons = new ArrayList<>();
         for (int i = 0; i < tests.size(); i++)
-            buttons.add(inputButton(testButtons, i, input, output, pane, additionalTestField));
+            buttons.add(inputButton(testButtons, i, input, output, mainPane, additionalTestField, curPane));
         Button newTestButton = new Button("+");
         newTestButton.setOnAction(event -> {
             tests.add(new Test(new ArrayList<>(), emptyOutputVariants()));
@@ -341,53 +344,79 @@ class TaskEditorController {
             input.clear();
             output.clear();
             additionalTestField.setText(tests.get(currentTest).getAdditionalTest());
-            testButtons.getChildren().add(currentTest, inputButton(testButtons, currentTest, input, output, pane, additionalTestField));
+            testButtons.getChildren().add(currentTest, inputButton(testButtons, currentTest, input, output, mainPane, additionalTestField, curPane));
             testButtons.getChildren().get(currentTest).setStyle("-fx-base: #b6e7c9;");
-            pane.setRight(showOutputVariantsButtons(output));
+            mainPane.add(showOutputVariantsButtons(output, mainPane), 2, 1);
         });
         newTestButton.setStyle("-fx-base: #ffffff;");
+        newTestButton.setPrefHeight(30);
+        newTestButton.setPrefWidth(30);
         buttons.add(newTestButton);
         buttons.get(currentTest).setStyle("-fx-base: #b6e7c9;");
         testButtons.getChildren().addAll(buttons);
         fillTextAreaWithConcatenatedList(curTask.getTestContents().get(currentTest).getInput(), input);
-        pane.setRight(showOutputVariantsButtons(output));
-        return testButtons;
+        mainPane.add(showOutputVariantsButtons(output, mainPane), 2, 1);
+        pane.setContent(testButtons);
+        pane.setPrefHeight(45);
+        pane.setPrefWidth(500);
+        return pane;
     }
 
     //Buttons that getPane output of each test.
-    private Button outputVariantButton(VBox outputButtons, Test test, int i, TextArea output) {
+    private Button outputVariantButton(VBox outputButtons, Test test, int i, TextArea output, GridPane curPane) {
         Button outputVariantButton = new Button(Integer.toString(i + 1));
-        outputVariantButton.setOnAction(event -> {
-            test.setOutputVariant(Arrays.stream(output.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)), currentOutputVariant);
-            updateButtonStyles(outputButtons, currentOutputVariant, currentOutputVariant = Integer.parseInt(outputVariantButton.getText()) - 1);
-            fillTextAreaWithConcatenatedList(test.getOutputVariants().get(currentOutputVariant), output);
+        outputVariantButton.setOnMouseClicked(event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                test.setOutputVariant(Arrays.stream(output.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)), currentOutputVariant);
+                updateButtonStyles(outputButtons, currentOutputVariant, currentOutputVariant = Integer.parseInt(outputVariantButton.getText()) - 1);
+                fillTextAreaWithConcatenatedList(test.getOutputVariants().get(currentOutputVariant), output);
+            } else if (event.getButton() == MouseButton.SECONDARY) {
+                if (curTask.getTestContents().get(currentTest).getOutputVariants().size() == 1) {
+                    curTask.getTestContents().get(currentTest).setOutputVariants(emptyOutputVariants());
+                } else {
+                    curTask.getTestContents().get(currentTest).setOutputVariant(Arrays.stream(output.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)), currentOutputVariant);
+                    curTask.getTestContents().get(currentTest).removeOutputVariant(Integer.parseInt(outputVariantButton.getText()) - 1);
+                    if (currentOutputVariant == curTask.getTestContents().get(currentTest).getOutputVariants().size())
+                        currentOutputVariant--;
+                    curPane.add(showOutputVariantsButtons(output, curPane), 2, 1);
+                }
+            }
         });
         outputVariantButton.setStyle("-fx-base: #ffffff;");
+        outputVariantButton.setPrefWidth(30);
+        outputVariantButton.setPrefHeight(30);
         return outputVariantButton;
     }
 
-    private VBox showOutputVariantsButtons(TextArea output) {
+    private ScrollPane showOutputVariantsButtons(TextArea output, GridPane curPane) {
+        ScrollPane pane = new ScrollPane();
         VBox outputButtons = new VBox();
         Test test = curTask.getTestContents().get(currentTest);
         ArrayList<Button> buttons = new ArrayList<>();
         ArrayList<ArrayList<String>> outputVariants = test.getOutputVariants();
         for (int i = 0; i < outputVariants.size(); i++)
-            buttons.add(outputVariantButton(outputButtons, test, i, output));
+            buttons.add(outputVariantButton(outputButtons, test, i, output, curPane));
         Button newOutputVariantButton = new Button("+");
         newOutputVariantButton.setOnAction(event -> {
             test.addOutputVariant(new ArrayList<>());
             test.setOutputVariant(Arrays.stream(output.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)), currentOutputVariant);
             outputButtons.getChildren().get(currentOutputVariant).setStyle("-fx-base: #ffffff;");
             currentOutputVariant = test.getOutputVariants().size() - 1;
-            outputButtons.getChildren().add(currentOutputVariant, outputVariantButton(outputButtons, test, currentOutputVariant, output));
+            outputButtons.getChildren().add(currentOutputVariant, outputVariantButton(outputButtons, test, currentOutputVariant, output, curPane));
             outputButtons.getChildren().get(currentOutputVariant).setStyle("-fx-base: #b6e7c9;");
             output.clear();
         });
         newOutputVariantButton.setStyle("-fx-base: #ffffff;");
+        newOutputVariantButton.setPrefWidth(30);
+        newOutputVariantButton.setPrefHeight(30);
         buttons.add(newOutputVariantButton);
         buttons.get(currentOutputVariant).setStyle("-fx-base: #b6e7c9;");
+        fillTextAreaWithConcatenatedList(curTask.getTestContents().get(currentTest).getOutputVariants().get(currentOutputVariant), output);
         outputButtons.getChildren().addAll(buttons);
-        return outputButtons;
+        pane.setContent(outputButtons);
+        pane.setMaxHeight(200);
+        pane.setPrefWidth(45);
+        return pane;
     }
 
 }

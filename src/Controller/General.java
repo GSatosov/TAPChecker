@@ -44,7 +44,7 @@ public class General {
         return startDate;
     }
 
-    private static void setTests(ArrayList<Task> tasks, ConcurrentHashMap<Task, ArrayList<Test>> localTests) {
+    private static void setTests(ConcurrentLinkedQueue<Task> tasks, ConcurrentHashMap<Task, ArrayList<Test>> localTests) {
         CountDownLatch latch = new CountDownLatch(tasks.size());
         tasks.forEach(task -> new Thread(() -> {
             if (localTests.containsKey(task))
@@ -56,10 +56,7 @@ public class General {
                     task.setTestContents(tests);
                     return null;
                 });
-            if (task.getName().endsWith("hs"))
-                haskellTasksQueue.add(task);
-            else
-                javaTasksQueue.add(task);
+
             System.out.println("Tests for " + task.getSubjectName() + " " + task.getName() + " have been set: " + (new Date().getTime() - startDate.getTime()) + " ms.");
             latch.countDown();
         }).start());
@@ -68,9 +65,13 @@ public class General {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        if (tasks.peek().getName().endsWith("hs"))
+            haskellTasksQueue.add(tasks.poll());
+        else
+            javaTasksQueue.add(tasks.poll());
     }
 
-    public static void runLocalTests(Callback onExit, MainController mainController, ArrayList<Task> tasks) {
+    public static void runLocalTests(Callback onExit, MainController mainController, ConcurrentLinkedQueue<Task> tasks) {
         startDate = new Date();
         haskellTasksQueue = new ConcurrentLinkedQueue<>();
         javaTasksQueue = new ConcurrentLinkedQueue<>();
@@ -90,7 +91,7 @@ public class General {
         }
         saveResults(results);
         startAntiplagiarismTesting();
-
+        checkForFailedTasks();
         try {
             LocalSettings.saveSettings();
         } catch (InvalidKeyException | NoSuchAlgorithmException | IOException | NoSuchPaddingException e) {
@@ -112,11 +113,11 @@ public class General {
         return new Thread(() -> {
             boolean startedHaskellTesting = false;
             while (tGroup.activeCount() > 0 || !haskellTasksQueue.isEmpty()) {
+                if (!startedHaskellTesting)
+                    if (!applier.startHaskellTesting())
+                        break;
                 if (!getHaskellTasksQueue().isEmpty()) {
                     Task task = getHaskellTasksQueue().poll();
-                    if (!startedHaskellTesting)
-                        if (!applier.startHaskellTesting())
-                            break;
                     startedHaskellTesting = true;
                     Result haskellResult;
                     haskellResult = applier.handleHaskellTask(task);
@@ -214,7 +215,7 @@ public class General {
     }
 
     private static void addFailedTasks(ArrayList<Task> tasks) {
-        ArrayList<Task> failedTasks = LocalSettings.getInstance().getFailedTasks();
+        ConcurrentLinkedQueue<Task> failedTasks = LocalSettings.getInstance().getFailedTasks();
         tasks.forEach(task -> {
             if (failedTasks.stream().noneMatch(task1 -> task1.getReceivedDate().getTime() == task.getReceivedDate().getTime()
                     && task.getName().equals(task1.getName()) && task.getSubjectName().equals(task.getSubjectName())

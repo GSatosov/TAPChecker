@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 /**
@@ -202,7 +203,7 @@ public class MainController implements Initializable {
         runLocalTasks.setOnAction(event -> {
             runLocalTasks.setDisable(true);
             General.runLocalTests(() -> runLocalTasks.setDisable(false), this,
-                    LocalSettings.getInstance().getResults().stream().map(Result::getTask).collect(Collectors.toCollection(ArrayList::new)));
+                    new ConcurrentLinkedQueue<>(LocalSettings.getInstance().getResults().stream().map(Result::getTask).collect(Collectors.toCollection(ArrayList::new))));
         });
         runFailedTasks.setOnAction(event -> {
             runFailedTasks.setDisable(true);

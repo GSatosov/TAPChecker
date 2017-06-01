@@ -6,6 +6,7 @@ import java.lang.reflect.Array;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Created by Alexander Baranov on 20.05.2017.
@@ -16,7 +17,7 @@ public class LocalSettings implements Serializable {
     private List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
     private Date lastDateEmailChecked = new Date(0L);
     private ArrayList<PlagiarismResult> plagiarismResults = new ArrayList<>();
-    private ArrayList<Task> failedTasks = new ArrayList<>();
+    private ConcurrentLinkedQueue<Task> failedTasks = new ConcurrentLinkedQueue<>();
 
     private LocalSettings() {
     }
@@ -54,12 +55,8 @@ public class LocalSettings implements Serializable {
         this.lastDateEmailChecked = date;
     }
 
-    public ArrayList<Task> getFailedTasks() {
+    public ConcurrentLinkedQueue<Task> getFailedTasks() {
         return failedTasks;
-    }
-
-    public void addFailedTasks(ArrayList<Task> tasks) {
-        failedTasks.addAll(tasks);
     }
 
     public ArrayList<PlagiarismResult> getPlagiarismResults() {
