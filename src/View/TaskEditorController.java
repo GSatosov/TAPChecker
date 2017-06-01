@@ -234,7 +234,7 @@ class TaskEditorController {
         else
             timeLimitTextField.setText(Long.toString(task.getTimeInMS()));
         if (task.getDeadline() != null)
-            deadlinePicker.setValue(task.getDeadline().toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+            deadlinePicker.setValue(new java.sql.Date(task.getDeadline().getTime()).toLocalDate());
         else
             deadlinePicker.setValue(null);
         fillTextAreaWithConcatenatedList(task.getTestContents().get(0).getInput(), input);
