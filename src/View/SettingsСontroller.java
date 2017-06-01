@@ -13,6 +13,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ResourceBundle;
 
@@ -108,7 +109,7 @@ public class SettingsСontroller implements Initializable {
             addNewSubject.disableProperty().bind(Bindings.isEmpty(newSubject.textProperty()));
 
             addNewSubject.setOnAction(e -> {
-                GlobalSettings.getInstance().getSubjectsAndGroups().put(newSubject.getText(), Arrays.asList());
+                GlobalSettings.getInstance().getSubjectsAndGroups().put(newSubject.getText(), new ArrayList<>());
                 subjectList.getItems().add(newSubject.getText());
                 confirm.close();
             });
@@ -133,7 +134,7 @@ public class SettingsСontroller implements Initializable {
             addNewGroup.disableProperty().bind(Bindings.isEmpty(newGroup.textProperty()));
 
             addNewGroup.setOnAction(e -> {
-                GlobalSettings.getInstance().getSubjectsAndGroups().get(subjectList).add(newGroup.getText());
+                GlobalSettings.getInstance().getSubjectsAndGroups().get(subjectList.getValue()).add(newGroup.getText());
                 groupList.getItems().add(newGroup.getText());
                 confirm.close();
             });

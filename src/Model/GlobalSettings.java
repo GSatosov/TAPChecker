@@ -50,16 +50,16 @@ public class GlobalSettings implements Serializable {
     }
 
 
-    private HashMap<String, List<String>> subjectsAndGroups = new HashMap<>();
+    private HashMap<String, ArrayList<String>> subjectsAndGroups = new HashMap<>();
 
-    public HashMap<String, List<String>> getSubjectsAndGroups() {
+    public HashMap<String, ArrayList<String>> getSubjectsAndGroups() {
         return subjectsAndGroups;
     }
 
     // TODO Delete that block
     {
-        List<String> java = Arrays.asList("A3400", "A3401", "A3402", "A3403");
-        List<String> haskell = Arrays.asList("A3300", "A3301", "A3400", "A3401", "A3402", "A3403");
+        ArrayList<String> java = new ArrayList<>(Arrays.asList("A3400", "A3401", "A3402", "A3403"));
+        ArrayList<String> haskell = new ArrayList<>(Arrays.asList("A3300", "A3301", "A3400", "A3401", "A3402", "A3403"));
         getSubjectsAndGroups().put("Java", java);
         getSubjectsAndGroups().put("Функциональное программирование", haskell);
     }
