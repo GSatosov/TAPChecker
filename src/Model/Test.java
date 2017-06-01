@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by GSatosov on 3/18/2017.
@@ -71,7 +72,7 @@ public class Test implements Serializable {
         logList(writer, this.outputVariants.get(outputVariants.size() - 1));
     }
 
-    public static void logList(BufferedWriter writer, ArrayList<String> list) {
+    public static void logList(BufferedWriter writer, List<String> list) {
         list.forEach(line -> {
             try {
                 writer.write(line);

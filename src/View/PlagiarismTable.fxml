@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Text?>
+
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="View.PlagiarismTableController"
+            prefHeight="400.0" prefWidth="600.0" >
+
+    <VBox AnchorPane.topAnchor="5" AnchorPane.rightAnchor="5" AnchorPane.leftAnchor="5" AnchorPane.bottomAnchor="5" spacing="10">
+        <HBox spacing="10">
+            <ChoiceBox fx:id="subjectsList"/>
+            <ChoiceBox fx:id="tasksList"/>
+        </HBox>
+        <TableView fx:id="plagiarismTable" VBox.vgrow="always"/>
+    </VBox>
+
+</AnchorPane>

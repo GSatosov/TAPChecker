@@ -3,6 +3,7 @@ package Controller;
 import Model.Result;
 import Model.Task;
 import Model.Test;
+import com.sun.org.apache.xerces.internal.xs.StringList;
 
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
@@ -10,6 +11,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,7 +21,7 @@ import java.util.stream.Collectors;
  */
 class TestsApplier {
     private volatile boolean notInterrupted;
-    private volatile ArrayList<String> haskellOutput;
+    private volatile List<String> haskellOutput;
     private Process haskellProcess;
     private PrintStream haskellProcessInput;
     private JavaCompiler compiler;
@@ -27,7 +29,7 @@ class TestsApplier {
     private BufferedWriter javaOutputWriter;
 
     private Thread cmdOutput(InputStream stream) {
-        haskellOutput = new ArrayList<>();
+        haskellOutput = Collections.synchronizedList(new ArrayList<String>());
         final boolean[] readyToCompileFiles = {false}; //...
         return new Thread(() -> {
             try {

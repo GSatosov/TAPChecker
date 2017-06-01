@@ -17,7 +17,7 @@ public class LocalSettings implements Serializable {
     private Date lastDateEmailChecked = new Date(0L);
     private ArrayList<PlagiarismResult> plagiarismResults = new ArrayList<>();
     private ConcurrentLinkedQueue<Task> failedTasks = new ConcurrentLinkedQueue<>();
-    private HashMap<String, ArrayList<Task>> subjectsAndTasks;
+    private HashMap<String, ArrayList<Task>> subjectsAndTasks = new HashMap<>();
 
     private LocalSettings() {
     }

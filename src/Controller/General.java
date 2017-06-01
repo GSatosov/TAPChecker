@@ -118,10 +118,10 @@ public class General {
         return new Thread(() -> {
             boolean startedHaskellTesting = false;
             while (tGroup.activeCount() > 0 || !haskellTasksQueue.isEmpty()) {
-                if (!startedHaskellTesting)
-                    if (!applier.startHaskellTesting())
-                        break;
                 if (!getHaskellTasksQueue().isEmpty()) {
+                    if (!startedHaskellTesting)
+                        if (!applier.startHaskellTesting())
+                            break;
                     Task task = getHaskellTasksQueue().poll();
                     startedHaskellTesting = true;
                     Result haskellResult;

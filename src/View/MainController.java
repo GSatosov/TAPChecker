@@ -50,7 +50,6 @@ public class MainController implements Initializable {
     @FXML
     private Button runFailedTasks;
     private static Stage settingsFrame;
-    private int plagiarismListSize = -1; //H A C K S
     private Stage plagiarismStage;
 
     static Stage getSettingsFrame() {
@@ -137,6 +136,7 @@ public class MainController implements Initializable {
     private static TableColumn<Map, ResultsTableCellObject> getColumn(String columnTitle) {
         TableColumn<Map, ResultsTableCellObject> column = new TableColumn<>(columnTitle);
         column.setCellValueFactory(new MapValueFactory(columnTitle));
+        column.setSortable(false);
         column.setCellFactory(new Callback<TableColumn<Map, ResultsTableCellObject>, TableCell<Map, ResultsTableCellObject>>() {
             @Override
             public TableCell call(TableColumn p) {
@@ -154,8 +154,8 @@ public class MainController implements Initializable {
 
                             if (item.getResult() != null) {
                                 final ContextMenu contextMenu = new ContextMenu();
-                                MenuItem code = new MenuItem("Open " + item.getResult().getStudent().getName() + "'s code.");
-                                MenuItem log = new MenuItem("Open " + item.getResult().getStudent().getName() + "'s log.");
+                                MenuItem code = new MenuItem("Open code");
+                                MenuItem log = new MenuItem("Open log");
                                 contextMenu.getItems().addAll(code, log);
                                 code.setOnAction(event -> {
                                     if (Desktop.isDesktopSupported())
@@ -212,13 +212,13 @@ public class MainController implements Initializable {
         });
         plagiarismResults.setOnAction(event -> {
             if (LocalSettings.getInstance().getPlagiarismResults().size() > 0) {
-                if (LocalSettings.getInstance().getPlagiarismResults().size() > plagiarismListSize) {
-                    plagiarism = new PlagiarismTableController(LocalSettings.getInstance().getPlagiarismResults()).getPane();
-                    plagiarismListSize = LocalSettings.getInstance().getPlagiarismResults().size();
+                try {
                     plagiarismStage = new Stage();
-                    plagiarismStage.setScene(new Scene(plagiarism, 500, 480));
+                    plagiarismStage.setScene(new Scene(new FXMLLoader(getClass().getResource("PlagiarismTable.fxml")).load(), 800, 480));
                     plagiarismStage.show();
-                } else plagiarismStage.show();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             } else {
                 Alert alert = new Alert(Alert.AlertType.ERROR, "No plagiarism results have been acquired. Run tests to get them.");
                 alert.showAndWait();

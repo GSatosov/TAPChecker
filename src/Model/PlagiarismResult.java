@@ -34,6 +34,34 @@ public class PlagiarismResult implements Serializable {
         }
     }
 
+    public String getFirstStudentName() {
+        return getTaskFromFirstStudent().getStudent().getName();
+    }
+
+    public String getSecondStudentName() {
+        return getTaskFromSecondStudent().getStudent().getName();
+    }
+
+    public String getFirstStudentGroupName() {
+        return getTaskFromFirstStudent().getStudent().getGroupName();
+    }
+
+    public String getSecondStudentGroupName() {
+        return getTaskFromSecondStudent().getStudent().getGroupName();
+    }
+
+    public String getSubject() {
+        return getTaskFromFirstStudent().getSubjectName();
+    }
+
+    public String getTaskName() {
+        return getTaskFromFirstStudent().getName();
+    }
+
+    public String getTaskCode() {
+        return getTaskFromFirstStudent().getTaskCode();
+    }
+
     public PlagiarismResult(Task task1, Task task2) {
         if (task1.getReceivedDate().getTime() < task2.getReceivedDate().getTime()) {
             this.taskFromFirstStudent = task1;
