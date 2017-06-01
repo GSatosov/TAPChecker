@@ -12,9 +12,11 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
+import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -109,8 +111,9 @@ class TaskEditorController {
                 updateCurrentTest(inputArea, outputArea);
                 LocalSettings.getInstance().updateTest(curTask);
                 try {
+                    LocalSettings.saveSettings();
                     GoogleDriveManager.saveTask(curTask);
-                } catch (IOException e) {
+                } catch (IOException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException e) {
                     e.printStackTrace();
                 }
             }
@@ -139,7 +142,7 @@ class TaskEditorController {
                 subjectsAndTasks = LocalSettings.getInstance().getSubjectsAndTasks();
             }
 
-            subjectsBox.getItems().addAll(subjectsAndTasks.keySet());
+            subjectsBox.getItems().addAll(subjectsAndTasks.keySet().stream().sorted().collect(Collectors.toCollection(ArrayList::new)));
             subjectsBox.setOnAction(event1 -> {
                 tasksBox.getSelectionModel().clearSelection();
                 tasksBox.getItems().clear();
