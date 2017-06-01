@@ -19,6 +19,8 @@ public class LocalSettings implements Serializable {
     private ConcurrentLinkedQueue<Task> failedTasks = new ConcurrentLinkedQueue<>();
     private HashMap<String, ArrayList<Task>> subjectsAndTasks = new HashMap<>();
 
+    private Date editedTasksDate = new Date();
+
     private LocalSettings() {
     }
 
@@ -46,6 +48,10 @@ public class LocalSettings implements Serializable {
         return instance;
     }
 
+    public Date getEditedTasksDate() {
+        return editedTasksDate;
+    }
+
     public boolean editorHasBeenLaunched() {
         return editorHasBeenLaunched;
     }
@@ -59,7 +65,7 @@ public class LocalSettings implements Serializable {
         this.editorHasBeenLaunched = true;
     }
 
-    public void updateTest(Task task) {
+    public void updateTask(Task task) {
         if (subjectsAndTasks.containsKey(task.getSubjectName())) {
             if (subjectsAndTasks.get(task.getSubjectName()).contains(task))
                 subjectsAndTasks.get(task.getSubjectName()).remove(task); //...
@@ -69,6 +75,13 @@ public class LocalSettings implements Serializable {
             tasks.add(task);
             subjectsAndTasks.put(task.getSubjectName(), tasks);
         }
+        editedTasksDate = new Date();
+        GlobalSettings.getInstance().setEditedTasksDate(new Date());
+    }
+
+    public void deleteTask(Task task) { //TODO write this method
+        editedTasksDate = new Date(); //Updating the date
+        GlobalSettings.getInstance().setEditedTasksDate(new Date());
     }
 
     public Date getLastDateEmailChecked() {

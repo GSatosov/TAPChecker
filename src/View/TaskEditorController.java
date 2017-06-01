@@ -1,6 +1,7 @@
 package View;
 
 import Controller.GoogleDriveManager;
+import Model.GlobalSettings;
 import Model.LocalSettings;
 import Model.Task;
 import Model.Test;
@@ -111,7 +112,7 @@ class TaskEditorController {
                         taskCodeField.getCharacters().toString(),
                         hardDeadlineCheckbox.isSelected());
                 updateCurrentTest(inputArea, outputArea);
-                LocalSettings.getInstance().updateTest(curTask);
+                LocalSettings.getInstance().updateTask(curTask);
                 constructComboBoxes(taskCodeField, taskSubjectField, taskNameField, inputArea, outputArea, antiPlagiarismCheckBox, hardDeadlineCheckbox, deadlinePicker, timeLimitField, additionalTestField, testsPane, testsGridPane);
                 subjectsBox.getSelectionModel().select(curTask.getSubjectName());
                 tasksBox.getSelectionModel().select(curTask.getTaskCode() + ": " + curTask.getName());
@@ -133,6 +134,7 @@ class TaskEditorController {
                 if (response == ButtonType.OK) {
                     //TODO write method for task deletion on Google Drive here
                     //TODO write method for task deletion from LocalSettings
+                    LocalSettings.getInstance().deleteTask(curTask);
                     System.out.println("Bang!");
                 }
             });
@@ -170,9 +172,14 @@ class TaskEditorController {
 
         try {
             HashMap<String, ArrayList<Task>> subjectsAndTasks;
-            if (!LocalSettings.getInstance().editorHasBeenLaunched()) {
+            if (!LocalSettings.getInstance().editorHasBeenLaunched() || GlobalSettings.getInstance().getEditedTasksDate().compareTo(LocalSettings.getInstance().getEditedTasksDate()) > 0) {
                 subjectsAndTasks = GoogleDriveManager.getTasksAndSubjects();
                 LocalSettings.getInstance().setSubjectsAndTasks(subjectsAndTasks);
+                try {
+                    LocalSettings.saveSettings();
+                } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException e) {
+                    e.printStackTrace();
+                }
             } else {
                 subjectsAndTasks = LocalSettings.getInstance().getSubjectsAndTasks();
             }

@@ -10,6 +10,8 @@ import java.util.*;
  * Created by Alexander Baranov on 03.03.2017.
  */
 public class GlobalSettings implements Serializable {
+    private Date editedTasksDate = new Date();
+
 
     private static volatile GlobalSettings instance;
 
@@ -49,6 +51,13 @@ public class GlobalSettings implements Serializable {
         return resultsTableURL;
     }
 
+    public Date getEditedTasksDate() {
+        return editedTasksDate;
+    }
+
+    void setEditedTasksDate(Date editedTasksDate) {
+        this.editedTasksDate = editedTasksDate;
+    }
 
     private HashMap<String, ArrayList<String>> subjectsAndGroups = new HashMap<>();
 
