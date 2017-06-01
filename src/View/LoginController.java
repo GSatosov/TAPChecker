@@ -11,11 +11,8 @@ import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 
-import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.net.URL;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ResourceBundle;
 
 /**
@@ -49,7 +46,7 @@ public class LoginController implements Initializable {
         MainFrame.getPrimaryStage().addEventHandler(KeyEvent.KEY_PRESSED, event -> {
             if (event.getCode() == KeyCode.ENTER) {
                 if (mailServer.isFocused()) {
-                        mailServer.show();
+                    mailServer.show();
                 } else {
                     login.fire();
                     event.consume();

@@ -25,13 +25,23 @@ public class PlagiarismResult implements Serializable {
 
     public PlagiarismResult(String result, Task task1, Task task2) {
         this.result = result;
-        this.taskFromFirstStudent = task1;
-        this.taskFromSecondStudent = task2;
+        if (task1.getReceivedDate().getTime() < task2.getReceivedDate().getTime()) {
+            this.taskFromFirstStudent = task1;
+            this.taskFromSecondStudent = task2;
+        } else {
+            this.taskFromFirstStudent = task2;
+            this.taskFromSecondStudent = task1;
+        }
     }
 
     public PlagiarismResult(Task task1, Task task2) {
-        this.taskFromFirstStudent = task1;
-        this.taskFromSecondStudent = task2;
+        if (task1.getReceivedDate().getTime() < task2.getReceivedDate().getTime()) {
+            this.taskFromFirstStudent = task1;
+            this.taskFromSecondStudent = task2;
+        } else {
+            this.taskFromFirstStudent = task2;
+            this.taskFromSecondStudent = task1;
+        }
     }
 
     @Override
@@ -43,8 +53,8 @@ public class PlagiarismResult implements Serializable {
     @Override
     public boolean equals(Object obj) {
         PlagiarismResult result = (PlagiarismResult) obj;
-        return this.taskFromFirstStudent.toString().equals(result.taskFromFirstStudent.toString()) &&
-                this.taskFromSecondStudent.toString().equals(result.taskFromSecondStudent.toString()) &&
-                this.taskFromSecondStudent.getName().equals(result.taskFromSecondStudent.getName());
+        return this.taskFromFirstStudent.getName().equals(result.taskFromFirstStudent.getName()) &&
+                this.taskFromFirstStudent.getAuthor().equals(result.taskFromFirstStudent.getAuthor()) &&
+                this.taskFromSecondStudent.getAuthor().equals(result.taskFromSecondStudent.getAuthor());
     }
 }

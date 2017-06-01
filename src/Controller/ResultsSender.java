@@ -3,16 +3,8 @@ package Controller;
 import Model.*;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.*;
-import com.sun.istack.internal.NotNull;
-import com.sun.xml.internal.ws.util.StringUtils;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
@@ -32,8 +24,7 @@ public class ResultsSender implements Runnable {
             String spreadsheetId;
             Pattern pattern = Pattern.compile("/spreadsheets/d/([a-zA-Z0-9-_]+)");
             Matcher matcher = pattern.matcher(GlobalSettings.getInstance().getResultsTableURL());
-            if (matcher.find())
-            {
+            if (matcher.find()) {
                 spreadsheetId = matcher.group().replace("/spreadsheets/d/", "");
                 HashMap<String, ArrayList<String>> taskNumbersForSubjects = GoogleDriveManager.getTaskNumbersForSubjects();
                 final CellFormat centerFormat = new CellFormat().setHorizontalAlignment("CENTER");
@@ -163,8 +154,7 @@ public class ResultsSender implements Runnable {
                         e.printStackTrace();
                     }
                 });
-            }
-            else {
+            } else {
                 throw new IllegalArgumentException("Wrong table url format!");
             }
 

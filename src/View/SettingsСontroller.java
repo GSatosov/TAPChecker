@@ -6,11 +6,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 
-import javax.crypto.NoSuchPaddingException;
-import java.io.IOException;
 import java.net.URL;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ResourceBundle;
 
 /**
@@ -30,6 +26,7 @@ public class SettingsСontroller implements Initializable {
     Button ok;
     @FXML
     Button cancel;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         generateTableLink.setOnAction(event -> {

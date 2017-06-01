@@ -1,16 +1,9 @@
 package Model;
 
 import Controller.GoogleDriveManager;
-import com.google.api.client.http.FileContent;
-import com.google.api.services.drive.model.*;
 
-import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 /**
@@ -19,8 +12,10 @@ import java.util.*;
 public class GlobalSettings implements Serializable {
 
     private static volatile GlobalSettings instance;
+
     private GlobalSettings() {
     }
+
     public static GlobalSettings getInstance() {
         if (instance == null) {
             synchronized (GlobalSettings.class) {
@@ -31,8 +26,7 @@ public class GlobalSettings implements Serializable {
                             ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(outputStream.toByteArray());
                             ObjectInput in = new ObjectInputStream(byteArrayInputStream);
                             instance = (GlobalSettings) in.readObject();
-                        }
-                        else {
+                        } else {
                             instance = new GlobalSettings();
                         }
                     } catch (IOException | ClassNotFoundException e) {

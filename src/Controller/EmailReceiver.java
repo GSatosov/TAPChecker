@@ -125,6 +125,11 @@ public class EmailReceiver {
         Date newDateEmailChecking = new Date();
         downloadedMessagesCount = new CountDownLatch(messages.length);
         localTests = new ConcurrentHashMap<>();
+        HashMap<String, ArrayList<Task>> subjectsAndTasks = LocalSettings.getInstance().getSubjectsAndTasks();
+        subjectsAndTasks.keySet().forEach(key -> subjectsAndTasks.get(key).forEach(value -> {
+            if (!localTests.containsKey(value))
+                localTests.put(value, value.getTestContents());
+        }));
         Arrays.stream(messages).forEach(message -> {
             try {
                 if (lastDateEmailChecking.compareTo(message.getReceivedDate()) < 0) {

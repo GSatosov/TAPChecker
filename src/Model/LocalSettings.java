@@ -2,7 +2,6 @@ package Model;
 
 import javax.crypto.NoSuchPaddingException;
 import java.io.*;
-import java.lang.reflect.Array;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -12,12 +11,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * Created by Alexander Baranov on 20.05.2017.
  */
 public class LocalSettings implements Serializable {
-
+    private boolean editorHasBeenLaunched;
     private static volatile LocalSettings instance;
     private List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
     private Date lastDateEmailChecked = new Date(0L);
     private ArrayList<PlagiarismResult> plagiarismResults = new ArrayList<>();
     private ConcurrentLinkedQueue<Task> failedTasks = new ConcurrentLinkedQueue<>();
+    private HashMap<String, ArrayList<Task>> subjectsAndTasks;
 
     private LocalSettings() {
     }
@@ -46,6 +46,30 @@ public class LocalSettings implements Serializable {
         return instance;
     }
 
+    public boolean editorHasBeenLaunched() {
+        return editorHasBeenLaunched;
+    }
+
+    public HashMap<String, ArrayList<Task>> getSubjectsAndTasks() {
+        return subjectsAndTasks;
+    }
+
+    public void setSubjectsAndTasks(HashMap<String, ArrayList<Task>> subjectsAndTasks) {
+        this.subjectsAndTasks = subjectsAndTasks;
+        this.editorHasBeenLaunched = true;
+    }
+
+    public void updateTest(Task task) {
+        if (subjectsAndTasks.containsKey(task.getSubjectName())) {
+            if (subjectsAndTasks.get(task.getSubjectName()).contains(task))
+                subjectsAndTasks.get(task.getSubjectName()).remove(task); //...
+            subjectsAndTasks.get(task.getSubjectName()).add(task);
+        } else {
+            ArrayList<Task> tasks = new ArrayList<>();
+            tasks.add(task);
+            subjectsAndTasks.put(task.getSubjectName(), tasks);
+        }
+    }
 
     public Date getLastDateEmailChecked() {
         return this.lastDateEmailChecked;

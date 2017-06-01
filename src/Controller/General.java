@@ -76,6 +76,11 @@ public class General {
         haskellTasksQueue = new ConcurrentLinkedQueue<>();
         javaTasksQueue = new ConcurrentLinkedQueue<>();
         ConcurrentHashMap<Task, ArrayList<Test>> localTests = new ConcurrentHashMap<>();
+        HashMap<String, ArrayList<Task>> subjectsAndTasks = LocalSettings.getInstance().getSubjectsAndTasks();
+        subjectsAndTasks.keySet().forEach(key -> subjectsAndTasks.get(key).forEach(value -> {
+            if (!localTests.containsKey(value))
+                localTests.put(value, value.getTestContents());
+        }));
         setTests(tasks, localTests);
         TestsApplier testsApplier = new TestsApplier();
         latchForTaskAppliers = new CountDownLatch(2);
@@ -179,7 +184,7 @@ public class General {
     private static void saveResults(List<Result> results) {
         LocalSettings.getInstance().getResults().addAll(results);
         List<Result> filteredResults = Collections.synchronizedList(new ArrayList<Result>());
-        LocalSettings.getInstance().getResults().stream().forEach(result -> {
+        LocalSettings.getInstance().getResults().forEach(result -> {
             Optional<Result> firstResult = filteredResults.stream().filter(r -> r.getStudent().getName().equals(result.getStudent().getName()) && r.getTask().getName().equals(result.getTask().getName()) && r.getGroup().equals(result.getStudent().getGroupName())).findFirst();
             if (firstResult.isPresent()) {
                 Result old = firstResult.get();
@@ -205,12 +210,12 @@ public class General {
         if (!haskellTasksQueue.isEmpty()) {
             addFailedTasks(new ArrayList<>(haskellTasksQueue));
             haskellTasksQueue.clear();
-            System.out.println("Some of the Haskell tasks have not undergo testing for some reason. Run local tests later to re-test these tasks.");
+            System.out.println("Some of the Haskell tasks have not underwent testing for some reason. Run local tests later to re-test these tasks.");
         }
         if (!javaTasksQueue.isEmpty()) {
             addFailedTasks(new ArrayList<>(javaTasksQueue));
             javaTasksQueue.clear();
-            System.out.println("Some of the Java tasks have not undergo testing for some reason. Run local tests later to re-test these tasks.");
+            System.out.println("Some of the Java tasks have not underwent testing for some reason. Run local tests later to re-test these tasks.");
         }
     }
 
@@ -218,7 +223,7 @@ public class General {
         ConcurrentLinkedQueue<Task> failedTasks = LocalSettings.getInstance().getFailedTasks();
         tasks.forEach(task -> {
             if (failedTasks.stream().noneMatch(task1 -> task1.getReceivedDate().getTime() == task.getReceivedDate().getTime()
-                    && task.getName().equals(task1.getName()) && task.getSubjectName().equals(task.getSubjectName())
+                    && task.getName().equals(task1.getName()) && task.getSubjectName().equals(task1.getSubjectName())
                     && task1.getAuthor().equals(task.getAuthor())))
                 failedTasks.add(task);
         });
@@ -273,7 +278,7 @@ public class General {
         tasks.forEach(task -> {
             if (tasksThatShouldBeCheckedOnPlagiarism.contains(task.getName()) && tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).count() > 1) {
                 tasksThatShouldBeCheckedOnPlagiarism.remove(task.getName());
-                tasksForPlagiarismCheck.add(tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).sorted(Comparator.comparingLong(o -> o.getReceivedDate().getTime())).collect(Collectors.toCollection(ArrayList::new)));
+                tasksForPlagiarismCheck.add(tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).collect(Collectors.toCollection(ArrayList::new)));
             }
         });
         PlagiarismChecker checker = new PlagiarismChecker(tasksForPlagiarismCheck, LocalSettings.getInstance().getPlagiarismResults());

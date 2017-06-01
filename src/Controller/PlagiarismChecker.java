@@ -1,7 +1,6 @@
 package Controller;
 
 import Model.PlagiarismResult;
-import Model.Result;
 import Model.Task;
 
 import java.io.IOException;
@@ -73,11 +72,18 @@ class PlagiarismChecker {
         if (task.getName().endsWith("hs")) {
             char[] taskName = task.getName().split("\\.")[0].toCharArray();
             taskName[0] = Character.toLowerCase(taskName[0]);
-            return removeMultiLineComments(lines.stream().filter(line -> !line.isEmpty())
-                    .filter(line -> !line.trim().startsWith("--") && !line.trim().startsWith("module") && !line.trim().contains(new String(taskName) + " ::"))
+            return removeMultiLineComments(lines.stream().filter(line -> !line.isEmpty()).map(line -> {
+                if (line.trim().contains("--"))
+                    return line.substring(0, line.indexOf("--"));
+                else return line;
+            }).filter(line -> !line.trim().startsWith("module") && !line.trim().contains(new String(taskName) + " ::"))
                     .reduce("", String::concat), "{-", "-}").replaceAll("\\s+", " ");
         }
-        String taskWithoutComments = removeMultiLineComments(lines.stream().filter(line -> !line.trim().startsWith("//")).reduce("", String::concat), "/*", "*/")
+        String taskWithoutComments = removeMultiLineComments(lines.stream().map(line -> {
+            if (line.trim().contains("//"))
+                return line.substring(0, line.indexOf("//"));
+            else return line;
+        }).reduce("", String::concat), "/*", "*/")
                 .replaceAll("\\s+", " ");
         String firstSection = taskWithoutComments.substring(0, taskWithoutComments.indexOf("{") + 1);
         String concatenatedSections = firstSection

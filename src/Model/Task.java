@@ -118,6 +118,6 @@ public class Task implements Serializable {
     @Override
     public boolean equals(Object obj) {
         Task task = (Task) obj;
-        return this.getName().equals(task.getName());
+        return this.getName().equals(task.getName()) && this.getSubjectName().equals(task.getSubjectName());
     }
 }

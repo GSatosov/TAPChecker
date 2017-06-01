@@ -1,9 +1,9 @@
 package View;
 
 import Controller.GoogleDriveManager;
+import Model.LocalSettings;
 import Model.Task;
 import Model.Test;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
@@ -107,6 +107,7 @@ class TaskEditorController {
                         taskCodeField.getCharacters().toString(),
                         hardDeadlineCheckbox.isSelected());
                 updateCurrentTest(inputArea, outputArea);
+                LocalSettings.getInstance().updateTest(curTask);
                 try {
                     GoogleDriveManager.saveTask(curTask);
                 } catch (IOException e) {
@@ -120,7 +121,8 @@ class TaskEditorController {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.OK) {
-                    //TODO write method here
+                    //TODO write method for task deletion on Google Drive here
+                    //TODO write method for task deletion from LocalSettings
                     System.out.println("Bang!");
                 }
             });
@@ -129,7 +131,14 @@ class TaskEditorController {
         ComboBox<String> subjectsBox = new ComboBox<>();
         ComboBox<String> tasksBox = new ComboBox<>();
         try {
-            HashMap<String, ArrayList<Task>> subjectsAndTasks = GoogleDriveManager.getTasksAndSubjects();
+            HashMap<String, ArrayList<Task>> subjectsAndTasks;
+            if (!LocalSettings.getInstance().editorHasBeenLaunched()) {
+                subjectsAndTasks = GoogleDriveManager.getTasksAndSubjects();
+                LocalSettings.getInstance().setSubjectsAndTasks(subjectsAndTasks);
+            } else {
+                subjectsAndTasks = LocalSettings.getInstance().getSubjectsAndTasks();
+            }
+
             subjectsBox.getItems().addAll(subjectsAndTasks.keySet());
             subjectsBox.setOnAction(event1 -> {
                 tasksBox.getSelectionModel().clearSelection();

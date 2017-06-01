@@ -10,7 +10,6 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.FileContent;
 import com.google.api.client.http.HttpTransport;
-import com.google.api.client.json.Json;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
@@ -24,7 +23,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.*;
-import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -346,8 +344,7 @@ public class GoogleDriveManager {
         String folderId = "";
         if (folder.isPresent()) {
             folderId = folder.get().getId();
-        }
-        else {
+        } else {
             File fileMetadata = new File();
             fileMetadata.setName(task.getSubjectName().replaceAll(" ", "_"));
             fileMetadata.setMimeType("application/vnd.google-apps.folder");
@@ -412,13 +409,11 @@ public class GoogleDriveManager {
                     .execute();
 
             filePath.delete();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
     }
-
 
 
 }
