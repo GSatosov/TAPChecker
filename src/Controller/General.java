@@ -2,22 +2,19 @@ package Controller;
 
 import Model.*;
 import View.MainController;
-import com.sun.org.apache.regexp.internal.RE;
 import javafx.application.Platform;
 
 import javax.crypto.NoSuchPaddingException;
 import javax.mail.MessagingException;
-import javax.swing.table.TableColumn;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
@@ -40,24 +37,48 @@ public class General {
     }
 
     private static Date startDate;
-    private static ArrayList<String> tasksThatShouldBeCheckedOnAntiPlagiarism;
+    private static ArrayList<String> tasksThatShouldBeCheckedOnPlagiarism;
 
     static Date getStartDate() {
         if (startDate == null) startDate = new Date();
         return startDate;
     }
 
-    public static void runLocalTests(Callback onExit, MainController mainController) {
+    private static void setTests(ArrayList<Task> tasks, ConcurrentHashMap<Task, ArrayList<Test>> localTests) {
+        CountDownLatch latch = new CountDownLatch(tasks.size());
+        tasks.forEach(task -> new Thread(() -> {
+            if (localTests.containsKey(task))
+                task.setTestContents(localTests.get(task));
+            else
+                ExponentialBackOff.execute(() -> {
+                    ArrayList<Test> tests = GoogleDriveManager.getTests(task);
+                    localTests.put(task, tests);
+                    task.setTestContents(tests);
+                    return null;
+                });
+            if (task.getName().endsWith("hs"))
+                haskellTasksQueue.add(task);
+            else
+                javaTasksQueue.add(task);
+            System.out.println("Tests for " + task.getSubjectName() + " " + task.getName() + " have been set: " + (new Date().getTime() - startDate.getTime()) + " ms.");
+            latch.countDown();
+        }).start());
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void runLocalTests(Callback onExit, MainController mainController, ArrayList<Task> tasks) {
         startDate = new Date();
         haskellTasksQueue = new ConcurrentLinkedQueue<>();
         javaTasksQueue = new ConcurrentLinkedQueue<>();
-        ArrayList<Task> allTasks = LocalSettings.getInstance().getResults().stream().map(Result::getTask).collect(Collectors.toCollection(ArrayList::new));
-        ArrayList<Task> failedTasks = LocalSettings.getInstance().getFailedTasks();
-        refreshTests(allTasks);
-        refreshTests(failedTasks);
+        ConcurrentHashMap<Task, ArrayList<Test>> localTests = new ConcurrentHashMap<>();
+        setTests(tasks, localTests);
         TestsApplier testsApplier = new TestsApplier();
         latchForTaskAppliers = new CountDownLatch(2);
-        tasksThatShouldBeCheckedOnAntiPlagiarism = new ArrayList<>();
+        tasksThatShouldBeCheckedOnPlagiarism = new ArrayList<>();
         List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
         ThreadGroup tGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), "Tasks Runners");
         haskellTasksThread(tGroup, testsApplier, results).start();
@@ -87,22 +108,6 @@ public class General {
     }
 
 
-    private static void refreshTests(ArrayList<Task> tasks) {
-        tasks.forEach(task -> {
-            try {
-                ArrayList<Test> testsFromDrive = GoogleDriveManager.getTests(task);
-                if (!task.getTestContents().equals(testsFromDrive))
-                    task.setTestContents(testsFromDrive);
-                if (task.getSourcePath().endsWith("hs"))
-                    haskellTasksQueue.add(task);
-                else
-                    javaTasksQueue.add(task);
-            } catch (IOException | ParseException e) {
-                e.printStackTrace();
-            }
-        });
-    }
-
     private static Thread haskellTasksThread(ThreadGroup tGroup, TestsApplier applier, List<Result> results) {
         return new Thread(() -> {
             boolean startedHaskellTesting = false;
@@ -117,10 +122,11 @@ public class General {
                     haskellResult = applier.handleHaskellTask(task);
                     if (haskellResult.getMessage().contains("OK")
                             && task.shouldBeCheckedForAntiPlagiarism()
-                            && !tasksThatShouldBeCheckedOnAntiPlagiarism.contains(task.getName()))
-                        tasksThatShouldBeCheckedOnAntiPlagiarism.add(task.getName());
+                            && !tasksThatShouldBeCheckedOnPlagiarism.contains(task.getName()))
+                        tasksThatShouldBeCheckedOnPlagiarism.add(task.getName());
                     results.add(haskellResult);
-                    System.out.println(haskellResult);
+                    System.out.print(haskellResult);
+                    System.out.println(" (" + ((new Date()).getTime() - General.getStartDate().getTime()) + ") ms.");
                 } else {
                     try {
                         Thread.sleep(100);
@@ -150,10 +156,11 @@ public class General {
                     javaResult = applier.handleJavaTask(task);
                     if (javaResult.getMessage().contains("OK")
                             && task.shouldBeCheckedForAntiPlagiarism()
-                            && !tasksThatShouldBeCheckedOnAntiPlagiarism.contains(task.getName()))
-                        tasksThatShouldBeCheckedOnAntiPlagiarism.add(task.getName());
+                            && !tasksThatShouldBeCheckedOnPlagiarism.contains(task.getName()))
+                        tasksThatShouldBeCheckedOnPlagiarism.add(task.getName());
                     results.add(javaResult);
-                    System.out.println(javaResult);
+                    System.out.print(javaResult);
+                    System.out.println(" (" + ((new Date()).getTime() - General.getStartDate().getTime()) + ") ms.");
                 } else {
                     try {
                         Thread.sleep(100);
@@ -195,15 +202,25 @@ public class General {
 
     private static void checkForFailedTasks() {
         if (!haskellTasksQueue.isEmpty()) {
-            LocalSettings.getInstance().addFailedTasks(new ArrayList<>(haskellTasksQueue));
+            addFailedTasks(new ArrayList<>(haskellTasksQueue));
             haskellTasksQueue.clear();
-            System.out.println("Some of the Haskell tasks haven't undergo testing for some reason. Run local tests later to re-test these tasks.");
+            System.out.println("Some of the Haskell tasks have not undergo testing for some reason. Run local tests later to re-test these tasks.");
         }
         if (!javaTasksQueue.isEmpty()) {
-            LocalSettings.getInstance().addFailedTasks(new ArrayList<>(javaTasksQueue));
+            addFailedTasks(new ArrayList<>(javaTasksQueue));
             javaTasksQueue.clear();
-            System.out.println("Some of the Java tasks haven't undergo testing for some reason. Run local tests later to re-test these tasks.");
+            System.out.println("Some of the Java tasks have not undergo testing for some reason. Run local tests later to re-test these tasks.");
         }
+    }
+
+    private static void addFailedTasks(ArrayList<Task> tasks) {
+        ArrayList<Task> failedTasks = LocalSettings.getInstance().getFailedTasks();
+        tasks.forEach(task -> {
+            if (failedTasks.stream().noneMatch(task1 -> task1.getReceivedDate().getTime() == task.getReceivedDate().getTime()
+                    && task.getName().equals(task1.getName()) && task.getSubjectName().equals(task.getSubjectName())
+                    && task1.getAuthor().equals(task.getAuthor())))
+                failedTasks.add(task);
+        });
     }
 
     public static void getResults(Callback onExit, MainController mainController) throws InterruptedException {
@@ -222,7 +239,7 @@ public class General {
         List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
         haskellTasksQueue = new ConcurrentLinkedQueue<>();
         javaTasksQueue = new ConcurrentLinkedQueue<>();
-        tasksThatShouldBeCheckedOnAntiPlagiarism = new ArrayList<>();
+        tasksThatShouldBeCheckedOnPlagiarism = new ArrayList<>();
         {
             TestsApplier applier = new TestsApplier();
             haskellTasksThread(tGroup, applier, results).start();
@@ -253,8 +270,8 @@ public class General {
         ArrayList<Task> tasks = LocalSettings.getInstance().getResults().stream().filter(result -> result.getMessage().contains("OK")).map(Result::getTask).collect(Collectors.toCollection(ArrayList::new));
         System.out.println("Parsing file system.");
         tasks.forEach(task -> {
-            if (tasksThatShouldBeCheckedOnAntiPlagiarism.contains(task.getName()) && tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).count() > 1) {
-                tasksThatShouldBeCheckedOnAntiPlagiarism.remove(task.getName());
+            if (tasksThatShouldBeCheckedOnPlagiarism.contains(task.getName()) && tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).count() > 1) {
+                tasksThatShouldBeCheckedOnPlagiarism.remove(task.getName());
                 tasksForPlagiarismCheck.add(tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).sorted(Comparator.comparingLong(o -> o.getReceivedDate().getTime())).collect(Collectors.toCollection(ArrayList::new)));
             }
         });

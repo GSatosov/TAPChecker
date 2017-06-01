@@ -34,7 +34,7 @@ public class MainController implements Initializable {
     @FXML
     private TabPane resultsTable;
     @FXML
-    private Button runLocalTests;
+    private Button runLocalTasks;
     @FXML
     private BorderPane plagiarism;
 
@@ -46,6 +46,8 @@ public class MainController implements Initializable {
     private Button settings;
     @FXML
     private Button editTasks;
+    @FXML
+    private Button runFailedTasks;
     private static Stage settingsFrame;
     private int plagiarismListSize = -1; //H A C K S
     private Stage plagiarismStage;
@@ -197,9 +199,15 @@ public class MainController implements Initializable {
                 e.printStackTrace();
             }
         });
-        runLocalTests.setOnAction(event -> {
-            runLocalTests.setDisable(true);
-            General.runLocalTests(() -> runLocalTests.setDisable(false), this);
+        runLocalTasks.setOnAction(event -> {
+            runLocalTasks.setDisable(true);
+            General.runLocalTests(() -> runLocalTasks.setDisable(false), this,
+                    LocalSettings.getInstance().getResults().stream().map(Result::getTask).collect(Collectors.toCollection(ArrayList::new)));
+        });
+        runFailedTasks.setOnAction(event -> {
+            runFailedTasks.setDisable(true);
+            General.runLocalTests(() -> runFailedTasks.setDisable(false), this,
+                    LocalSettings.getInstance().getFailedTasks());
         });
         plagiarismResults.setOnAction(event -> {
             if (LocalSettings.getInstance().getPlagiarismResults().size() > 0) {

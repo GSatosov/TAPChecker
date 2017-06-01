@@ -38,7 +38,7 @@ public class Result implements Comparable, Serializable {
 
     @Override
     public String toString() {
-        return task.getAuthor() + " has scored " + message + " on " + task.getSubjectName() + " " + task.getName() + ".";
+        return task.getAuthor() + " has scored " + message + " on " + task.getSubjectName() + " " + task.getName();
     }
 
     @Override

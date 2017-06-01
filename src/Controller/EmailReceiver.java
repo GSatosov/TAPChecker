@@ -145,13 +145,13 @@ public class EmailReceiver {
                                     } else {
                                         General.getJavaTasksQueue().add(att);
                                     }
-                                    System.out.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " s).");
+                                    System.out.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " ms).");
                                 } else {
                                     ExponentialBackOff.execute(() -> {
                                         ArrayList<Test> cTests = GoogleDriveManager.getTests(att);
                                         localTests.put(att, cTests);
                                         att.setTestContents(cTests);
-                                        System.out.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " s).");
+                                        System.out.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " ms).");
                                         if (att.getName().endsWith(".hs")) {
                                             General.getHaskellTasksQueue().add(att);
                                         } else {

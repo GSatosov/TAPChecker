@@ -13,11 +13,12 @@
 
     <HBox AnchorPane.topAnchor="5" AnchorPane.rightAnchor="5" AnchorPane.leftAnchor="5"
           spacing="10">
-        <Button fx:id="runTests" text="Check mail and run tests"/>
-        <Button fx:id="runLocalTests" text="Run local tests"/>
+        <Button fx:id="runTests" text="Check mail"/>
+        <Button fx:id="runLocalTasks" text="Run local tasks"/>
+        <Button fx:id="runFailedTasks" text="Run failed tasks"/>
         <Button fx:id="plagiarismResults" text="Show plagiarism results"/>
-        <Button fx:id="settings" text="Settings"/>
         <Button fx:id="editTasks" text="Edit Tests"/>
+        <Button fx:id="settings" text="Settings"/>
     </HBox>
     <TabPane fx:id="resultsTable"
              AnchorPane.topAnchor="40" AnchorPane.rightAnchor="5" AnchorPane.leftAnchor="5"

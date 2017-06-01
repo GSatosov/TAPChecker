@@ -16,6 +16,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 
@@ -128,13 +129,12 @@ class TaskEditorController {
                         java.sql.Date.valueOf(deadlinePicker.getValue()),
                         taskCodeField.getCharacters().toString(),
                         hardDeadlineCheckbox.isSelected());
-                fillCurrentTest(inputArea, outputArea);
+                updateCurrentTest(inputArea, outputArea);
                 try {
                     GoogleDriveManager.saveTask(curTask);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                System.out.println("");
             }
         });
         bottomPane.add(saveTask, 0, 2);
@@ -149,7 +149,7 @@ class TaskEditorController {
                 tasksBox.getSelectionModel().clearSelection();
                 tasksBox.getItems().clear();
                 if (!subjectsBox.getValue().equals("New Subject...")) {
-                    tasksBox.getItems().addAll(subjectsAndTasks.get(subjectsBox.getValue()).stream().map(Task::getName).collect(Collectors.toList()));
+                    tasksBox.getItems().addAll(subjectsAndTasks.get(subjectsBox.getValue()).stream().sorted(Comparator.comparing(Task::getTaskCode)).map(task -> task.getTaskCode() + ": " + task.getName()).collect(Collectors.toList()));
                 }
                 tasksBox.getItems().add("New Task...");
                 fillFieldsWithTaskInformation(emptyTask(), taskCodeField, taskSubjectField, taskNameField, inputArea, outputArea, antiPlagiarismCheckBox, hardDeadlineCheckbox, deadlinePicker, timeLimitField,
@@ -161,7 +161,7 @@ class TaskEditorController {
                     Task task;
                     if (!subjectsBox.getValue().equals("New Subject...")) {
                         if (!tasksBox.getValue().equals("New Task...")) {
-                            task = subjectsAndTasks.get(subjectsBox.getValue()).stream().filter(t -> t.getName().equals(tasksBox.getValue())).findFirst().get();
+                            task = subjectsAndTasks.get(subjectsBox.getValue()).stream().filter(t -> t.getName().equals(tasksBox.getValue().split(": ")[1])).findFirst().get();
                             taskSubjectField.setDisable(true);
                             taskNameField.setDisable(true);
                         } else {
@@ -288,18 +288,6 @@ class TaskEditorController {
         box.getChildren().get(currentIndex).setStyle("-fx-base: #b6e7c9;");
     }
 
-    //Fills runTests with content found in input fields. Rewrite.
-    private void fillCurrentTest(TextArea inputField, TextArea outputField) {
-        ArrayList<Test> newTests = curTask.getTestContents();
-        newTests.get(currentTest).setInput(Arrays.stream(inputField.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)));
-        if (newTests.get(currentTest).getOutputVariants().size() == 1) {
-            ArrayList<ArrayList<String>> outputVariants = new ArrayList<>();
-            outputVariants.add(Arrays.stream(outputField.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)));
-            newTests.get(currentTest).setOutputVariants(outputVariants);
-        } else
-            newTests.get(currentTest).setOutputVariant(Arrays.stream(outputField.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)),
-                    currentOutputVariant);
-    }
 
     private void updateCurrentTest(TextArea input, TextArea output) {
         Test testToBeUpdated = curTask.getTestContents().get(currentTest);
