@@ -31,6 +31,9 @@ class TaskEditorController {
     private Task curTask;
     private Integer currentTest;
     private Integer currentOutputVariant;
+    private ComboBox<String> subjectsBox;
+    private ComboBox<String> tasksBox;
+    private GridPane comboBoxesPane = new GridPane();
 
     Stage getStage() {
         Stage testEditorStage = new Stage();
@@ -66,10 +69,10 @@ class TaskEditorController {
         });
         TextField taskNameField = new TextField();
         TextField taskSubjectField = new TextField();
-        taskPane.add(new Text("Enter the name of the function to check"), 0, 1);
-        taskPane.add(taskNameField, 1, 1);
-        taskPane.add(new Text("Enter the name of the subject"), 0, 2);
-        taskPane.add(taskSubjectField, 1, 2);
+        taskPane.add(new Text("Enter the name of the subject"), 0, 1);
+        taskPane.add(taskSubjectField, 1, 1);
+        taskPane.add(new Text("Enter the name of the function to check"), 0, 2);
+        taskPane.add(taskNameField, 1, 2);
         taskPane.add(new Text("Enter the code for this task:"), 0, 3);
         taskPane.add(taskCodeField, 1, 3);
         taskPane.add(new Text("Enter the time limit in ms:"), 0, 4);
@@ -91,7 +94,6 @@ class TaskEditorController {
 
         BorderPane testsPane = new BorderPane(); //Pane with test/output variants buttons and input/output text areas.
         GridPane bottomPane = new GridPane();
-
         bottomPane.add(new Text("Enter an additional test:"), 0, 1);
         TextField additionalTestField = new TextField();
         bottomPane.add(additionalTestField, 1, 1);
@@ -110,6 +112,11 @@ class TaskEditorController {
                         hardDeadlineCheckbox.isSelected());
                 updateCurrentTest(inputArea, outputArea);
                 LocalSettings.getInstance().updateTest(curTask);
+                constructComboBoxes(taskCodeField, taskSubjectField, taskNameField, inputArea, outputArea, antiPlagiarismCheckBox, hardDeadlineCheckbox, deadlinePicker, timeLimitField, additionalTestField, testsPane, testsGridPane);
+                subjectsBox.getSelectionModel().select(curTask.getSubjectName());
+                tasksBox.getSelectionModel().select(curTask.getTaskCode() + ": " + curTask.getName());
+                taskSubjectField.setDisable(true);
+                taskNameField.setDisable(true);
                 try {
                     LocalSettings.saveSettings();
                     GoogleDriveManager.saveTask(curTask);
@@ -131,8 +138,36 @@ class TaskEditorController {
             });
         });
         bottomPane.add(deleteTaskButton, 4, 2);
-        ComboBox<String> subjectsBox = new ComboBox<>();
-        ComboBox<String> tasksBox = new ComboBox<>();
+        constructComboBoxes(taskCodeField, taskSubjectField, taskNameField, inputArea, outputArea, antiPlagiarismCheckBox, hardDeadlineCheckbox, deadlinePicker, timeLimitField, additionalTestField, testsPane, testsGridPane);
+        comboBoxesPane = new GridPane();
+        comboBoxesPane.add(subjectsBox, 0, 1);
+        comboBoxesPane.add(tasksBox, 1, 1);
+        BorderPane tasksBorderPane = new BorderPane();
+        tasksBorderPane.setCenter(taskPane);
+        tasksBorderPane.setBottom(testsPane);
+        testsPane.setTop(showTestButtons(inputArea, outputArea, testsGridPane, additionalTestField, testsPane));
+        testsPane.setCenter(testsGridPane);
+        testsGridPane.add(inputArea, 0, 1);
+        testsGridPane.add(outputArea, 1, 1);
+        mainPane.setTop(comboBoxesPane);
+        mainPane.setCenter(tasksBorderPane);
+        mainPane.setBottom(bottomPane);
+        testEditorStage.setScene(new Scene(mainPane, 500, 480));
+        testEditorStage.setTitle("Task Editor");
+        testEditorStage.setResizable(false);
+        return testEditorStage;
+    }
+
+    private void constructComboBoxes(TextField taskCodeField,
+                                     TextField taskSubjectField, TextField taskNameField,
+                                     TextArea inputArea, TextArea outputArea,
+                                     CheckBox antiPlagiarismCheckBox, CheckBox hardDeadlineCheckbox,
+                                     DatePicker deadlinePicker, TextField timeLimitField,
+                                     TextField additionalTestField, BorderPane testsPane,
+                                     GridPane testsGridPane) {
+        subjectsBox = new ComboBox<>();
+        tasksBox = new ComboBox<>();
+
         try {
             HashMap<String, ArrayList<Task>> subjectsAndTasks;
             if (!LocalSettings.getInstance().editorHasBeenLaunched()) {
@@ -141,7 +176,6 @@ class TaskEditorController {
             } else {
                 subjectsAndTasks = LocalSettings.getInstance().getSubjectsAndTasks();
             }
-
             subjectsBox.getItems().addAll(subjectsAndTasks.keySet().stream().sorted().collect(Collectors.toCollection(ArrayList::new)));
             subjectsBox.setOnAction(event1 -> {
                 tasksBox.getSelectionModel().clearSelection();
@@ -187,23 +221,8 @@ class TaskEditorController {
         tasksBox.getItems().add("New Task...");
         subjectsBox.getSelectionModel().selectLast();
         tasksBox.getSelectionModel().selectLast();
-        GridPane comboBoxesPane = new GridPane();
         comboBoxesPane.add(subjectsBox, 0, 1);
         comboBoxesPane.add(tasksBox, 1, 1);
-        BorderPane tasksBorderPane = new BorderPane();
-        tasksBorderPane.setCenter(taskPane);
-        tasksBorderPane.setBottom(testsPane);
-        testsPane.setTop(showTestButtons(inputArea, outputArea, testsGridPane, additionalTestField, testsPane));
-        testsPane.setCenter(testsGridPane);
-        testsGridPane.add(inputArea, 0, 1);
-        testsGridPane.add(outputArea, 1, 1);
-        mainPane.setTop(comboBoxesPane);
-        mainPane.setCenter(tasksBorderPane);
-        mainPane.setBottom(bottomPane);
-        testEditorStage.setScene(new Scene(mainPane, 500, 480));
-        testEditorStage.setTitle("Task Editor");
-        testEditorStage.setResizable(false);
-        return testEditorStage;
     }
 
     private Task emptyTask() {
@@ -390,8 +409,8 @@ class TaskEditorController {
                     curTask.getTestContents().get(currentTest).removeOutputVariant(Integer.parseInt(outputVariantButton.getText()) - 1);
                     if (currentOutputVariant == curTask.getTestContents().get(currentTest).getOutputVariants().size())
                         currentOutputVariant--;
-                    curPane.add(showOutputVariantsButtons(output, curPane), 2, 1);
                 }
+                curPane.add(showOutputVariantsButtons(output, curPane), 2, 1);
             }
         });
         outputVariantButton.setStyle("-fx-base: #ffffff;");
