@@ -35,6 +35,7 @@ class TaskEditorController {
     private ComboBox<String> subjectsBox;
     private ComboBox<String> tasksBox;
     private GridPane comboBoxesPane = new GridPane();
+    private final String newTask = "New Task...";
 
     Stage getStage() {
         Stage testEditorStage = new Stage();
@@ -69,21 +70,18 @@ class TaskEditorController {
             }
         });
         TextField taskNameField = new TextField();
-        TextField taskSubjectField = new TextField();
-        taskPane.add(new Text("Enter the name of the subject"), 0, 1);
-        taskPane.add(taskSubjectField, 1, 1);
-        taskPane.add(new Text("Enter the name of the function to check"), 0, 2);
-        taskPane.add(taskNameField, 1, 2);
-        taskPane.add(new Text("Enter the code for this task:"), 0, 3);
-        taskPane.add(taskCodeField, 1, 3);
-        taskPane.add(new Text("Enter the time limit in ms:"), 0, 4);
-        taskPane.add(timeLimitField, 1, 4);
-        taskPane.add(new Text("Enter the deadline for this task:"), 0, 5);
-        taskPane.add(deadlinePicker, 1, 5);
-        taskPane.add(new Text("If the deadline has not been met, will the task net 0 points?"), 0, 6);
-        taskPane.add(hardDeadlineCheckbox, 1, 6);
-        taskPane.add(new Text("Check the task on plagiarism?"), 0, 7);
-        taskPane.add(antiPlagiarismCheckBox, 1, 7);
+        taskPane.add(new Text("Enter the name of the function to check"), 0, 1);
+        taskPane.add(taskNameField, 1, 1);
+        taskPane.add(new Text("Enter the code for this task:"), 0, 2);
+        taskPane.add(taskCodeField, 1, 2);
+        taskPane.add(new Text("Enter the time limit in ms:"), 0, 3);
+        taskPane.add(timeLimitField, 1, 3);
+        taskPane.add(new Text("Enter the deadline for this task:"), 0, 4);
+        taskPane.add(deadlinePicker, 1, 4);
+        taskPane.add(new Text("If the deadline has not been met, will the task net 0 points?"), 0, 5);
+        taskPane.add(hardDeadlineCheckbox, 1, 5);
+        taskPane.add(new Text("Check the task on plagiarism?"), 0, 6);
+        taskPane.add(antiPlagiarismCheckBox, 1, 6);
         TextArea inputArea = new TextArea();
         TextArea outputArea = new TextArea();
         outputArea.setPrefWidth(200);
@@ -103,8 +101,8 @@ class TaskEditorController {
         bottomPane.add(saveAdditionalTestButton, 2, 1);
         Button saveTask = new Button("Save Task");
         saveTask.setOnAction(event1 -> {
-            if (fieldsAreReady(timeLimitField, deadlinePicker, taskCodeField, taskNameField, taskSubjectField)) {
-                curTask.setSubjectName(taskSubjectField.getText());
+            if (fieldsAreReady(timeLimitField, deadlinePicker, taskCodeField, taskNameField)) {
+                curTask.setSubjectName(subjectsBox.getValue());
                 curTask.setName(taskNameField.getText());
                 curTask.setTestFields(Long.parseLong(timeLimitField.getCharacters().toString()),
                         antiPlagiarismCheckBox.isSelected(),
@@ -113,10 +111,9 @@ class TaskEditorController {
                         hardDeadlineCheckbox.isSelected());
                 updateCurrentTest(inputArea, outputArea);
                 LocalSettings.getInstance().updateTask(curTask);
-                constructComboBoxes(taskCodeField, taskSubjectField, taskNameField, inputArea, outputArea, antiPlagiarismCheckBox, hardDeadlineCheckbox, deadlinePicker, timeLimitField, additionalTestField, testsPane, testsGridPane);
+                constructComboBoxes(taskCodeField, taskNameField, inputArea, outputArea, antiPlagiarismCheckBox, hardDeadlineCheckbox, deadlinePicker, timeLimitField, additionalTestField, testsPane, testsGridPane);
                 subjectsBox.getSelectionModel().select(curTask.getSubjectName());
                 tasksBox.getSelectionModel().select(curTask.getTaskCode() + ": " + curTask.getName());
-                taskSubjectField.setDisable(true);
                 taskNameField.setDisable(true);
                 try {
                     LocalSettings.saveSettings();
@@ -140,7 +137,7 @@ class TaskEditorController {
             });
         });
         bottomPane.add(deleteTaskButton, 4, 2);
-        constructComboBoxes(taskCodeField, taskSubjectField, taskNameField, inputArea, outputArea, antiPlagiarismCheckBox, hardDeadlineCheckbox, deadlinePicker, timeLimitField, additionalTestField, testsPane, testsGridPane);
+        constructComboBoxes(taskCodeField, taskNameField, inputArea, outputArea, antiPlagiarismCheckBox, hardDeadlineCheckbox, deadlinePicker, timeLimitField, additionalTestField, testsPane, testsGridPane);
         comboBoxesPane = new GridPane();
         comboBoxesPane.add(subjectsBox, 0, 1);
         comboBoxesPane.add(tasksBox, 1, 1);
@@ -160,8 +157,7 @@ class TaskEditorController {
         return testEditorStage;
     }
 
-    private void constructComboBoxes(TextField taskCodeField,
-                                     TextField taskSubjectField, TextField taskNameField,
+    private void constructComboBoxes(TextField taskCodeField, TextField taskNameField,
                                      TextArea inputArea, TextArea outputArea,
                                      CheckBox antiPlagiarismCheckBox, CheckBox hardDeadlineCheckbox,
                                      DatePicker deadlinePicker, TextField timeLimitField,
@@ -169,7 +165,6 @@ class TaskEditorController {
                                      GridPane testsGridPane) {
         subjectsBox = new ComboBox<>();
         tasksBox = new ComboBox<>();
-
         try {
             HashMap<String, ArrayList<Task>> subjectsAndTasks;
             if (!LocalSettings.getInstance().editorHasBeenLaunched() || GlobalSettings.getInstance().getEditedTasksDate().compareTo(LocalSettings.getInstance().getEditedTasksDate()) > 0) {
@@ -183,50 +178,39 @@ class TaskEditorController {
             } else {
                 subjectsAndTasks = LocalSettings.getInstance().getSubjectsAndTasks();
             }
+
             subjectsBox.getItems().addAll(subjectsAndTasks.keySet().stream().sorted().collect(Collectors.toCollection(ArrayList::new)));
+            subjectsBox.getSelectionModel().selectFirst();
+            tasksBox.getItems().addAll(subjectsAndTasks.get(subjectsBox.getValue()).stream().sorted(Comparator.comparing(Task::getTaskCode)).map(task -> task.getTaskCode() + ": " + task.getName()).collect(Collectors.toList()));
             subjectsBox.setOnAction(event1 -> {
-                tasksBox.getSelectionModel().clearSelection();
                 tasksBox.getItems().clear();
-                if (!subjectsBox.getValue().equals("New Subject...")) {
-                    tasksBox.getItems().addAll(subjectsAndTasks.get(subjectsBox.getValue()).stream().sorted(Comparator.comparing(Task::getTaskCode)).map(task -> task.getTaskCode() + ": " + task.getName()).collect(Collectors.toList()));
-                }
-                tasksBox.getItems().add("New Task...");
-                fillFieldsWithTaskInformation(emptyTask(), taskCodeField, taskSubjectField, taskNameField, inputArea, outputArea, antiPlagiarismCheckBox, hardDeadlineCheckbox, deadlinePicker, timeLimitField,
+                tasksBox.getItems().addAll(subjectsAndTasks.get(subjectsBox.getValue()).stream().sorted(Comparator.comparing(Task::getTaskCode)).map(task -> task.getTaskCode() + ": " + task.getName()).collect(Collectors.toList()));
+                tasksBox.getItems().add(newTask);
+                fillFieldsWithTaskInformation(emptyTask(), taskCodeField, taskNameField, inputArea, outputArea, antiPlagiarismCheckBox, hardDeadlineCheckbox, deadlinePicker, timeLimitField,
                         additionalTestField, testsPane, testsGridPane);
                 tasksBox.getSelectionModel().selectLast();
             });
             tasksBox.setOnAction(event1 -> {
                 if (tasksBox.getValue() != null) {
                     Task task;
-                    if (!subjectsBox.getValue().equals("New Subject...")) {
-                        if (!tasksBox.getValue().equals("New Task...")) {
-                            task = subjectsAndTasks.get(subjectsBox.getValue()).stream().filter(t -> t.getName().equals(tasksBox.getValue().split(": ")[1])).findFirst().get();
-                            taskSubjectField.setDisable(true);
-                            taskNameField.setDisable(true);
-                        } else {
-                            task = emptyTask();
-                            task.setSubjectName(subjectsBox.getValue());
-                            taskSubjectField.setDisable(true);
-                            taskNameField.setDisable(false);
-                        }
+                    if (!tasksBox.getValue().equals(newTask)) {
+                        task = subjectsAndTasks.get(subjectsBox.getValue()).stream().filter(t -> t.getName().equals(tasksBox.getValue().split(": ")[1])).findFirst().get();
+                        taskNameField.setDisable(true);
                     } else {
-                        taskSubjectField.setDisable(false);
-                        taskNameField.setDisable(false);
                         task = emptyTask();
+                        taskNameField.setDisable(false);
                     }
                     curTask = task;
                     currentOutputVariant = 0;
                     currentTest = 0;
-                    fillFieldsWithTaskInformation(task, taskCodeField, taskSubjectField, taskNameField, inputArea, outputArea, antiPlagiarismCheckBox, hardDeadlineCheckbox, deadlinePicker, timeLimitField,
+                    fillFieldsWithTaskInformation(task, taskCodeField, taskNameField, inputArea, outputArea, antiPlagiarismCheckBox, hardDeadlineCheckbox, deadlinePicker, timeLimitField,
                             additionalTestField, testsPane, testsGridPane);
                 }
             });
         } catch (IOException e) {
             e.printStackTrace();
         }
-        subjectsBox.getItems().add("New Subject...");
-        tasksBox.getItems().add("New Task...");
-        subjectsBox.getSelectionModel().selectLast();
+        tasksBox.getItems().add(newTask);
         tasksBox.getSelectionModel().selectLast();
         comboBoxesPane.add(subjectsBox, 0, 1);
         comboBoxesPane.add(tasksBox, 1, 1);
@@ -247,13 +231,11 @@ class TaskEditorController {
     }
 
     private void fillFieldsWithTaskInformation(Task task, TextField taskCodeField,
-                                               TextField taskSubjectNameField, TextField taskNameField,
-                                               TextArea input, TextArea output,
-                                               CheckBox antiPlagiarism, CheckBox hasHardDeadline,
-                                               DatePicker deadlinePicker, TextField timeLimitTextField,
-                                               TextField additionalTestField, BorderPane mainPane,
-                                               GridPane testsPane) {
-        taskSubjectNameField.setText(task.getSubjectName());
+                                               TextField taskNameField, TextArea input,
+                                               TextArea output, CheckBox antiPlagiarism,
+                                               CheckBox hasHardDeadline, DatePicker deadlinePicker,
+                                               TextField timeLimitTextField, TextField additionalTestField,
+                                               BorderPane mainPane, GridPane testsPane) {
         taskNameField.setText(task.getName());
         taskCodeField.setText(task.getTaskCode());
         antiPlagiarism.setSelected(task.shouldBeCheckedForAntiPlagiarism());
@@ -272,14 +254,9 @@ class TaskEditorController {
         mainPane.setTop(showTestButtons(input, output, testsPane, additionalTestField, mainPane));
     }
 
-    private boolean fieldsAreReady(TextField timeLimit, DatePicker picker, TextField taskCode, TextField taskName, TextField taskSubjectName) {
+    private boolean fieldsAreReady(TextField timeLimit, DatePicker picker, TextField taskCode, TextField taskName) {
         if (taskName.getText().isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.ERROR, "Field for task name is empty.");
-            alert.showAndWait();
-            return false;
-        }
-        if (taskSubjectName.getText().isEmpty()) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Field for task subject is empty.");
             alert.showAndWait();
             return false;
         }

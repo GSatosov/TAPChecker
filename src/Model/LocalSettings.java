@@ -75,13 +75,13 @@ public class LocalSettings implements Serializable {
             tasks.add(task);
             subjectsAndTasks.put(task.getSubjectName(), tasks);
         }
-        editedTasksDate = new Date();
         GlobalSettings.getInstance().setEditedTasksDate(new Date());
+        editedTasksDate = new Date();
     }
 
     public void deleteTask(Task task) { //TODO write this method
-        editedTasksDate = new Date(); //Updating the date
         GlobalSettings.getInstance().setEditedTasksDate(new Date());
+        editedTasksDate = new Date();
     }
 
     public Date getLastDateEmailChecked() {

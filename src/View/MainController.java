@@ -202,7 +202,7 @@ public class MainController implements Initializable {
         runLocalTasks.setManaged(LocalSettings.getInstance().getResults().size() != 0);
         runFailedTasks.setManaged(LocalSettings.getInstance().getFailedTasks().size() != 0);
         plagiarismResults.setManaged(LocalSettings.getInstance().getPlagiarismResults().size() != 0);
-
+        editTasks.setManaged(!GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty());
         runTests.setOnAction(event -> {
             runTests.setDisable(true);
             runLocalTasks.setDisable(true);
@@ -225,13 +225,13 @@ public class MainController implements Initializable {
             runLocalTasks.setDisable(true);
             runFailedTasks.setDisable(true);
             General.runLocalTests(() -> {
-                runTests.setDisable(false);
-                runLocalTasks.setDisable(false);
-                runFailedTasks.setDisable(false);
-                runLocalTasks.setManaged(LocalSettings.getInstance().getResults().size() != 0);
-                runFailedTasks.setManaged(LocalSettings.getInstance().getFailedTasks().size() != 0);
-                plagiarismResults.setManaged(LocalSettings.getInstance().getPlagiarismResults().size() != 0);
-            }, this,
+                        runTests.setDisable(false);
+                        runLocalTasks.setDisable(false);
+                        runFailedTasks.setDisable(false);
+                        runLocalTasks.setManaged(LocalSettings.getInstance().getResults().size() != 0);
+                        runFailedTasks.setManaged(LocalSettings.getInstance().getFailedTasks().size() != 0);
+                        plagiarismResults.setManaged(LocalSettings.getInstance().getPlagiarismResults().size() != 0);
+                    }, this,
                     new ConcurrentLinkedQueue<>(LocalSettings.getInstance().getResults().stream().map(Result::getTask).collect(Collectors.toCollection(ArrayList::new))));
         });
         runFailedTasks.setOnAction(event -> {
@@ -239,13 +239,13 @@ public class MainController implements Initializable {
             runLocalTasks.setDisable(true);
             runFailedTasks.setDisable(true);
             General.runLocalTests(() -> {
-                runTests.setDisable(false);
-                runLocalTasks.setDisable(false);
-                runFailedTasks.setDisable(false);
-                runLocalTasks.setManaged(LocalSettings.getInstance().getResults().size() != 0);
-                runFailedTasks.setManaged(LocalSettings.getInstance().getFailedTasks().size() != 0);
-                plagiarismResults.setManaged(LocalSettings.getInstance().getPlagiarismResults().size() != 0);
-            }, this,
+                        runTests.setDisable(false);
+                        runLocalTasks.setDisable(false);
+                        runFailedTasks.setDisable(false);
+                        runLocalTasks.setManaged(LocalSettings.getInstance().getResults().size() != 0);
+                        runFailedTasks.setManaged(LocalSettings.getInstance().getFailedTasks().size() != 0);
+                        plagiarismResults.setManaged(LocalSettings.getInstance().getPlagiarismResults().size() != 0);
+                    }, this,
                     LocalSettings.getInstance().getFailedTasks());
         });
         plagiarismResults.setOnAction(event -> {
@@ -279,6 +279,7 @@ public class MainController implements Initializable {
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 }
+                editTasks.setManaged(!GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty());
             }).start());
             settingsFrame.show();
         });

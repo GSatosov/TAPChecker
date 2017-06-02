@@ -17,7 +17,7 @@
         <Button fx:id="runLocalTasks" text="Run local tasks"/>
         <Button fx:id="runFailedTasks" text="Run failed tasks"/>
         <Button fx:id="plagiarismResults" text="Show plagiarism results"/>
-        <Button fx:id="editTasks" text="Edit Tests"/>
+        <Button fx:id="editTasks" text="Edit Tasks"/>
         <Button fx:id="settings" text="Settings"/>
     </HBox>
     <TabPane fx:id="resultsTable"
