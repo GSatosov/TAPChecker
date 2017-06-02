@@ -198,7 +198,6 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         new File(GlobalSettings.getDataFolder()).mkdirs();
-        showResults();
 
         runLocalTasks.setManaged(LocalSettings.getInstance().getResults().size() != 0);
         runFailedTasks.setManaged(LocalSettings.getInstance().getFailedTasks().size() != 0);
@@ -254,6 +253,7 @@ public class MainController implements Initializable {
                 try {
                     plagiarismStage = new Stage();
                     plagiarismStage.setScene(new Scene(new FXMLLoader(getClass().getResource("PlagiarismTable.fxml")).load(), 800, 480));
+                    plagiarismStage.setTitle("Plagiarism results");
                     plagiarismStage.show();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -266,14 +266,13 @@ public class MainController implements Initializable {
         settings.setOnAction(event -> {
             settingsFrame = new Stage();
             try {
-                settingsFrame.setScene(new Scene(new FXMLLoader(getClass().getResource("Settings.fxml")).load(), 600, 400));
+                settingsFrame.setScene(new Scene(new FXMLLoader(getClass().getResource("Settings.fxml")).load()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
             settingsFrame.initModality(Modality.WINDOW_MODAL);
             settingsFrame.initOwner(MainFrame.getPrimaryStage());
-            settingsFrame.setTitle("GlobalSettings");
-            settingsFrame.setResizable(false);
+            settingsFrame.setTitle("Settings");
             settingsFrame.setOnCloseRequest(e -> new Thread(() -> {
                 try {
                     GlobalSettings.saveFile();

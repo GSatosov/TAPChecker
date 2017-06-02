@@ -47,46 +47,6 @@ public class GlobalSettings implements Serializable {
 
     private String resultsTableURL = "https://docs.google.com/spreadsheets/d/1cIg4hbegIKJfiy7-CM0lzXqRss8AgyxYlWFGT3hxZE8/edit#gid=0";
 
-    public static Boolean getMasksOn() {
-        return masksOn;
-    }
-
-    public static void setMasksOn(Boolean masksOn) {
-        GlobalSettings.masksOn = masksOn;
-    }
-
-    public static ArrayList<String> getLetterMask() {
-        return letterMask;
-    }
-
-    public static void setLetterMask(ArrayList<String> letterMask) {
-        GlobalSettings.letterMask = letterMask;
-    }
-
-    public static ArrayList<String> getWrongSubject() {
-        return wrongSubject;
-    }
-
-    public static void setWrongSubject(ArrayList<String> wrongSubject) {
-        GlobalSettings.wrongSubject = wrongSubject;
-    }
-
-    public static ArrayList<String> getWrongGroup() {
-        return wrongGroup;
-    }
-
-    public static void setWrongGroup(ArrayList<String> wrongGroup) {
-        GlobalSettings.wrongGroup = wrongGroup;
-    }
-
-    public static ArrayList<String> getWrongTask() {
-        return wrongTask;
-    }
-
-    public static void setWrongTask(ArrayList<String> wrongTask) {
-        GlobalSettings.wrongTask = wrongTask;
-    }
-
     public String getResultsTableURL() {
         return resultsTableURL;
     }
@@ -202,16 +162,6 @@ public class GlobalSettings implements Serializable {
     public static String getClientSecret() {
         return clientSecret;
     }
-
-    private static Boolean masksOn;
-
-    private static ArrayList<String> letterMask;
-
-    private static ArrayList<String> wrongSubject;
-
-    private static ArrayList<String> wrongGroup;
-
-    private static ArrayList<String> wrongTask;
 
     private transient static final String globalSettingsFileName = "globalSettings.dat";
 

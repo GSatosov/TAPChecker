@@ -15,6 +15,7 @@ import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,15 +52,12 @@ public class SettingsСontroller implements Initializable {
     @FXML
     Button removeGroup;
 
-    @FXML
-    Button logout;
-
     //Autoresponder settings tab
     @FXML
     ToggleButton autoresponderToggle;
 
     @FXML
-    TextArea letterMask;
+    TextArea emailTemplate;
     @FXML
     TextArea wrongSubject;
     @FXML
@@ -186,41 +184,28 @@ public class SettingsСontroller implements Initializable {
             //
         });
 
-        logout.setOnAction(event -> {
-            GlobalSettings.getInstance().setPassword("");
-            MainController.getSettingsFrame().close();
-            MainFrame.setStageToLogin();
-        });
-
-        autoresponderToggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
-            if (oldValue) {
-                letterMask.setDisable(true);
-                wrongGroup.setDisable(true);
-                wrongSubject.setDisable(true);
-                wrongTask.setDisable(true);
-            } else {
-                letterMask.setDisable(false);
-                wrongGroup.setDisable(false);
-                wrongSubject.setDisable(false);
-                wrongTask.setDisable(false);
-            }
-        });
-
         /*autoresponderToggle.setSelected(GlobalSettings.getInstance().getMasksOn());
 
-        letterMask.getParagraphs().addAll(GlobalSettings.getInstance().getLetterMask());
+        emailTemplate.getParagraphs().addAll(GlobalSettings.getInstance().getLetterMask());
         wrongGroup.getParagraphs().addAll(GlobalSettings.getInstance().getWrongGroup());
         wrongSubject.getParagraphs().addAll(GlobalSettings.getInstance().getWrongSubject());
         wrongTask.getParagraphs().addAll(GlobalSettings.getInstance().getWrongTask());
 
         //shouldn't work
         addMasks.setOnAction(event -> {
-            GlobalSettings.getInstance().setLetterMask(new ArrayList<>((Collection<? extends String>) letterMask.getParagraphs()));
+            GlobalSettings.getInstance().setLetterMask(new ArrayList<>((Collection<? extends String>) emailTemplate.getParagraphs()));
             GlobalSettings.getInstance().setWrongGroup(new ArrayList<>((Collection<? extends String>) wrongGroup.getParagraphs()));
             GlobalSettings.getInstance().setWrongSubject(new ArrayList<>((Collection<? extends String>) wrongSubject.getParagraphs()));
             GlobalSettings.getInstance().setWrongTask(new ArrayList<>((Collection<? extends String>) wrongTask.getParagraphs()));
         });*/
 
-        close.setOnAction(event -> ((Stage)(((Button)event.getSource()).getScene().getWindow())).close());
+        close.setOnAction(event -> {
+            ((Stage)(((Button)event.getSource()).getScene().getWindow())).close();
+            try {
+                GlobalSettings.saveFile();
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
+        });
     }
 }

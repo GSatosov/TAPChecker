@@ -5,6 +5,7 @@ import Controller.GoogleDriveManager;
 import Model.GlobalSettings;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
@@ -22,6 +23,8 @@ public class MainFrame extends Application {
     private static Scene mainScene;
 
     private static Scene loginScene;
+
+    private static MainController mainController;
 
     static Stage getPrimaryStage() {
         return primaryStage;
@@ -50,27 +53,34 @@ public class MainFrame extends Application {
     static void setStageToLogin() {
         primaryStage.setScene(loginScene);
         primaryStage.setResizable(false);
+        primaryStage.setTitle("Login");
         primaryStage.sizeToScene();
     }
 
     static void setStagetoMain() {
         primaryStage.setScene(mainScene);
         primaryStage.setResizable(true);
+        primaryStage.setTitle(GlobalSettings.getApplicationName());
+        mainController.showResults();
     }
+
 
     @Override
     public void start(Stage primaryStage) throws Exception {
         setPrimaryStage(primaryStage);
+        FXMLLoader loaderMain = new FXMLLoader(getClass().getResource("Main.fxml"));
+        Parent rootMain = loaderMain.load();
+        mainController = (MainController)loaderMain.getController();
 
-        setLoginScene(new Scene(FXMLLoader.load(getClass().getResource("Login.fxml")), 430, 180));
-        setMainScene(new Scene(FXMLLoader.load(getClass().getResource("Main.fxml")), 640, 480));
+        setLoginScene(new Scene(new FXMLLoader(getClass().getResource("Login.fxml")).load()));
+        setMainScene(new Scene(rootMain, 640, 480));
 
         if (((GlobalSettings.getInstance().getEmail().isEmpty())&(GlobalSettings.getInstance().getPassword().isEmpty())) ||
                 (!EmailReceiver.validate(GlobalSettings.getInstance().getEmail(), GlobalSettings.getInstance().getPassword()))) {
             setStageToLogin();
         } else {
             GoogleDriveManager.authorize();
-            primaryStage.setScene(mainScene);
+            setStagetoMain();
         }
 
         primaryStage.show();

@@ -13,67 +13,57 @@
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.text.Text?>
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="View.SettingsСontroller"
-            prefHeight="400.0" prefWidth="600.0">
-    <VBox AnchorPane.leftAnchor="5" AnchorPane.topAnchor="5" AnchorPane.bottomAnchor="5" AnchorPane.rightAnchor="5" spacing="10">
+            prefHeight="450.0" prefWidth="600.0">
+
+    <VBox AnchorPane.leftAnchor="10" AnchorPane.topAnchor="10" AnchorPane.bottomAnchor="10" AnchorPane.rightAnchor="10" spacing="10">
         <TabPane VBox.vgrow="ALWAYS">
             <Tab text="Primary" closable="false">
                 <AnchorPane>
-                    <VBox AnchorPane.topAnchor="40" AnchorPane.leftAnchor="20" spacing="20">
-                        <HBox alignment="BASELINE_CENTER" spacing="10">
-                            <Label text="Enter link to table here:"/>
-                            <TextField fx:id="tableLink"/>
-                            <Button fx:id="addLink" text="Add"/>
-                            <Button fx:id="generateTableLink" text="Generate table"/>
-                        </HBox>
-                        <Separator/>
-                        <GridPane hgap="7" vgap="5">
-                            <Label text="Subjects list:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                            <ChoiceBox fx:id="subjectList" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-                            <Button fx:id="addSubject" text="+" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
-                            <Button fx:id="removeSubject" text="-" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
-                        </GridPane>
-                        <GridPane hgap="7" vgap="5">
-                            <Label text="Group List:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                            <ChoiceBox fx:id="groupList" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-                            <Button fx:id="addGroup" text="+" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
-                            <Button fx:id="removeGroup" text="-" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
-                        </GridPane>
-                    </VBox>
-                    <Button fx:id="logout" text="Log out" AnchorPane.bottomAnchor="20" AnchorPane.rightAnchor="20"/>
+                    <ScrollPane fitToWidth="true" AnchorPane.topAnchor="10" AnchorPane.rightAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.bottomAnchor="0" style="-fx-background-color:transparent;">
+                        <VBox spacing="10">
+                            <Text text="Results table:"/>
+                            <HBox spacing="10">
+                                <TextField fx:id="tableLink" promptText="Enter the link to the table..."/>
+                                <Button fx:id="addLink" text="Save"/>
+                                <Button fx:id="generateTableLink" text="Generate table..."/>
+                            </HBox>
+                            <Separator/>
+                            <Label text="Subjects list:"/>
+                            <HBox spacing="10">
+                                <ChoiceBox fx:id="subjectList" prefWidth="300"/>
+                                <Button fx:id="addSubject" text="Add"/>
+                                <Button fx:id="removeSubject" text="Remove"/>
+                            </HBox>
+                            <Label text="Group list:"/>
+                            <HBox spacing="10">
+                                <ChoiceBox fx:id="groupList" prefWidth="300"/>
+                                <Button fx:id="addGroup" text="Add"/>
+                                <Button fx:id="removeGroup" text="Remove"/>
+                            </HBox>
+                        </VBox>
+                    </ScrollPane>
                 </AnchorPane>
             </Tab>
             <Tab text="Autoresponder" closable="false">
-                <ScrollPane>
-                    <AnchorPane>
-                        <VBox spacing="20" AnchorPane.topAnchor="20" AnchorPane.leftAnchor="20" AnchorPane.bottomAnchor="40">
-                            <ToggleButton fx:id="autoresponderToggle" text="On"/>
-                            <VBox spacing="10">
-                                <Label text="Letter mask"/>
-                                <TextArea fx:id="letterMask"/>
-                            </VBox>
-                            <VBox spacing="10">
-                                <Label text="Wrong subject mask"/>
-                                <TextArea fx:id="wrongSubject"/>
-                            </VBox>
-                            <VBox spacing="10">
-                                <Label text="Wrong group mask"/>
-                                <TextArea fx:id="wrongGroup"/>
-                            </VBox>
-                            <VBox spacing="10">
-                                <Label text="Wrong task mask"/>
-                                <TextArea fx:id="wrongTask"/>
-                            </VBox>
+                <AnchorPane>
+                    <ScrollPane fitToWidth="true" AnchorPane.topAnchor="10" AnchorPane.rightAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.bottomAnchor="0" style="-fx-background-color:transparent;">
+                        <VBox spacing="10">
+                            <Text text="Write a letter template here for the autoresponder. You can use next masks:&#10;&#9;$emailSubject - subject from email&#10;&#9;$subject - estimated subject from email&#10;&#9;$group - estimated student's group from email&#10;&#9;$name - estimated student's name from email&#10;&#9;$date - date, when email was received&#10;&#9;$currentDate - current date (format dd.MM.yyyy)&#10;&#9;$currentTime - current time (format HH:mm)"/>
+                            <HBox>
+                                <TextArea fx:id="emailTemplate" HBox.hgrow="ALWAYS" promptText="Write a letter template here..."/>
+                            </HBox>
                         </VBox>
-                        <Button fx:id="addMasks" text="Add"/>
-                    </AnchorPane>
-                </ScrollPane>
+                    </ScrollPane>
+                </AnchorPane>
             </Tab>
         </TabPane>
-
-        <Button fx:id="close" text="Close"/>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Button fx:id="close" text="Close"/>
+        </HBox>
     </VBox>
 
 </AnchorPane>

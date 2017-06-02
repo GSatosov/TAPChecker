@@ -2,30 +2,23 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<GridPane xmlns="http://javafx.com/javafx"
-          xmlns:fx="http://javafx.com/fxml"
-          fx:controller="View.LoginController"
-          alignment="CENTER"
-          hgap="10" vgap="10"
-          prefHeight="180" prefWidth="430">
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="View.LoginController"
+            prefWidth="350"
+            prefHeight="150">
 
-    <Label text="Email:"
-           GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-    <HBox GridPane.columnIndex="1" GridPane.rowIndex="1" spacing="5">
-        <TextField fx:id="emailField"
-                   GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-        <ChoiceBox fx:id="mailServer"
-                   GridPane.columnIndex="2" GridPane.rowIndex="1"/>
-    </HBox>
-        <Label text="Password:"
-               GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-        <PasswordField fx:id="pwField"
-                       GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-    <HBox GridPane.columnIndex="1" GridPane.rowIndex="3" alignment="CENTER_RIGHT">
-        <ProgressIndicator fx:id="loginIndicator"
-                           scaleX="0.5" scaleY="0.5"
-                           GridPane.columnIndex="1" GridPane.rowIndex="3"/>
-        <Button fx:id="login" text="Log in"
-                GridPane.columnIndex="2" GridPane.rowIndex="3"/>
-    </HBox>
-</GridPane>
+    <VBox spacing="10" AnchorPane.leftAnchor="10" AnchorPane.topAnchor="10" AnchorPane.bottomAnchor="10" AnchorPane.rightAnchor="10" >
+        <Label text="Email:"/>
+        <HBox spacing="10">
+            <TextField fx:id="emailField" HBox.hgrow="ALWAYS" promptText="Enter the email..."/>
+            <ChoiceBox fx:id="mailServer"/>
+        </HBox>
+        <Label text="Password:"/>
+        <PasswordField fx:id="pwField" promptText="Enter the password..."/>
+        <HBox alignment="CENTER_RIGHT">
+            <ProgressIndicator fx:id="loginIndicator"/>
+            <Button fx:id="login" text="Login"/>
+        </HBox>
+    </VBox>
+</AnchorPane>
