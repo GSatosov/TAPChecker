@@ -12,6 +12,7 @@
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="View.SettingsСontroller"
@@ -20,21 +21,24 @@
         <Tab text="Primary" closable="false">
             <AnchorPane>
                 <VBox AnchorPane.topAnchor="40" AnchorPane.leftAnchor="20" spacing="20">
-                    <HBox spacing="10">
+                    <HBox alignment="BASELINE_CENTER" spacing="10">
+                        <Label text="Enter link to table here:"/>
                         <TextField fx:id="tableLink"/>
-                        <Button fx:id="generateTableLink" text="Generate link"/>
+                        <Button fx:id="addLink" text="Add"/>
+                        <Button fx:id="generateTableLink" text="Generate table"/>
                     </HBox>
+                    <Separator/>
                     <GridPane hgap="7" vgap="5">
-                        <Label text="Subjects list" GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.columnSpan="3"/>
-                        <ChoiceBox fx:id="subjectList" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                        <Button fx:id="addSubject" text="+" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-                        <Button fx:id="removeSubject" text="-" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                        <Label text="Subjects list:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                        <ChoiceBox fx:id="subjectList" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                        <Button fx:id="addSubject" text="+" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+                        <Button fx:id="removeSubject" text="-" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
                     </GridPane>
                     <GridPane hgap="7" vgap="5">
-                        <Label text="Group List" GridPane.columnIndex="0" GridPane.rowIndex="0" GridPane.columnSpan="3"/>
-                        <ChoiceBox fx:id="groupList" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-                        <Button fx:id="addGroup" text="+" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-                        <Button fx:id="removeGroup" text="-" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                        <Label text="Group List:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                        <ChoiceBox fx:id="groupList" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                        <Button fx:id="addGroup" text="+" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+                        <Button fx:id="removeGroup" text="-" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
                     </GridPane>
                 </VBox>
                 <Button fx:id="logout" text="Log out" AnchorPane.bottomAnchor="20" AnchorPane.rightAnchor="20"/>
@@ -62,6 +66,7 @@
                             <TextArea fx:id="wrongTask"/>
                         </VBox>
                     </VBox>
+                    <Button fx:id="addMasks" text="Add"/>
                 </AnchorPane>
             </ScrollPane>
         </Tab>

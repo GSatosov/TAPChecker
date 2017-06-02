@@ -2,20 +2,24 @@ package View;
 
 import Model.GlobalSettings;
 import javafx.beans.binding.Bindings;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
 
 /**
  * Created by Arseniy Nazarov on 27.04.17.
@@ -25,6 +29,8 @@ public class SettingsСontroller implements Initializable {
     //Primary settings tab
     @FXML
     TextField tableLink;
+    @FXML
+    Button addLink;
     @FXML
     Button generateTableLink;
 
@@ -58,6 +64,9 @@ public class SettingsСontroller implements Initializable {
     TextArea wrongGroup;
     @FXML
     TextArea wrongTask;
+
+    @FXML
+    Button addMasks;
 
     @FXML
     Button close;
@@ -98,7 +107,7 @@ public class SettingsСontroller implements Initializable {
             }
         });
 
-        addSubject.setOnAction(event -> {
+        addSubject.setOnAction((ActionEvent event) -> {
             Stage confirm = new Stage();
             confirm.setTitle("Add new subject");
             confirm.initModality(Modality.WINDOW_MODAL);
@@ -120,6 +129,10 @@ public class SettingsСontroller implements Initializable {
             box.setSpacing(10);
 
             confirm.setScene(new Scene(box));
+            confirm.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
+                if (e.getCode() == KeyCode.ENTER)
+                    addNewSubject.fire();
+            });
             confirm.show();
         });
 
@@ -145,6 +158,10 @@ public class SettingsСontroller implements Initializable {
             box.setSpacing(10);
 
             confirm.setScene(new Scene(box));
+            confirm.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
+                if (e.getCode() == KeyCode.ENTER)
+                    addNewGroup.fire();
+            });
             confirm.show();
         });
 
@@ -158,8 +175,6 @@ public class SettingsСontroller implements Initializable {
             MainFrame.setStageToLogin();
         });
 
-        autoresponderToggle.selectedProperty().setValue(true);
-
         autoresponderToggle.selectedProperty().addListener((observable, oldValue, newValue) -> {
             if (oldValue) {
                 letterMask.setDisable(true);
@@ -172,6 +187,21 @@ public class SettingsСontroller implements Initializable {
                 wrongSubject.setDisable(false);
                 wrongTask.setDisable(false);
             }
+        });
+
+        autoresponderToggle.setSelected(GlobalSettings.getInstance().getMasksOn());
+
+        letterMask.getParagraphs().addAll(GlobalSettings.getInstance().getLetterMask());
+        wrongGroup.getParagraphs().addAll(GlobalSettings.getInstance().getWrongGroup());
+        wrongSubject.getParagraphs().addAll(GlobalSettings.getInstance().getWrongSubject());
+        wrongTask.getParagraphs().addAll(GlobalSettings.getInstance().getWrongTask());
+
+        //shouldn't work
+        addMasks.setOnAction(event -> {
+            GlobalSettings.getInstance().setLetterMask(new ArrayList<>((Collection<? extends String>) letterMask.getParagraphs()));
+            GlobalSettings.getInstance().setWrongGroup(new ArrayList<>((Collection<? extends String>) wrongGroup.getParagraphs()));
+            GlobalSettings.getInstance().setWrongSubject(new ArrayList<>((Collection<? extends String>) wrongSubject.getParagraphs()));
+            GlobalSettings.getInstance().setWrongTask(new ArrayList<>((Collection<? extends String>) wrongTask.getParagraphs()));
         });
 
         close.setOnAction(event -> ((Stage)(((Button)event.getSource()).getScene().getWindow())).close());

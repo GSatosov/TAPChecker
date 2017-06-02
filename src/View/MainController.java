@@ -235,6 +235,13 @@ public class MainController implements Initializable {
             settingsFrame.initOwner(MainFrame.getPrimaryStage());
             settingsFrame.setTitle("GlobalSettings");
             settingsFrame.setResizable(false);
+            settingsFrame.setOnCloseRequest(e -> new Thread(() -> {
+                try {
+                    GlobalSettings.saveFile();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }).start());
             settingsFrame.show();
         });
         editTasks.setOnAction(event -> new TaskEditorController().getStage().show());
