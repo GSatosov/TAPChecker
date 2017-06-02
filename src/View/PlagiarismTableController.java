@@ -1,21 +1,13 @@
 package View;
 
-import Controller.GoogleDriveManager;
-import Model.*;
+import Model.LocalSettings;
+import Model.PlagiarismResult;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.geometry.HPos;
 import javafx.scene.control.*;
-import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.cell.MapValueFactory;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.text.Text;
-import javafx.util.*;
 
-
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -90,8 +82,8 @@ public class PlagiarismTableController implements Initializable {
 
         tasksList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null)
-            fillTable(resultsBySubject.get(subjectsList.getValue().toString().replace(" ", "_")).stream()
-                .filter(result -> result.getTaskName().equals(newValue.toString().split(": ")[1])).collect(Collectors.toList()));
+                fillTable(resultsBySubject.get(subjectsList.getValue().toString().replace(" ", "_")).stream()
+                        .filter(result -> result.getTaskName().equals(newValue.toString().split(": ")[1])).collect(Collectors.toList()));
 
         });
 
@@ -142,7 +134,7 @@ public class PlagiarismTableController implements Initializable {
         column.setCellFactory(new javafx.util.Callback<TableColumn<Map, PlagiarismResultsTableCellObject>, TableCell<Map, PlagiarismResultsTableCellObject>>() {
             @Override
             public TableCell call(TableColumn p) {
-                TableCell cell = new TableCell<String, PlagiarismResultsTableCellObject>() {
+                return new TableCell<String, PlagiarismResultsTableCellObject>() {
                     @Override
                     public void updateItem(final PlagiarismResultsTableCellObject item, final boolean empty) {
                         super.updateItem(item, empty);
@@ -152,13 +144,11 @@ public class PlagiarismTableController implements Initializable {
 
                             if (item.getPlagiarismResult() == null) {
                                 setStyle("-fx-font-weight:bold;");
-                            }
-                            else {
+                            } else {
                                 double doubleResult = Double.parseDouble(item.getPlagiarismResult().getResult().replaceAll("%", "").replaceAll(",", "."));
-                                if (doubleResult >= lowerBoundary){
-                                    setStyle("-fx-background-color: rgb(255, " + (Math.max(0, Math.min(Math.round((100 - doubleResult) / (100 - lowerBoundary) * 255), 255)))  + ", 0);");
-                                }
-                                else {
+                                if (doubleResult >= lowerBoundary) {
+                                    setStyle("-fx-background-color: rgb(255, " + (Math.max(0, Math.min(Math.round((100 - doubleResult) / (100 - lowerBoundary) * 255), 255))) + ", 0);");
+                                } else {
                                     setStyle("");
                                 }
 
@@ -167,20 +157,22 @@ public class PlagiarismTableController implements Initializable {
                                 MenuItem codeSecond = new MenuItem("Open " + item.getPlagiarismResult().getSecondStudentName() + "'s code");
                                 contextMenu.getItems().addAll(codeFirst, codeSecond);
                                 codeFirst.setOnAction(event -> {
-                                    if (Desktop.isDesktopSupported())
-                                        try {
-                                            Desktop.getDesktop().open(new File(item.getPlagiarismResult().getTaskFromFirstStudent().getSourcePath()));
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
+                                    String command = (System.getProperty("os.name").startsWith("Windows") ? "cmd /C start " : "xdg-open ")
+                                            + item.getPlagiarismResult().getTaskFromFirstStudent().getSourcePath();
+                                    try {
+                                        Runtime.getRuntime().exec(command);
+                                    } catch (Exception ex) {
+                                        ex.printStackTrace();
+                                    }
                                 });
                                 codeSecond.setOnAction(event -> {
-                                    if (Desktop.isDesktopSupported())
-                                        try {
-                                            Desktop.getDesktop().open(new File(item.getPlagiarismResult().getTaskFromSecondStudent().getSourcePath()));
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
+                                    String command = (System.getProperty("os.name").startsWith("Windows") ? "cmd /C start " : "xdg-open ")
+                                            + item.getPlagiarismResult().getTaskFromSecondStudent().getSourcePath();
+                                    try {
+                                        Runtime.getRuntime().exec(command);
+                                    } catch (Exception ex) {
+                                        ex.printStackTrace();
+                                    }
                                 });
                                 this.setContextMenu(contextMenu);
                             }
@@ -190,8 +182,6 @@ public class PlagiarismTableController implements Initializable {
                         }
                     }
                 };
-
-                return cell;
             }
         });
         return column;

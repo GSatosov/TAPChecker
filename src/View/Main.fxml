@@ -6,22 +6,21 @@
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.text.Text?>
+<?import javafx.scene.layout.VBox?>
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="View.MainController"
             prefHeight="480" prefWidth="640">
 
-    <HBox AnchorPane.topAnchor="5" AnchorPane.rightAnchor="5" AnchorPane.leftAnchor="5"
-          spacing="10">
-        <Button fx:id="runTests" text="Check mail"/>
-        <Button fx:id="runLocalTasks" text="Run local tasks"/>
-        <Button fx:id="runFailedTasks" text="Run failed tasks"/>
-        <Button fx:id="plagiarismResults" text="Show plagiarism results"/>
-        <Button fx:id="editTasks" text="Edit Tests"/>
-        <Button fx:id="settings" text="Settings"/>
-    </HBox>
-    <TabPane fx:id="resultsTable"
-             AnchorPane.topAnchor="40" AnchorPane.rightAnchor="5" AnchorPane.leftAnchor="5"
-             prefHeight="400">
-    </TabPane>
+    <VBox AnchorPane.topAnchor="5" AnchorPane.rightAnchor="5" AnchorPane.leftAnchor="5" AnchorPane.bottomAnchor="5" spacing="10">
+        <HBox spacing="10">
+            <Button fx:id="runTests" text="Check mail"/>
+            <Button fx:id="runLocalTasks" text="Run local tasks"/>
+            <Button fx:id="runFailedTasks" text="Run failed tasks"/>
+            <Button fx:id="plagiarismResults" text="Show plagiarism results"/>
+            <Button fx:id="editTasks" text="Edit Tests"/>
+            <Button fx:id="settings" text="Settings"/>
+        </HBox>
+        <TabPane fx:id="resultsTable" VBox.vgrow="ALWAYS" />
+    </VBox>
 </AnchorPane>

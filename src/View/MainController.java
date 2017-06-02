@@ -20,7 +20,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -163,21 +162,23 @@ public class MainController implements Initializable {
                                 MenuItem log = new MenuItem("Open log");
                                 contextMenu.getItems().addAll(code, log);
                                 code.setOnAction(event -> {
-                                    if (Desktop.isDesktopSupported())
-                                        try {
-                                            Desktop.getDesktop().open(new File(item.getResult().getTask().getSourcePath()));
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
+                                    String command = (System.getProperty("os.name").startsWith("Windows") ? "cmd /C start " : "xdg-open ")
+                                            + item.getResult().getTask().getSourcePath();
+                                    try {
+                                        Runtime.getRuntime().exec(command);
+                                    } catch (Exception ex) {
+                                        ex.printStackTrace();
+                                    }
                                 });
                                 log.setOnAction(event -> {
-                                    if (Desktop.isDesktopSupported())
-                                        try {
-                                            String sourcePath = item.getResult().getTask().getSourcePath();
-                                            Desktop.getDesktop().open(new File(sourcePath.substring(0, sourcePath.lastIndexOf('.')) + "Output.txt"));
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
+                                    String sourcePath = item.getResult().getTask().getSourcePath();
+                                    sourcePath = sourcePath.substring(0, sourcePath.lastIndexOf('.')) + "Output.txt";
+                                    String command = (System.getProperty("os.name").startsWith("Windows") ? "cmd /C start " : "xdg-open ") + sourcePath;
+                                    try {
+                                        Runtime.getRuntime().exec(command);
+                                    } catch (Exception ex) {
+                                        ex.printStackTrace();
+                                    }
                                 });
                                 this.setContextMenu(contextMenu);
                             }

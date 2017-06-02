@@ -17,63 +17,63 @@
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="View.SettingsСontroller"
             prefHeight="400.0" prefWidth="600.0">
-    <TabPane AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="40" AnchorPane.rightAnchor="0">
-        <Tab text="Primary" closable="false">
-            <AnchorPane>
-                <VBox AnchorPane.topAnchor="40" AnchorPane.leftAnchor="20" spacing="20">
-                    <HBox alignment="BASELINE_CENTER" spacing="10">
-                        <Label text="Enter link to table here:"/>
-                        <TextField fx:id="tableLink"/>
-                        <Button fx:id="addLink" text="Add"/>
-                        <Button fx:id="generateTableLink" text="Generate table"/>
-                    </HBox>
-                    <Separator/>
-                    <GridPane hgap="7" vgap="5">
-                        <Label text="Subjects list:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                        <ChoiceBox fx:id="subjectList" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-                        <Button fx:id="addSubject" text="+" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
-                        <Button fx:id="removeSubject" text="-" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
-                    </GridPane>
-                    <GridPane hgap="7" vgap="5">
-                        <Label text="Group List:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                        <ChoiceBox fx:id="groupList" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-                        <Button fx:id="addGroup" text="+" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
-                        <Button fx:id="removeGroup" text="-" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
-                    </GridPane>
-                </VBox>
-                <Button fx:id="logout" text="Log out" AnchorPane.bottomAnchor="20" AnchorPane.rightAnchor="20"/>
-            </AnchorPane>
-        </Tab>
-        <Tab text="Autoresponder" closable="false">
-            <ScrollPane>
+    <VBox AnchorPane.leftAnchor="5" AnchorPane.topAnchor="5" AnchorPane.bottomAnchor="5" AnchorPane.rightAnchor="5" spacing="10">
+        <TabPane VBox.vgrow="ALWAYS">
+            <Tab text="Primary" closable="false">
                 <AnchorPane>
-                    <VBox spacing="20" AnchorPane.topAnchor="20" AnchorPane.leftAnchor="20" AnchorPane.bottomAnchor="40">
-                        <ToggleButton fx:id="autoresponderToggle" text="On"/>
-                        <VBox spacing="10">
-                            <Label text="Letter mask"/>
-                            <TextArea fx:id="letterMask"/>
-                        </VBox>
-                        <VBox spacing="10">
-                            <Label text="Wrong subject mask"/>
-                            <TextArea fx:id="wrongSubject"/>
-                        </VBox>
-                        <VBox spacing="10">
-                            <Label text="Wrong group mask"/>
-                            <TextArea fx:id="wrongGroup"/>
-                        </VBox>
-                        <VBox spacing="10">
-                            <Label text="Wrong task mask"/>
-                            <TextArea fx:id="wrongTask"/>
-                        </VBox>
+                    <VBox AnchorPane.topAnchor="40" AnchorPane.leftAnchor="20" spacing="20">
+                        <HBox alignment="BASELINE_CENTER" spacing="10">
+                            <Label text="Enter link to table here:"/>
+                            <TextField fx:id="tableLink"/>
+                            <Button fx:id="addLink" text="Add"/>
+                            <Button fx:id="generateTableLink" text="Generate table"/>
+                        </HBox>
+                        <Separator/>
+                        <GridPane hgap="7" vgap="5">
+                            <Label text="Subjects list:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                            <ChoiceBox fx:id="subjectList" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                            <Button fx:id="addSubject" text="+" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+                            <Button fx:id="removeSubject" text="-" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+                        </GridPane>
+                        <GridPane hgap="7" vgap="5">
+                            <Label text="Group List:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                            <ChoiceBox fx:id="groupList" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                            <Button fx:id="addGroup" text="+" GridPane.columnIndex="2" GridPane.rowIndex="0"/>
+                            <Button fx:id="removeGroup" text="-" GridPane.columnIndex="3" GridPane.rowIndex="0"/>
+                        </GridPane>
                     </VBox>
-                    <Button fx:id="addMasks" text="Add"/>
+                    <Button fx:id="logout" text="Log out" AnchorPane.bottomAnchor="20" AnchorPane.rightAnchor="20"/>
                 </AnchorPane>
-            </ScrollPane>
-        </Tab>
-        <Tab text="Antiplagiary" closable="false"></Tab>
-    </TabPane>
+            </Tab>
+            <Tab text="Autoresponder" closable="false">
+                <ScrollPane>
+                    <AnchorPane>
+                        <VBox spacing="20" AnchorPane.topAnchor="20" AnchorPane.leftAnchor="20" AnchorPane.bottomAnchor="40">
+                            <ToggleButton fx:id="autoresponderToggle" text="On"/>
+                            <VBox spacing="10">
+                                <Label text="Letter mask"/>
+                                <TextArea fx:id="letterMask"/>
+                            </VBox>
+                            <VBox spacing="10">
+                                <Label text="Wrong subject mask"/>
+                                <TextArea fx:id="wrongSubject"/>
+                            </VBox>
+                            <VBox spacing="10">
+                                <Label text="Wrong group mask"/>
+                                <TextArea fx:id="wrongGroup"/>
+                            </VBox>
+                            <VBox spacing="10">
+                                <Label text="Wrong task mask"/>
+                                <TextArea fx:id="wrongTask"/>
+                            </VBox>
+                        </VBox>
+                        <Button fx:id="addMasks" text="Add"/>
+                    </AnchorPane>
+                </ScrollPane>
+            </Tab>
+        </TabPane>
 
-        <Button AnchorPane.bottomAnchor="15" AnchorPane.rightAnchor="15"
-                fx:id="close" text="Close"/>
+        <Button fx:id="close" text="Close"/>
+    </VBox>
 
 </AnchorPane>
