@@ -1,6 +1,12 @@
 package Controller;
 
 import Model.*;
+import View.EmailHandlerController;
+import View.MainController;
+import javafx.application.Platform;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
 
 import javax.crypto.NoSuchPaddingException;
 import javax.mail.*;
@@ -13,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -62,52 +69,198 @@ public class EmailReceiver {
         return true;
     }
 
+
+
     /*
     Save all message attachments in data folder
      */
     private static ArrayList<Task> saveMessageAttachments(Message message) throws IOException, MessagingException {
+        String emailSubject = message.getSubject();
+
         // name, group, subject
-        String[] subject = message.getSubject().split(",");
-        for (int i = 0; i < subject.length; i++)
-            subject[i] = subject[i].trim();
-        if (subject.length != 3)
-            return new ArrayList<>();
-        String fullName = subject[0];
-        {
-            // edit name
-            String[] name = subject[0].toLowerCase().split(" ");
-            subject[0] = "";
-            subject[0] = name[0].substring(0, 1).toUpperCase() + name[0].substring(1) + "_" + name[1].substring(0, 1).toUpperCase() + name[1].substring(1);
-        }
-        {
-            // edit group
-            subject[1] = subject[1].toUpperCase();
-            subject[1] = subject[1].replaceAll("А", "A").replaceAll("В", "B").replaceAll("С", "C").replaceAll("Е", "E").replaceAll("Н", "H").replaceAll("К", "K").replaceAll("М", "M").replaceAll("О", "O").replaceAll("Р", "P").replaceAll("Т", "T").replaceAll("Х", "X").replaceAll("У", "Y");
-        }
-        {
-            // edit subject
-            subject[2] = subject[2].toLowerCase().replaceAll(" ", "_");
-            subject[2] = subject[2].substring(0, 1).toUpperCase() + subject[2].substring(1);
-        }
-        String contentType = message.getContentType();
-        ArrayList<Task> tasks = new ArrayList<>();
-        if (contentType.contains("multipart")) {
-            Multipart multiPart = (Multipart) message.getContent();
-            for (int i = 0; i < multiPart.getCount(); i++) {
-                MimeBodyPart part = (MimeBodyPart) multiPart.getBodyPart(i);
-                if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
-                    String folder = GlobalSettings.getDataFolder() + "/" + Transliteration.cyr2lat(subject[2]) + "/" + Transliteration.cyr2lat(subject[1]) + "/" + Transliteration.cyr2lat(subject[0]) + "/" + (new SimpleDateFormat(GlobalSettings.getSourcesDateFormat())).format(message.getReceivedDate());
-                    File dir = new File(folder);
-                    dir.mkdirs();
-                    File f = new File(folder + "/" + part.getFileName());
-                    part.saveFile(f);
-                    Task task = new Task(part.getFileName(), subject[2], f.getAbsolutePath(), message.getReceivedDate());
-                    task.setAuthor(new Student(fullName, subject[1]));
-                    tasks.add(task);
+        String [] emailSubjectSplitted = emailSubject.split(",");
+        for (int i = 0; i < emailSubjectSplitted.length; i++) emailSubjectSplitted[i] = emailSubjectSplitted[i].trim();
+
+        HashMap<String, ArrayList<String>> subjectsAndGroups = GlobalSettings.getInstance().getSubjectsAndGroups();
+
+        StringBuilder finalSubject = new StringBuilder();
+        String subjectFromEmail = "";
+        final AtomicBoolean isCorrectSubject = new AtomicBoolean();
+
+        List<String> subjects = new ArrayList<>(subjectsAndGroups.keySet());
+        for (int i = 0; i < emailSubjectSplitted.length; i++) {
+            String subject = emailSubjectSplitted[i];
+            double subjectPercentEquality = 0;
+            for (int j = 0; j < subjects.size(); j++) {
+                String comparingSubject = subjects.get(j);
+                if (comparingSubject.toLowerCase().equals(subject.toLowerCase())) {
+                    isCorrectSubject.set(true);
+                    finalSubject.setLength(0);
+                    finalSubject.append(comparingSubject);
+                    subjectFromEmail = subject;
+                    break;
+                }
+                else {
+                    double percentEquality = (1 - (double)DamerauLevenshteinDistance.compare(subject, comparingSubject) / Math.max(subject.length(), comparingSubject.length()));
+                    if (percentEquality > subjectPercentEquality) {
+                        finalSubject.setLength(0);
+                        finalSubject.append(comparingSubject);
+                        subjectFromEmail = subject;
+                        subjectPercentEquality = percentEquality;
+                    }
                 }
             }
+            if (isCorrectSubject.get()) break;
         }
-        return tasks;
+
+        final StringBuilder finalGroup = new StringBuilder();
+        String groupFromEmail = "";
+        final AtomicBoolean isCorrectGroup = new AtomicBoolean();
+
+        List<String> groups;
+        if (isCorrectSubject.get()) {
+            groups = subjectsAndGroups.get(finalSubject.toString());
+        }
+        else {
+            groups = new ArrayList<>();
+            subjectsAndGroups.values().forEach(groups::addAll);
+        }
+        for (int i = 0; i < emailSubjectSplitted.length; i++) {
+            String group = emailSubjectSplitted[i].replaceAll(" ", "").replaceAll("А", "A").replaceAll("В", "B").replaceAll("С", "C").replaceAll("Е", "E").replaceAll("Н", "H").replaceAll("К", "K").replaceAll("М", "M").replaceAll("О", "O").replaceAll("Р", "P").replaceAll("Т", "T").replaceAll("Х", "X").replaceAll("У", "Y");;
+            double groupPercentEquality = 0;
+            for (int j = 0; j < groups.size(); j++) {
+                String comparingGroup = groups.get(j).replaceAll(" ", "").replaceAll("А", "A").replaceAll("В", "B").replaceAll("С", "C").replaceAll("Е", "E").replaceAll("Н", "H").replaceAll("К", "K").replaceAll("М", "M").replaceAll("О", "O").replaceAll("Р", "P").replaceAll("Т", "T").replaceAll("Х", "X").replaceAll("У", "Y");;
+                if (comparingGroup.toLowerCase().equals(group.toLowerCase())) {
+                    isCorrectGroup.set(true);
+                    finalGroup.setLength(0);
+                    finalGroup.append(groups.get(j));
+                    groupFromEmail = emailSubjectSplitted[i];
+                    break;
+                }
+                else {
+                    double percentEquality = (1 - (double)DamerauLevenshteinDistance.compare(group, comparingGroup) / Math.max(group.length(), comparingGroup.length()));
+                    if (percentEquality > groupPercentEquality) {
+                        finalGroup.setLength(0);
+                        finalGroup.append(groups.get(j));
+                        groupFromEmail = emailSubjectSplitted[i];
+                        groupPercentEquality = percentEquality;
+                    }
+                }
+            }
+            if (isCorrectGroup.get()) break;
+        }
+
+
+        StringBuilder finalStudentName = new StringBuilder();
+        String studentNameFromEmail = "";
+        double studentNamePercentEquality = 0;
+        final AtomicBoolean isCorrectStudentName = new AtomicBoolean();
+
+        List<String> studentNames = new ArrayList<>(LocalSettings.getInstance().getResults().stream().filter(result -> !isCorrectSubject.get() || result.getSubject().equals(finalSubject.toString()))
+                .filter(result -> !isCorrectGroup.get() || result.getGroup().equals(finalGroup.toString())).map(result -> result.getStudent().getName()).collect(Collectors.toSet()));
+
+        for (int i = 0; i < emailSubjectSplitted.length; i++) {
+            String[] nameParts = emailSubjectSplitted[i].toLowerCase().split(" ");
+            for (int j = 0; j < nameParts.length; j++) {
+                String[] namePartsByDash = nameParts[j].split("-");
+                for (int k = 0; k < namePartsByDash.length; k++) {
+                    namePartsByDash[k] = namePartsByDash[k].trim();
+                    if (namePartsByDash[k].length() > 0) namePartsByDash[k] = namePartsByDash[k].substring(0, 1).toUpperCase() + ((namePartsByDash[k].length() > 1) ? namePartsByDash[k].substring(1) : "");
+                }
+                String namePart = String.join("-", namePartsByDash);
+                nameParts[j] = namePart;
+            }
+            String studentName = String.join(" " , nameParts);
+            for (int j = 0; j < studentNames.size(); j++) {
+                String comparingStudentName = studentNames.get(j);
+                if (comparingStudentName.toLowerCase().equals(studentName.toLowerCase())) {
+                    isCorrectStudentName.set(true);
+                    finalStudentName.setLength(0);
+                    finalStudentName.append(comparingStudentName);
+                    studentNameFromEmail = studentName;
+                    break;
+                }
+                else {
+                    double percentEquality = (1 - (double)DamerauLevenshteinDistance.compare(studentName, comparingStudentName) / Math.max(studentName.length(), comparingStudentName.length()));
+                    if (percentEquality > studentNamePercentEquality) {
+                        finalStudentName.setLength(0);
+                        finalStudentName.append(comparingStudentName);
+                        studentNameFromEmail = studentName;
+                        studentNamePercentEquality = percentEquality;
+                    }
+                }
+            }
+            if (isCorrectStudentName.get()) break;
+        }
+
+        if (!isCorrectStudentName.get() || studentNamePercentEquality < 85) {
+            ArrayList<String> emailSubjectList = new ArrayList<>(Arrays.asList(emailSubjectSplitted));
+            emailSubjectList.remove(subjectFromEmail);
+            emailSubjectList.remove(groupFromEmail);
+            if (emailSubjectList.size() > 0) {
+                studentNameFromEmail = emailSubjectList.get(0);
+                String[] nameParts = studentNameFromEmail.toLowerCase().split(" ");
+                for (int j = 0; j < nameParts.length; j++) {
+                    String[] namePartsByDash = nameParts[j].split("-");
+                    for (int k = 0; k < namePartsByDash.length; k++) {
+                        namePartsByDash[k] = namePartsByDash[k].trim();
+                        if (namePartsByDash[k].length() > 0)
+                            namePartsByDash[k] = namePartsByDash[k].substring(0, 1).toUpperCase() + ((namePartsByDash[k].length() > 1) ? namePartsByDash[k].substring(1) : "");
+                    }
+                    String namePart = String.join("-", namePartsByDash);
+                    nameParts[j] = namePart;
+                }
+                finalStudentName.setLength(0);
+                finalStudentName.append(String.join(" ", nameParts));
+            }
+            else finalStudentName.setLength(0);
+        }
+
+        CountDownLatch emailHandlerLatch = new CountDownLatch(1);
+
+        EmailHandlerData emailHandlerData = new EmailHandlerData(emailSubject, finalSubject, finalGroup, finalStudentName, emailHandlerLatch);
+
+
+        if (!isCorrectSubject.get() || !isCorrectGroup.get() || !isCorrectStudentName.get()) {
+            Platform.runLater(() -> {
+                MainController.showEmailHandlerWindow(emailHandlerData);
+            });
+        }
+        else {
+            emailHandlerLatch.countDown();
+        }
+        try {
+            emailHandlerLatch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        if (emailHandlerData.getSkip())
+            return new ArrayList<>();
+        else {
+            String studentNameData = emailHandlerData.getStudentName().toString();
+            String subjectData = emailHandlerData.getSubject().toString().replaceAll(" ", "_");
+            String groupData = emailHandlerData.getGroup().toString().replaceAll(" ", "");
+            String contentType = message.getContentType();
+            ArrayList<Task> tasks = new ArrayList<>();
+            if (contentType.contains("multipart")) {
+                Multipart multiPart = (Multipart) message.getContent();
+                for (int i = 0; i < multiPart.getCount(); i++) {
+                    MimeBodyPart part = (MimeBodyPart) multiPart.getBodyPart(i);
+                    if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
+                        String folder = GlobalSettings.getDataFolder() + "/" + Transliteration.cyr2lat(subjectData) + "/" + Transliteration.cyr2lat(groupData) + "/" + Transliteration.cyr2lat(studentNameData.replaceAll(" ", "_")) + "/" + (new SimpleDateFormat(GlobalSettings.getSourcesDateFormat())).format(message.getReceivedDate());
+                        File dir = new File(folder);
+                        dir.mkdirs();
+                        File f = new File(folder + "/" + part.getFileName());
+                        part.saveFile(f);
+                        Task task = new Task(part.getFileName(), subjectData, f.getAbsolutePath(), message.getReceivedDate());
+                        task.setAuthor(new Student(studentNameData, groupData));
+                        tasks.add(task);
+                    }
+                }
+            }
+            return tasks;
+        }
     }
 
     /*
@@ -118,7 +271,7 @@ public class EmailReceiver {
         props.put("mail.store.protocol", "imaps");
         Session session = Session.getInstance(props);
         Store store = session.getStore();
-        store.connect(GlobalSettings.getInstance().getHost(), GlobalSettings.getEmail(), GlobalSettings.getPassword());
+        store.connect(GlobalSettings.getHost(), GlobalSettings.getEmail(), GlobalSettings.getPassword());
         Folder inbox = store.getFolder("INBOX");
         Message[] messages = receiveEmails(inbox);
         Date lastDateEmailChecking = LocalSettings.getInstance().getLastDateEmailChecked();
@@ -172,7 +325,7 @@ public class EmailReceiver {
                                 {
                                     // Left this way for testing purposes.
                                     LocalSettings.getInstance().setLastDateEmailChecked(new Date(0L));
-                                    LocalSettings.getInstance().getResults().clear();
+                                    //LocalSettings.getInstance().getResults().clear();
                                 }
                                 /*
                                 TODO uncomment that before deploy

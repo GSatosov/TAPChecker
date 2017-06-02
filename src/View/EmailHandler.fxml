@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.scene.text.Text?>
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="View.EmailHandlerController"
+            prefWidth="600">
+
+    <VBox spacing="10" AnchorPane.topAnchor="5" AnchorPane.rightAnchor="5" AnchorPane.leftAnchor="5" AnchorPane.bottomAnchor="5" >
+        <Text>Email subject:</Text>
+        <TextField fx:id="emailSubject" editable="false"/>
+        <HBox alignment="BASELINE_CENTER"><Text>Enter the student's information:</Text></HBox>
+        <HBox spacing="10" VBox.vgrow="ALWAYS">
+            <VBox HBox.hgrow="ALWAYS" spacing="10">
+                <Text>Subject:</Text>
+                <ChoiceBox fx:id="subjectsList"/>
+            </VBox>
+            <VBox HBox.hgrow="ALWAYS" spacing="10">
+                <Text>Group:</Text>
+                <ChoiceBox fx:id="groupsList"/>
+            </VBox>
+            <VBox HBox.hgrow="ALWAYS" spacing="10">
+                <Text>Name:</Text>
+                <TextField fx:id="nameField" promptText="Enter the student's name..."/>
+            </VBox>
+        </HBox>
+        <HBox alignment="BASELINE_RIGHT" spacing="10">
+            <Button fx:id="continueButton" >Continue</Button>
+            <Button fx:id="skipButton">Skip</Button>
+        </HBox>
+    </VBox>
+
+</AnchorPane>

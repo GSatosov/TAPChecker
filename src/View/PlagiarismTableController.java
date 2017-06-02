@@ -111,7 +111,7 @@ public class PlagiarismTableController implements Initializable {
         students = new ArrayList<>((new HashSet<>(students)));
         students.sort(String::compareTo);
 
-        plagiarismTable.getColumns().add(getColumn("ФИО"));
+        plagiarismTable.getColumns().add(getColumn("Full Name"));
 
         students.forEach(student -> {
             plagiarismTable.getColumns().add(getColumn(student));
@@ -121,7 +121,7 @@ public class PlagiarismTableController implements Initializable {
 
         students.forEach(student -> {
             HashMap<String, PlagiarismResultsTableCellObject> studentHM = new HashMap<>();
-            studentHM.put("ФИО", new PlagiarismResultsTableCellObject(student));
+            studentHM.put("Full Name", new PlagiarismResultsTableCellObject(student));
             results.stream().filter(result -> (result.getFirstStudentName() + " (" + result.getFirstStudentGroupName() + ")").equals(student) || (result.getSecondStudentName() + " (" + result.getSecondStudentGroupName() + ")").equals(student)).forEach(studentResult -> {
                 String secondStudent = (studentResult.getFirstStudentName() + " (" + studentResult.getFirstStudentGroupName() + ")").equals(student) ? studentResult.getSecondStudentName() + " (" + studentResult.getSecondStudentGroupName() + ")" : studentResult.getFirstStudentName() + " (" + studentResult.getFirstStudentGroupName() + ")";
                 studentHM.put(secondStudent, new PlagiarismResultsTableCellObject(studentResult.getResult(), studentResult));

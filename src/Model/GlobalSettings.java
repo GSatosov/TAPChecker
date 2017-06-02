@@ -91,6 +91,10 @@ public class GlobalSettings implements Serializable {
         return resultsTableURL;
     }
 
+    public void setResultsTableURL(String resultsTableURL) {
+        this.resultsTableURL = resultsTableURL;
+    }
+
     public Date getEditedTasksDate() {
         return editedTasksDate;
     }

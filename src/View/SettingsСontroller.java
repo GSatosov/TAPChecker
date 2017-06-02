@@ -19,6 +19,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.ResourceBundle;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -83,6 +85,21 @@ public class SettingsСontroller implements Initializable {
             groupList.getItems().clear();
             groupList.getItems().addAll(GlobalSettings.getInstance().getSubjectsAndGroups().get(newValue));
             groupList.setValue(groupList.getItems().get(0));
+        });
+
+        tableLink.setText(GlobalSettings.getInstance().getResultsTableURL());
+
+        addLink.setOnAction(event -> {
+            Pattern pattern = Pattern.compile("/spreadsheets/d/([a-zA-Z0-9-_]+)");
+            Matcher matcher = pattern.matcher(tableLink.getText());
+            if (matcher.find()) {
+                GlobalSettings.getInstance().setResultsTableURL(tableLink.getText());
+            }
+            else {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Entered incorrect link to the table!");
+                alert.showAndWait();
+                tableLink.setText("");
+            }
         });
 
         removeSubject.setOnAction(event -> {
@@ -189,7 +206,7 @@ public class SettingsСontroller implements Initializable {
             }
         });
 
-        autoresponderToggle.setSelected(GlobalSettings.getInstance().getMasksOn());
+        /*autoresponderToggle.setSelected(GlobalSettings.getInstance().getMasksOn());
 
         letterMask.getParagraphs().addAll(GlobalSettings.getInstance().getLetterMask());
         wrongGroup.getParagraphs().addAll(GlobalSettings.getInstance().getWrongGroup());
@@ -202,7 +219,7 @@ public class SettingsСontroller implements Initializable {
             GlobalSettings.getInstance().setWrongGroup(new ArrayList<>((Collection<? extends String>) wrongGroup.getParagraphs()));
             GlobalSettings.getInstance().setWrongSubject(new ArrayList<>((Collection<? extends String>) wrongSubject.getParagraphs()));
             GlobalSettings.getInstance().setWrongTask(new ArrayList<>((Collection<? extends String>) wrongTask.getParagraphs()));
-        });
+        });*/
 
         close.setOnAction(event -> ((Stage)(((Button)event.getSource()).getScene().getWindow())).close());
     }

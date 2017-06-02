@@ -2,12 +2,14 @@ package View;
 
 import Controller.General;
 import Controller.GoogleDriveManager;
+import Model.EmailHandlerData;
 import Model.GlobalSettings;
 import Model.LocalSettings;
 import Model.Result;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
@@ -25,6 +27,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 /**
@@ -51,6 +54,8 @@ public class MainController implements Initializable {
     private Button runFailedTasks;
     private static Stage settingsFrame;
     private Stage plagiarismStage;
+
+    private static Stage emailHandler;
 
     static Stage getSettingsFrame() {
         return settingsFrame;
@@ -96,7 +101,7 @@ public class MainController implements Initializable {
 
                 currentTable.setColumnResizePolicy(p -> true);
 
-                currentTable.getColumns().add(getColumn("ФИО"));
+                currentTable.getColumns().add(getColumn("Full Name"));
 
                 for (String subjectTaskNumber : subjectTaskNumbers) {
                     currentTable.getColumns().add(getColumn(subjectTaskNumber));
@@ -105,13 +110,13 @@ public class MainController implements Initializable {
                 // group by group
                 subjectResults.stream().collect(Collectors.groupingBy(Result::getGroup)).forEach((group, groupResults) -> {
                     HashMap<String, ResultsTableCellObject> groupHM = new HashMap<>();
-                    groupHM.put("ФИО", new ResultsTableCellObject("Группа " + group));
+                    groupHM.put("Full Name", new ResultsTableCellObject("Группа " + group));
                     currentTable.getItems().add(groupHM);
 
                     Set<String> studentsNames = groupResults.stream().map(r -> r.getStudent().getName()).collect(Collectors.toSet());
                     studentsNames.stream().sorted(String::compareTo).forEach(student -> {
                         HashMap<String, ResultsTableCellObject> studentHM = new HashMap<>();
-                        studentHM.put("ФИО", new ResultsTableCellObject(student));
+                        studentHM.put("Full Name", new ResultsTableCellObject(student));
                         groupResults.stream().filter(result -> result.getStudent().getName().equals(student)).forEach(studentResult -> {
                             studentHM.put(studentResult.getTask().getTaskCode(), new ResultsTableCellObject(studentResult.getMessage(), studentResult));
                         });
@@ -119,7 +124,7 @@ public class MainController implements Initializable {
                     });
 
                     HashMap<String, ResultsTableCellObject> emptyHM = new HashMap<>();
-                    emptyHM.put("ФИО", new ResultsTableCellObject(""));
+                    emptyHM.put("Full Name", new ResultsTableCellObject(""));
                     currentTable.getItems().add(emptyHM);
                 });
 
@@ -192,22 +197,55 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         new File(GlobalSettings.getDataFolder()).mkdirs();
+        showResults();
+
+        runLocalTasks.setManaged(LocalSettings.getInstance().getResults().size() != 0);
+        runFailedTasks.setManaged(LocalSettings.getInstance().getFailedTasks().size() != 0);
+        plagiarismResults.setManaged(LocalSettings.getInstance().getPlagiarismResults().size() != 0);
+
         runTests.setOnAction(event -> {
             runTests.setDisable(true);
+            runLocalTasks.setDisable(true);
+            runFailedTasks.setDisable(true);
             try {
-                General.getResults(() -> runTests.setDisable(false), this);
+                General.getResults(() -> {
+                    runTests.setDisable(false);
+                    runLocalTasks.setDisable(false);
+                    runFailedTasks.setDisable(false);
+                    runLocalTasks.setManaged(LocalSettings.getInstance().getResults().size() != 0);
+                    runFailedTasks.setManaged(LocalSettings.getInstance().getFailedTasks().size() != 0);
+                    plagiarismResults.setManaged(LocalSettings.getInstance().getPlagiarismResults().size() != 0);
+                }, this);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         });
         runLocalTasks.setOnAction(event -> {
+            runTests.setDisable(true);
             runLocalTasks.setDisable(true);
-            General.runLocalTests(() -> runLocalTasks.setDisable(false), this,
+            runFailedTasks.setDisable(true);
+            General.runLocalTests(() -> {
+                runTests.setDisable(false);
+                runLocalTasks.setDisable(false);
+                runFailedTasks.setDisable(false);
+                runLocalTasks.setManaged(LocalSettings.getInstance().getResults().size() != 0);
+                runFailedTasks.setManaged(LocalSettings.getInstance().getFailedTasks().size() != 0);
+                plagiarismResults.setManaged(LocalSettings.getInstance().getPlagiarismResults().size() != 0);
+            }, this,
                     new ConcurrentLinkedQueue<>(LocalSettings.getInstance().getResults().stream().map(Result::getTask).collect(Collectors.toCollection(ArrayList::new))));
         });
         runFailedTasks.setOnAction(event -> {
+            runTests.setDisable(true);
+            runLocalTasks.setDisable(true);
             runFailedTasks.setDisable(true);
-            General.runLocalTests(() -> runFailedTasks.setDisable(false), this,
+            General.runLocalTests(() -> {
+                runTests.setDisable(false);
+                runLocalTasks.setDisable(false);
+                runFailedTasks.setDisable(false);
+                runLocalTasks.setManaged(LocalSettings.getInstance().getResults().size() != 0);
+                runFailedTasks.setManaged(LocalSettings.getInstance().getFailedTasks().size() != 0);
+                plagiarismResults.setManaged(LocalSettings.getInstance().getPlagiarismResults().size() != 0);
+            }, this,
                     LocalSettings.getInstance().getFailedTasks());
         });
         plagiarismResults.setOnAction(event -> {
@@ -245,5 +283,24 @@ public class MainController implements Initializable {
             settingsFrame.show();
         });
         editTasks.setOnAction(event -> new TaskEditorController().getStage().show());
+    }
+
+    public static void showEmailHandlerWindow(EmailHandlerData emailHandlerData) {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(MainController.class.getResource("EmailHandler.fxml"));
+            Parent root = fxmlLoader.load();
+            EmailHandlerController emailHandlerController = fxmlLoader.getController();
+            emailHandlerController.setUserData(emailHandlerData);
+            emailHandler = new Stage();
+            emailHandler.setTitle("Email Handler");
+            emailHandler.setResizable(false);
+            emailHandler.setScene(new Scene(root));
+            emailHandler.show();
+            emailHandler.setOnCloseRequest(we -> {
+                emailHandlerData.getEmailHandlerLatch().countDown();
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

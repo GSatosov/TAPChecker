@@ -65,10 +65,12 @@ public class General {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        if (tasks.peek().getName().endsWith("hs"))
-            haskellTasksQueue.add(tasks.poll());
-        else
-            javaTasksQueue.add(tasks.poll());
+        if (tasks.size() > 0) {
+            if (tasks.peek().getName().endsWith("hs"))
+                haskellTasksQueue.add(tasks.poll());
+            else
+                javaTasksQueue.add(tasks.poll());
+        }
     }
 
     public static void runLocalTests(Callback onExit, MainController mainController, ConcurrentLinkedQueue<Task> tasks) {
@@ -77,42 +79,52 @@ public class General {
         javaTasksQueue = new ConcurrentLinkedQueue<>();
         ConcurrentHashMap<Task, ArrayList<Test>> localTests = new ConcurrentHashMap<>();
         HashMap<String, ArrayList<Task>> subjectsAndTasks = LocalSettings.getInstance().getSubjectsAndTasks();
-        subjectsAndTasks.keySet().forEach(key -> subjectsAndTasks.get(key).forEach(value -> {
-            if (!localTests.containsKey(value))
-                localTests.put(value, value.getTestContents());
+        subjectsAndTasks.values().forEach(value -> value.forEach(v -> {
+            if (!localTests.containsKey(v))
+                localTests.put(v, v.getTestContents());
         }));
         setTests(tasks, localTests);
+
         TestsApplier testsApplier = new TestsApplier();
-        latchForTaskAppliers = new CountDownLatch(2);
         tasksThatShouldBeCheckedOnPlagiarism = new ArrayList<>();
         List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
+
+        latchForTaskAppliers = new CountDownLatch(2);
+
         ThreadGroup tGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), "Tasks Runners");
         haskellTasksThread(tGroup, testsApplier, results).start();
         javaTasksThread(tGroup, testsApplier, results).start();
-        try {
-            latchForTaskAppliers.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        saveResults(results);
-        startAntiplagiarismTesting();
-        checkForFailedTasks();
-        try {
-            LocalSettings.saveSettings();
-        } catch (InvalidKeyException | NoSuchAlgorithmException | IOException | NoSuchPaddingException e) {
-            e.printStackTrace();
-        }
-        // Sending results to Google spreadsheet
-        (new Thread(new ResultsSender())).start();
+        resultsHandler(onExit, mainController, results).start();
 
-        // Filling local table with results
-        Platform.runLater((new Thread(() -> {
-            System.out.println("Sending results to table");
-            Platform.runLater((new Thread(mainController::showResults)));
-        })));
-        onExit.call();
     }
 
+    private static Thread resultsHandler(Callback onExit, MainController mainController, List<Result> results) {
+        return new Thread(() -> {
+            try {
+                latchForTaskAppliers.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            saveResults(results);
+            startAntiplagiarismTesting();
+            checkForFailedTasks();
+            try {
+                LocalSettings.saveSettings();
+            } catch (InvalidKeyException | NoSuchAlgorithmException | IOException | NoSuchPaddingException e) {
+                e.printStackTrace();
+            }
+
+            // Sending results to Google spreadsheet
+            (new Thread(new ResultsSender())).start();
+
+            // Filling local table with results
+            Platform.runLater((new Thread(mainController::showResults)));
+
+            onExit.call();
+
+        });
+    }
 
     private static Thread haskellTasksThread(ThreadGroup tGroup, TestsApplier applier, List<Result> results) {
         return new Thread(() -> {
@@ -233,6 +245,7 @@ public class General {
         startDate = new Date();
 
         latchForTaskAppliers = new CountDownLatch(2);
+
         ThreadGroup tGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), "Tasks Receivers");
         new Thread(tGroup, () -> {
             try {
@@ -246,29 +259,11 @@ public class General {
         haskellTasksQueue = new ConcurrentLinkedQueue<>();
         javaTasksQueue = new ConcurrentLinkedQueue<>();
         tasksThatShouldBeCheckedOnPlagiarism = new ArrayList<>();
-        {
-            TestsApplier applier = new TestsApplier();
-            haskellTasksThread(tGroup, applier, results).start();
-            javaTasksThread(tGroup, applier, results).start();
-        }
-        latchForTaskAppliers.await();
-        checkForFailedTasks();
 
-        saveResults(results);
-        // Plagiarism Checking
-        startAntiplagiarismTesting();
-
-        try {
-            LocalSettings.saveSettings();
-        } catch (InvalidKeyException | NoSuchAlgorithmException | IOException | NoSuchPaddingException e) {
-            e.printStackTrace();
-        }
-        // Sending results to Google spreadsheet
-        (new Thread(new ResultsSender())).start();
-
-        // Filling local table with results
-        Platform.runLater((new Thread(mainController::showResults)));
-        onExit.call();
+        TestsApplier applier = new TestsApplier();
+        haskellTasksThread(tGroup, applier, results).start();
+        javaTasksThread(tGroup, applier, results).start();
+        resultsHandler(onExit, mainController, results).start();
     }
 
     private static void startAntiplagiarismTesting() {

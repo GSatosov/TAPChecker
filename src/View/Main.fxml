@@ -23,8 +23,5 @@
     <TabPane fx:id="resultsTable"
              AnchorPane.topAnchor="40" AnchorPane.rightAnchor="5" AnchorPane.leftAnchor="5"
              prefHeight="400">
-        <Tab closable="false">
-            <Text text="No data in table"/>
-        </Tab>
     </TabPane>
 </AnchorPane>
