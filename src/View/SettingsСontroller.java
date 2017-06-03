@@ -192,6 +192,9 @@ public class SettingsСontroller implements Initializable {
             }
         });
 
+        emailTemplate.setText(GlobalSettings.getInstance().getAutoresponderTemplate());
+        emailSubject.setText(GlobalSettings.getInstance().getAutoresponderEmailSubject());
+
         emailTemplate.textProperty().addListener((observable, oldValue, newValue) -> GlobalSettings.getInstance().setAutoresponderTemplate(newValue));
 
         emailSubject.textProperty().addListener((observable, oldValue, newValue) -> GlobalSettings.getInstance().setAutoresponderEmailSubject(newValue));

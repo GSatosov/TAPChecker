@@ -119,7 +119,15 @@ public class Task implements Serializable {
     @Override
     public boolean equals(Object obj) {
         Task task = (Task) obj;
-        return this.getName().equals(task.getName()) && this.getSubjectName().equals(task.getSubjectName());
+        int thisDot = this.getName().lastIndexOf(".");
+        int objDot = task.getName().lastIndexOf(".");
+        return (thisDot != -1 ? this.getName().substring(0, thisDot) : this.getName()).toLowerCase().equals((objDot != -1 ? task.getName().substring(0, objDot) : task.getName()).toLowerCase()) && this.getSubjectName().replaceAll(" ", "_").toLowerCase().equals(task.getSubjectName().replaceAll(" ", "_").toLowerCase());
+    }
+
+    @Override
+    public int hashCode() {
+        int thisDot = this.getName().lastIndexOf(".");
+        return ((thisDot != -1 ? this.getName().substring(0, thisDot) : this.getName()).toLowerCase() + " " + this.getSubjectName().replaceAll(" ", "_").toLowerCase()).hashCode();
     }
 
     public String getAdditionalTest() {

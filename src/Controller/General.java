@@ -220,11 +220,13 @@ public class General {
                 Result old = firstResult.get();
                 if (old.compareTo(result) < 0) {
                     filteredResults.remove(old);
-                    File dir = Paths.get(old.getTask().getSourcePath()).getParent().toFile();
-                    if (!deleteDirectory(dir)) {
-                        throw new RuntimeException("Please, delete the directory: " + dir.getAbsolutePath());
-                    } else {
-                        System.out.println("Result successfully deleted: " + old);
+                    if (!old.getTask().getSourcePath().equals(result.getTask().getSourcePath())) {
+                        File dir = Paths.get(old.getTask().getSourcePath()).getParent().toFile();
+                        if (!deleteDirectory(dir)) {
+                            throw new RuntimeException("Please, delete the directory: " + dir.getAbsolutePath());
+                        } else {
+                            System.out.println("Result successfully deleted: " + old);
+                        }
                     }
                     filteredResults.add(result);
                 }

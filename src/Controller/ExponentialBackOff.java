@@ -44,7 +44,7 @@ final class ExponentialBackOff {
 
     private static void doWait(int attempt) {
         try {
-            Thread.sleep(FIBONACCI[attempt] * 1000 + Math.round(Math.random() * 500));
+            Thread.sleep(FIBONACCI[attempt] * 1000 + Math.round(Math.random() * FIBONACCI[attempt] * 500));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
