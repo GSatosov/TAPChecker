@@ -17,16 +17,6 @@ public class Test implements Serializable {
         this.outputVariants.remove(i);
     }
 
-    public String getAdditionalTest() {
-        return additionalTest;
-    }
-
-    public void setAdditionalTest(String additionalTest) {
-        this.additionalTest = additionalTest;
-    }
-
-    private String additionalTest = "";
-
     public void setOutputVariants(ArrayList<ArrayList<String>> outputVariants) {
         this.outputVariants = outputVariants;
     }
@@ -55,7 +45,6 @@ public class Test implements Serializable {
     public Test(ArrayList<String> input, ArrayList<ArrayList<String>> outputVariants) {
         this.input = input;
         this.outputVariants = outputVariants;
-        this.additionalTest = "";
     }
 
     public void logOutputVariants(BufferedWriter writer) {

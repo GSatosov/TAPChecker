@@ -1,5 +1,7 @@
 package Model;
 
+import Controller.GoogleDriveManager;
+
 import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.security.InvalidKeyException;
@@ -65,7 +67,7 @@ public class LocalSettings implements Serializable {
         this.editorHasBeenLaunched = true;
     }
 
-    public void updateTask(Task task) {
+    public void updateTask(Task task) throws IOException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException {
         if (subjectsAndTasks.containsKey(task.getSubjectName())) {
             if (subjectsAndTasks.get(task.getSubjectName()).contains(task))
                 subjectsAndTasks.get(task.getSubjectName()).remove(task); //...
@@ -76,12 +78,21 @@ public class LocalSettings implements Serializable {
             subjectsAndTasks.put(task.getSubjectName(), tasks);
         }
         GlobalSettings.getInstance().setEditedTasksDate(new Date());
+        GlobalSettings.saveFile();
         editedTasksDate = new Date();
+        LocalSettings.saveSettings();
     }
 
-    public void deleteTask(Task task) { //TODO write this method
+    public void deleteTask(Task task) throws IOException, NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+        if (subjectsAndTasks.containsKey(task.getSubjectName())) {
+            if (subjectsAndTasks.get(task.getSubjectName()).contains(task)) {
+                subjectsAndTasks.get(task.getSubjectName()).remove(task);
+            }
+        }
         GlobalSettings.getInstance().setEditedTasksDate(new Date());
+        GlobalSettings.saveFile();
         editedTasksDate = new Date();
+        LocalSettings.saveSettings();
     }
 
     public Date getLastDateEmailChecked() {

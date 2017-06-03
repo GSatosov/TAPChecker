@@ -187,8 +187,10 @@ public class GoogleDriveManager {
                 long time = tests.getLong("maximumOperatingTimeInMS");
                 boolean hasHardDeadline = tests.getBoolean("hasHardDeadline");
                 String taskCode = tests.getString("taskCode");
+                String additionalTest = tests.getString("additionalTest");
                 JSONArray aTests = tests.getJSONArray("tests");
                 task.setTestFields(time, antiPlagiarism, deadline, taskCode, hasHardDeadline);
+                task.setAdditionalTest(additionalTest);
                 aTests.forEach(t -> {
                     ArrayList<String> input = new ArrayList<>();
                     ArrayList<ArrayList<String>> output = new ArrayList<>();
@@ -302,6 +304,8 @@ public class GoogleDriveManager {
                         long time = tests.getLong("maximumOperatingTimeInMS");
                         boolean hasHardDeadline = tests.getBoolean("hasHardDeadline");
                         String taskCode = tests.getString("taskCode");
+                        String additionalTest = tests.getString("additionalTest");
+                        task.setAdditionalTest(additionalTest);
                         JSONArray aTests = tests.getJSONArray("tests");
                         task.setTestFields(time, antiPlagiarism, deadline, taskCode, hasHardDeadline);
                         aTests.forEach(t -> {
@@ -335,7 +339,7 @@ public class GoogleDriveManager {
         return tasksAndSubjects;
     }
 
-    public static void saveTask(Task task) throws IOException {
+    public static String deleteTask(Task task) throws IOException {
         Drive service = getDriveService();
 
         FileList getFolders = service.files().list().setQ("mimeType = 'application/vnd.google-apps.folder'").execute();
@@ -366,6 +370,12 @@ public class GoogleDriveManager {
             }
         });
 
+        return folderId;
+    }
+
+    public static void saveTask(Task task) throws IOException {
+        String folderId = deleteTask(task);
+
         com.google.api.services.drive.model.File fileMetadata = new com.google.api.services.drive.model.File();
         fileMetadata.setParents(Collections.singletonList(folderId));
         fileMetadata.setName(task.getName() + ".txt");
@@ -376,6 +386,7 @@ public class GoogleDriveManager {
         taskJSON.put("deadline", new SimpleDateFormat("dd.MM.yyyy").format(task.getDeadline()));
         taskJSON.put("hasHardDeadline", task.hasHardDeadline());
         taskJSON.put("taskCode", task.getTaskCode());
+        taskJSON.put("additionalTest", task.getAdditionalTest());
         JSONArray tests = new JSONArray();
         task.getTestContents().forEach(test -> {
             JSONObject testJSON = new JSONObject();

@@ -22,6 +22,7 @@ public class Task implements Serializable {
     private boolean antiPlagiarism;
     private Date deadline;
     private boolean hardDeadline;
+    private String additionalTest = "";
 
     public Task() {
 
@@ -119,5 +120,13 @@ public class Task implements Serializable {
     public boolean equals(Object obj) {
         Task task = (Task) obj;
         return this.getName().equals(task.getName()) && this.getSubjectName().equals(task.getSubjectName());
+    }
+
+    public String getAdditionalTest() {
+        return additionalTest;
+    }
+
+    public void setAdditionalTest(String additionalTest) {
+        this.additionalTest = additionalTest;
     }
 }

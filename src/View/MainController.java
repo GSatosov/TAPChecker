@@ -263,7 +263,16 @@ public class MainController implements Initializable {
             settingsFrame.show();
         });
         editTasks.setOnAction(event -> {
-            new TaskEditorController().getStage().show();
+            Stage taskEditorFrame = new Stage();
+            try {
+                taskEditorFrame.setScene(new Scene(new FXMLLoader(getClass().getResource("TaskEditor.fxml")).load()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            taskEditorFrame.initModality(Modality.WINDOW_MODAL);
+            taskEditorFrame.initOwner(MainFrame.getPrimaryStage());
+            taskEditorFrame.setTitle("Task editor");
+            taskEditorFrame.show();
         });
     }
 

@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Class for applying tests. As of 3/14 only Haskell support is implemented. As of 4/18 Java support is implemented as well. TODO handle exceptions better
+ * Class for applying tests. As of 3/14 only Haskell support is implemented. As of 4/18 Java support is implemented as well.
  */
 class TestsApplier {
     private volatile boolean notInterrupted;
@@ -183,14 +183,14 @@ class TestsApplier {
                 return haskellResult("RE " + (i + 1), task);
             }
             String response = this.haskellOutput.get(0).split(" ", 2)[1]; // *>TaskName> Output
-            if (!test.getAdditionalTest().isEmpty()) {
+            if (!task.getAdditionalTest().isEmpty()) {
                 File additionalTestInput = new File(parentFolder + File.separator + taskName);
                 try {
                     additionalTestInput.createNewFile();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                switch (performAnAdditionalTest(test.getAdditionalTest(), additionalTestInput, taskName, test.getOutputVariants())) {
+                switch (performAnAdditionalTest(task.getAdditionalTest(), additionalTestInput, taskName, test.getOutputVariants())) {
                     case 0:
                         continue;
                     case 1:
@@ -355,8 +355,8 @@ class TestsApplier {
                     Test.logList(javaOutputWriter, new ArrayList<>(Files.readAllLines(Paths.get(errorFile.getPath()))));
                     return javaResult("RE " + (i + 1), task, testInputFile, testOutputFile, errorFile); //Runtime Error
                 }
-                if (!test.getAdditionalTest().isEmpty()) {
-                    switch (performAnAdditionalTest(test.getAdditionalTest(), testOutputFile, taskName, test.getOutputVariants())) {
+                if (!task.getAdditionalTest().isEmpty()) {
+                    switch (performAnAdditionalTest(task.getAdditionalTest(), testOutputFile, taskName, test.getOutputVariants())) {
                         case 0:
                             continue;
                         case 1:
