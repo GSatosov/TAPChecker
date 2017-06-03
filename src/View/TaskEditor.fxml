@@ -31,7 +31,7 @@
         <Separator/>
         <GridPane hgap="10" vgap="10">
             <Text GridPane.columnIndex="0" GridPane.rowIndex="0" text="Enter the name of the function to check:"/>
-            <TextField GridPane.hgrow="ALWAYS" GridPane.columnIndex="1" GridPane.rowIndex="0" fx:id="funcitonName" promptText="Name of the function..."/>
+            <TextField GridPane.hgrow="ALWAYS" GridPane.columnIndex="1" GridPane.rowIndex="0" fx:id="functionName" promptText="Name of the function..."/>
             <Text GridPane.columnIndex="0" GridPane.rowIndex="1" text="Enter the code for task:"/>
             <TextField GridPane.hgrow="ALWAYS" GridPane.columnIndex="1" GridPane.rowIndex="1" fx:id="taskCode" promptText="Code for the task..."/>
             <Text GridPane.columnIndex="0" GridPane.rowIndex="2" text="Enter the time limit in milliseconds:"/>

@@ -14,7 +14,6 @@ import javafx.stage.FileChooser;
 import javax.crypto.NoSuchPaddingException;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -33,10 +32,10 @@ public class TaskEditorController implements Initializable {
     public ChoiceBox subjectsList;
 
     @FXML
-    public ChoiceBox tasksList;
+    public ChoiceBox<String> tasksList;
 
     @FXML
-    public TextField funcitonName;
+    public TextField functionName;
 
     @FXML
     public TextField taskCode;
@@ -68,7 +67,7 @@ public class TaskEditorController implements Initializable {
     @FXML
     public TabPane inputs;
 
-    public Task currentTask;
+    private Task currentTask;
 
 
     @Override
@@ -140,10 +139,10 @@ public class TaskEditorController implements Initializable {
                     Task task;
                     if (tasksList.getSelectionModel().getSelectedIndex() != tasksList.getItems().size() - 1) {
                         task = subjectsAndTasks.get(subjectsList.getValue().toString()).stream().filter(t -> t.getName().equals(tasksList.getValue().toString().split(": ")[1])).findFirst().get();
-                        funcitonName.setDisable(true);
+                        functionName.setDisable(true);
                     } else {
                         task = emptyTask();
-                        funcitonName.setDisable(false);
+                        functionName.setDisable(false);
                     }
                     fillFieldsWithTaskInformation(task);
                 }
@@ -192,7 +191,7 @@ public class TaskEditorController implements Initializable {
             saveTask.setOnAction(event -> {
                 if (fieldsAreReady()) {
                     currentTask.setSubjectName(subjectsList.getValue().toString());
-                    currentTask.setName(funcitonName.getText());
+                    currentTask.setName(functionName.getText());
                     currentTask.setTestFields(Long.parseLong(timeLimit.getCharacters().toString()),
                             plagiarismCheck.isSelected(),
                             java.sql.Date.valueOf(deadline.getValue()),
@@ -234,7 +233,7 @@ public class TaskEditorController implements Initializable {
 
     private void fillFieldsWithTaskInformation(Task task) {
         currentTask = task;
-        funcitonName.setText(currentTask.getName());
+        functionName.setText(currentTask.getName());
         taskCode.setText(currentTask.getTaskCode());
         plagiarismCheck.setSelected(currentTask.shouldBeCheckedForAntiPlagiarism());
         hardDeadline.setSelected(currentTask.hasHardDeadline());
@@ -343,7 +342,7 @@ public class TaskEditorController implements Initializable {
     }
 
     private boolean fieldsAreReady() {
-        if (funcitonName.getText() == null || funcitonName.getText().isEmpty()) {
+        if (functionName.getText() == null || functionName.getText().isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.ERROR, "Field for task name is empty!");
             alert.showAndWait();
             return false;
