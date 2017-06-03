@@ -406,8 +406,7 @@ public class GoogleDriveManager {
                 testOutput.put(outputJson);
             });
             testJSON.put("output", testOutput);
-            testJSON.put("applyAdditionalTest", test.isApplyAdditionalTest());
-
+            testJSON.put("applyAdditionalTest", test.hasAnAdditionalTest());
             tests.put(testJSON);
         });
         taskJSON.put("tests", tests);

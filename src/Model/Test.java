@@ -84,7 +84,7 @@ public class Test implements Serializable {
         return otherTest.getInput().equals(this.getInput()) && this.getOutputVariants().equals(otherTest.getOutputVariants());
     }
 
-    public boolean isApplyAdditionalTest() {
+    public boolean hasAnAdditionalTest() {
         return applyAdditionalTest;
     }
 

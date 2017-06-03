@@ -3,7 +3,6 @@ package Controller;
 import Model.Result;
 import Model.Task;
 import Model.Test;
-import com.sun.org.apache.xerces.internal.xs.StringList;
 
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
@@ -183,10 +182,17 @@ class TestsApplier {
                 return haskellResult("RE " + (i + 1), task);
             }
             String response = this.haskellOutput.get(0).split(" ", 2)[1]; // *>TaskName> Output
-            if (!task.getAdditionalTest().isEmpty()) {
+            if (test.hasAnAdditionalTest() & !task.getAdditionalTest().isEmpty()) {
                 File additionalTestInput = new File(parentFolder + File.separator + taskName);
                 try {
                     additionalTestInput.createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    FileWriter writer = new FileWriter(additionalTestInput);
+                    writer.write(response);
+                    writer.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -355,7 +361,7 @@ class TestsApplier {
                     Test.logList(javaOutputWriter, new ArrayList<>(Files.readAllLines(Paths.get(errorFile.getPath()))));
                     return javaResult("RE " + (i + 1), task, testInputFile, testOutputFile, errorFile); //Runtime Error
                 }
-                if (!task.getAdditionalTest().isEmpty()) {
+                if (test.hasAnAdditionalTest() & !task.getAdditionalTest().isEmpty()) {
                     switch (performAnAdditionalTest(task.getAdditionalTest(), testOutputFile, taskName, test.getOutputVariants())) {
                         case 0:
                             continue;

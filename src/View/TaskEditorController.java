@@ -254,7 +254,7 @@ public class TaskEditorController implements Initializable {
                     currentTask.getTestContents().get(i).getInput().forEach(in -> {
                         taskEditorInputTabController.inputArea.setText(taskEditorInputTabController.inputArea.getText() + (!taskEditorInputTabController.inputArea.getText().equals("") ? System.getProperty("line.separator") : "") + in);
                     });
-                    taskEditorInputTabController.applyAdditionalTest.setSelected(currentTask.getTestContents().get(i).isApplyAdditionalTest());
+                    taskEditorInputTabController.applyAdditionalTest.setSelected(currentTask.getTestContents().get(i).hasAnAdditionalTest());
                 }
                 if (taskEditorInputTabController.outputs.getTabs().size() == 0) {
                     taskEditorInputTabController.addOutputsListener(this);
