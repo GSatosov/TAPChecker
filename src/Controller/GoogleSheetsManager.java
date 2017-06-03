@@ -2,11 +2,18 @@ package Controller;
 
 import Model.GlobalSettings;
 import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.services.drive.Drive;
+import com.google.api.services.drive.model.File;
+import com.google.api.services.drive.model.FileList;
 import com.google.api.services.sheets.v4.Sheets;
+import com.google.api.services.sheets.v4.model.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
-class GoogleSheetsManager {
+public class GoogleSheetsManager {
 
     private static volatile Sheets service;
 
@@ -23,6 +30,56 @@ class GoogleSheetsManager {
             }
         }
         return service;
+    }
+
+    public static String createSpreadsheet() throws IOException {
+        Spreadsheet requestBody = new Spreadsheet();
+
+        Sheets sheetsService = getService();
+        Sheets.Spreadsheets.Create request = sheetsService.spreadsheets().create(requestBody);
+
+        Spreadsheet spreadsheet = request.execute();
+
+        List<Request> requests = new ArrayList<>();
+        requests.add(new Request()
+                .setUpdateSpreadsheetProperties(new UpdateSpreadsheetPropertiesRequest()
+                        .setProperties(new SpreadsheetProperties()
+                                .setTitle("Результаты"))
+                        .setFields("title")));
+
+        service.spreadsheets().batchUpdate(spreadsheet.getSpreadsheetId(), new BatchUpdateSpreadsheetRequest().setRequests(requests)).execute();
+
+        Drive driveService = GoogleDriveManager.getDriveService();
+        FileList getFolders = driveService.files().list().setQ("mimeType = 'application/vnd.google-apps.folder' and trashed = false").execute();
+        Optional<File> resultsFolderOpt = getFolders.getFiles().stream().filter(file -> file.getName().equals("Результаты")).findFirst();
+        File resultsFolder;
+        if (!resultsFolderOpt.isPresent()) {
+            File fileMetadata = new File();
+            fileMetadata.setName("Результаты");
+            fileMetadata.setMimeType("application/vnd.google-apps.folder");
+
+            resultsFolder = driveService.files().create(fileMetadata)
+                    .setFields("id")
+                    .execute();
+        }
+        else resultsFolder = resultsFolderOpt.get();
+
+        File file = driveService.files().get(spreadsheet.getSpreadsheetId())
+                .setFields("parents")
+                .execute();
+        StringBuilder previousParents = new StringBuilder();
+        for(String parent: file.getParents()) {
+            previousParents.append(parent);
+            previousParents.append(',');
+        }
+
+        driveService.files().update(spreadsheet.getSpreadsheetId(), null)
+                .setAddParents(resultsFolder.getId())
+                .setRemoveParents(previousParents.toString())
+                .setFields("id, parents")
+                .execute();
+
+        return spreadsheet.getSpreadsheetUrl();
     }
 
 }

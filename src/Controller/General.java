@@ -44,33 +44,37 @@ public class General {
         return startDate;
     }
 
-    private static void setTests(ConcurrentLinkedQueue<Task> tasks, ConcurrentHashMap<Task, ArrayList<Test>> localTests) {
+    private static void setTests(ConcurrentLinkedQueue<Task> tasks, ConcurrentHashMap<Task, ArrayList<Test>> localTests, CountDownLatch setTestsLatch) {
         CountDownLatch latch = new CountDownLatch(tasks.size());
         tasks.forEach(task -> new Thread(() -> {
-            if (localTests.containsKey(task))
+            if (localTests.containsKey(task)) {
                 task.setTestContents(localTests.get(task));
-            else
+                latch.countDown();
+                System.out.println("Tests for " + task.getSubjectName() + " " + task.getName() + " have been set: " + (new Date().getTime() - startDate.getTime()) + " ms.");
+            }
+            else {
                 ExponentialBackOff.execute(() -> {
                     ArrayList<Test> tests = GoogleDriveManager.getTests(task);
                     localTests.put(task, tests);
                     task.setTestContents(tests);
+                    latch.countDown();
+                    System.out.println("Tests for " + task.getSubjectName() + " " + task.getName() + " have been set: " + (new Date().getTime() - startDate.getTime()) + " ms.");
                     return null;
                 });
-
-            System.out.println("Tests for " + task.getSubjectName() + " " + task.getName() + " have been set: " + (new Date().getTime() - startDate.getTime()) + " ms.");
-            latch.countDown();
+            }
         }).start());
         try {
             latch.await();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        if (tasks.size() > 0) {
+        while (tasks.size() > 0) {
             if (tasks.peek().getName().endsWith("hs"))
                 haskellTasksQueue.add(tasks.poll());
             else
                 javaTasksQueue.add(tasks.poll());
         }
+        setTestsLatch.countDown();
     }
 
     public static void runLocalTests(Callback onExit, MainController mainController, ConcurrentLinkedQueue<Task> tasks) {
@@ -83,18 +87,32 @@ public class General {
             if (!localTests.containsKey(v))
                 localTests.put(v, v.getTestContents());
         }));
-        setTests(tasks, localTests);
 
-        TestsApplier testsApplier = new TestsApplier();
-        tasksThatShouldBeCheckedOnPlagiarism = new ArrayList<>();
-        List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
+        CountDownLatch setTestsLatch = new CountDownLatch(1);
 
-        latchForTaskAppliers = new CountDownLatch(2);
+        // setTests
+        new Thread(() -> {
+            setTests(tasks, localTests, setTestsLatch);
+        }).start();
 
-        ThreadGroup tGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), "Tasks Runners");
-        haskellTasksThread(tGroup, testsApplier, results).start();
-        javaTasksThread(tGroup, testsApplier, results).start();
-        resultsHandler(onExit, mainController, results).start();
+        // test appliers
+        new Thread(() -> {
+            try {
+                setTestsLatch.await();
+                TestsApplier testsApplier = new TestsApplier();
+                tasksThatShouldBeCheckedOnPlagiarism = new ArrayList<>();
+                List<Result> results = Collections.synchronizedList(new ArrayList<Result>());
+
+                latchForTaskAppliers = new CountDownLatch(2);
+
+                ThreadGroup tGroup = new ThreadGroup(Thread.currentThread().getThreadGroup(), "Tasks Runners");
+                haskellTasksThread(tGroup, testsApplier, results).start();
+                javaTasksThread(tGroup, testsApplier, results).start();
+                resultsHandler(onExit, mainController, results).start();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
 
     }
 

@@ -89,14 +89,19 @@ public class GlobalSettings implements Serializable {
     }
 
 
-    private transient static final String host = "imap.";
+    private transient static final String hostImap = "imap.";
+    private transient static final String hostSmtp = "smtp.";
 
-    public static String getHost() {
-        return host + getEmail().split("@")[1];
+    public static String getHostImap() {
+        return hostImap + getEmail().split("@")[1];
+    }
+
+    public static String getHostSmtp() {
+        return hostSmtp + getEmail().split("@")[1];
     }
 
     public static String getHostByEmail(String email) {
-        return host + email.split("@")[1];
+        return hostImap + email.split("@")[1];
     }
 
 
@@ -165,6 +170,18 @@ public class GlobalSettings implements Serializable {
 
     private transient static final String globalSettingsFileName = "globalSettings.dat";
 
+    private String autoresponderTemplate = "";
+
+    private String autoresponderEmailSubject = "";
+
+    public void setAutoresponderTemplate(String autoresponderTemplate) {
+        this.autoresponderTemplate = autoresponderTemplate;
+    }
+
+    public String getAutoresponderTemplate() {
+        return this.autoresponderTemplate;
+    }
+
     public static String getGlobalSettingsFileName() {
         return globalSettingsFileName;
     }
@@ -184,4 +201,11 @@ public class GlobalSettings implements Serializable {
 
     }
 
+    public String getAutoresponderEmailSubject() {
+        return autoresponderEmailSubject;
+    }
+
+    public void setAutoresponderEmailSubject(String autoresponderEmailSubject) {
+        this.autoresponderEmailSubject = autoresponderEmailSubject;
+    }
 }

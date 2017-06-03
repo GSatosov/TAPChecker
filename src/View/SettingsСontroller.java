@@ -1,7 +1,10 @@
 package View;
 
+import Controller.GoogleSheetsManager;
 import Model.GlobalSettings;
 import javafx.beans.binding.Bindings;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -14,26 +17,27 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * Created by Arseniy Nazarov on 27.04.17.
  */
 public class SettingsСontroller implements Initializable {
 
-    //Primary settings tab
+    @FXML
+    public TextField emailSubject;
+
     @FXML
     TextField tableLink;
     @FXML
-    Button addLink;
+    Button saveLink;
     @FXML
     Button generateTableLink;
 
@@ -87,7 +91,7 @@ public class SettingsСontroller implements Initializable {
 
         tableLink.setText(GlobalSettings.getInstance().getResultsTableURL());
 
-        addLink.setOnAction(event -> {
+        saveLink.setOnAction(event -> {
             Pattern pattern = Pattern.compile("/spreadsheets/d/([a-zA-Z0-9-_]+)");
             Matcher matcher = pattern.matcher(tableLink.getText());
             if (matcher.find()) {
@@ -181,31 +185,24 @@ public class SettingsСontroller implements Initializable {
         });
 
         generateTableLink.setOnAction(event -> {
-            //
+            try {
+                tableLink.setText(GoogleSheetsManager.createSpreadsheet());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         });
 
-        /*autoresponderToggle.setSelected(GlobalSettings.getInstance().getMasksOn());
+        emailTemplate.textProperty().addListener((observable, oldValue, newValue) -> GlobalSettings.getInstance().setAutoresponderTemplate(newValue));
 
-        emailTemplate.getParagraphs().addAll(GlobalSettings.getInstance().getLetterMask());
-        wrongGroup.getParagraphs().addAll(GlobalSettings.getInstance().getWrongGroup());
-        wrongSubject.getParagraphs().addAll(GlobalSettings.getInstance().getWrongSubject());
-        wrongTask.getParagraphs().addAll(GlobalSettings.getInstance().getWrongTask());
-
-        //shouldn't work
-        addMasks.setOnAction(event -> {
-            GlobalSettings.getInstance().setLetterMask(new ArrayList<>((Collection<? extends String>) emailTemplate.getParagraphs()));
-            GlobalSettings.getInstance().setWrongGroup(new ArrayList<>((Collection<? extends String>) wrongGroup.getParagraphs()));
-            GlobalSettings.getInstance().setWrongSubject(new ArrayList<>((Collection<? extends String>) wrongSubject.getParagraphs()));
-            GlobalSettings.getInstance().setWrongTask(new ArrayList<>((Collection<? extends String>) wrongTask.getParagraphs()));
-        });*/
+        emailSubject.textProperty().addListener((observable, oldValue, newValue) -> GlobalSettings.getInstance().setAutoresponderEmailSubject(newValue));
 
         close.setOnAction(event -> {
-            ((Stage)(((Button)event.getSource()).getScene().getWindow())).close();
-            try {
-                GlobalSettings.saveFile();
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
+            ((Button)event.getSource()).getScene().getWindow().fireEvent(
+                    new WindowEvent(
+                            ((Button)event.getSource()).getScene().getWindow(),
+                            WindowEvent.WINDOW_CLOSE_REQUEST
+                    )
+            );
         });
     }
 }

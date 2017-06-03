@@ -18,6 +18,7 @@ public class ResultsSender implements Runnable {
 
     @Override
     public void run() {
+        if (LocalSettings.getInstance().getResults().size() == 0) return;
         System.out.println("Running thread for results sender...");
         try {
             final Sheets service = GoogleSheetsManager.getService();
@@ -29,23 +30,43 @@ public class ResultsSender implements Runnable {
                 HashMap<String, ArrayList<String>> taskNumbersForSubjects = GoogleDriveManager.getTaskNumbersForSubjects();
                 final CellFormat centerFormat = new CellFormat().setHorizontalAlignment("CENTER");
                 final CellFormat centerBoldFormat = new CellFormat().setHorizontalAlignment("CENTER").setTextFormat(new TextFormat().setBold(true));
+
+                Spreadsheet responseAllSheets = service.spreadsheets().get(spreadsheetId).execute();
+                for (int i = 1; i < responseAllSheets.getSheets().size(); i++) {
+                    Sheet sheet = responseAllSheets.getSheets().get(i);
+                    BatchUpdateSpreadsheetRequest deleteSheetBody = new BatchUpdateSpreadsheetRequest().setRequests(
+                            Arrays.asList(new Request().setDeleteSheet(new DeleteSheetRequest().setSheetId(sheet.getProperties().getSheetId())))
+                    );
+                    try {
+                        service.spreadsheets().batchUpdate(spreadsheetId, deleteSheetBody).execute();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                        Thread.currentThread().interrupt();
+                    }
+                }
+
+                List<Request> renameRequests = new ArrayList<>();
+                renameRequests.add(new Request()
+                        .setUpdateSheetProperties(new UpdateSheetPropertiesRequest()
+                                .setProperties(new SheetProperties()
+                                        .setTitle(" ").setSheetId(responseAllSheets.getSheets().get(0).getProperties().getSheetId()))
+                                .setFields("title")));
+
+                service.spreadsheets().batchUpdate(spreadsheetId, new BatchUpdateSpreadsheetRequest().setRequests(renameRequests)).execute();
+
                 // grouping results by subjects
                 LocalSettings.getInstance().getResults().stream().collect(Collectors.groupingBy(Result::getSubject)).forEach((subject, subjectResults) -> {
                     ValueRange response;
                     // get or create sheet for subject
+                    BatchUpdateSpreadsheetRequest addSheetBody = new BatchUpdateSpreadsheetRequest().setRequests(
+                            Arrays.asList(new Request().setAddSheet(new AddSheetRequest().setProperties(
+                                    new SheetProperties().setTitle(subject)))));
                     try {
+                        BatchUpdateSpreadsheetResponse responseCreate = service.spreadsheets().batchUpdate(spreadsheetId, addSheetBody).execute();
                         response = service.spreadsheets().values().get(spreadsheetId, subject).execute();
-                    } catch (IOException e) {
-                        BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(
-                                Arrays.asList(new Request().setAddSheet(new AddSheetRequest().setProperties(
-                                        new SheetProperties().setTitle(subject)))));
-                        try {
-                            BatchUpdateSpreadsheetResponse responseCreate = service.spreadsheets().batchUpdate(spreadsheetId, body).execute();
-                            response = service.spreadsheets().values().get(spreadsheetId, subject).execute();
-                        } catch (IOException e1) {
-                            e1.printStackTrace();
-                            Thread.currentThread().interrupt();
-                        }
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                        Thread.currentThread().interrupt();
                     }
                     Sheets.Spreadsheets.Get requestSheetId = null;
                     try {
@@ -69,7 +90,7 @@ public class ResultsSender implements Runnable {
                         subjectResults.stream().collect(Collectors.groupingBy(Result::getGroup)).forEach((group, groupResults) -> {
                             ArrayList<String> taskNumbersForSubject = taskNumbersForSubjects.get(subject);
                             ArrayList<String> groupAndTasks = new ArrayList<>();
-                            groupAndTasks.add("Группа " + group);
+                            groupAndTasks.add("Group " + group);
                             requests.add(new Request().setRepeatCell(new RepeatCellRequest()
                                     .setRange(new GridRange().setSheetId(sheetID).setStartRowIndex(lineIndex.get()).setEndRowIndex(lineIndex.get() + 2))
                                     .setCell(new CellData().setUserEnteredFormat(centerBoldFormat))

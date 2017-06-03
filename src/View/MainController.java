@@ -109,7 +109,7 @@ public class MainController implements Initializable {
                 // group by group
                 subjectResults.stream().collect(Collectors.groupingBy(Result::getGroup)).forEach((group, groupResults) -> {
                     HashMap<String, ResultsTableCellObject> groupHM = new HashMap<>();
-                    groupHM.put("Full Name", new ResultsTableCellObject("Группа " + group));
+                    groupHM.put("Full Name", new ResultsTableCellObject("Group " + group));
                     currentTable.getItems().add(groupHM);
 
                     Set<String> studentsNames = groupResults.stream().map(r -> r.getStudent().getName()).collect(Collectors.toSet());
@@ -150,7 +150,7 @@ public class MainController implements Initializable {
                         super.updateItem(item, empty);
                         if (item != null) {
                             setText(item.getItem());
-                            if (item.getItem().startsWith("Группа ")) {
+                            if (item.getItem().startsWith("Group ")) {
                                 setStyle("-fx-font-weight:bold;");
                             } else if (item.getResult() != null && item.getResult().getTask().getReceivedDate().compareTo(item.getResult().getTask().getDeadline()) > 0) {
                                 setStyle("-fx-background-color: " + (item.getResult().getTask().hasHardDeadline() ? "red" : "yellow") + ";");
@@ -199,52 +199,31 @@ public class MainController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         new File(GlobalSettings.getDataFolder()).mkdirs();
 
-        runLocalTasks.setManaged(LocalSettings.getInstance().getResults().size() != 0);
-        runFailedTasks.setManaged(LocalSettings.getInstance().getFailedTasks().size() != 0);
-        plagiarismResults.setManaged(LocalSettings.getInstance().getPlagiarismResults().size() != 0);
-        editTasks.setManaged(!GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty());
+        configureButtons();
         runTests.setOnAction(event -> {
-            runTests.setDisable(true);
-            runLocalTasks.setDisable(true);
-            runFailedTasks.setDisable(true);
+            setMenuDisabled(true);
             try {
                 General.getResults(() -> {
-                    runTests.setDisable(false);
-                    runLocalTasks.setDisable(false);
-                    runFailedTasks.setDisable(false);
-                    runLocalTasks.setManaged(LocalSettings.getInstance().getResults().size() != 0);
-                    runFailedTasks.setManaged(LocalSettings.getInstance().getFailedTasks().size() != 0);
-                    plagiarismResults.setManaged(LocalSettings.getInstance().getPlagiarismResults().size() != 0);
+                    setMenuDisabled(false);
+                    configureButtons();
                 }, this);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         });
         runLocalTasks.setOnAction(event -> {
-            runTests.setDisable(true);
-            runLocalTasks.setDisable(true);
-            runFailedTasks.setDisable(true);
+            setMenuDisabled(true);
             General.runLocalTests(() -> {
-                        runTests.setDisable(false);
-                        runLocalTasks.setDisable(false);
-                        runFailedTasks.setDisable(false);
-                        runLocalTasks.setManaged(LocalSettings.getInstance().getResults().size() != 0);
-                        runFailedTasks.setManaged(LocalSettings.getInstance().getFailedTasks().size() != 0);
-                        plagiarismResults.setManaged(LocalSettings.getInstance().getPlagiarismResults().size() != 0);
+                        setMenuDisabled(false);
+                        configureButtons();
                     }, this,
                     new ConcurrentLinkedQueue<>(LocalSettings.getInstance().getResults().stream().map(Result::getTask).collect(Collectors.toCollection(ArrayList::new))));
         });
         runFailedTasks.setOnAction(event -> {
-            runTests.setDisable(true);
-            runLocalTasks.setDisable(true);
-            runFailedTasks.setDisable(true);
+            setMenuDisabled(true);
             General.runLocalTests(() -> {
-                        runTests.setDisable(false);
-                        runLocalTasks.setDisable(false);
-                        runFailedTasks.setDisable(false);
-                        runLocalTasks.setManaged(LocalSettings.getInstance().getResults().size() != 0);
-                        runFailedTasks.setManaged(LocalSettings.getInstance().getFailedTasks().size() != 0);
-                        plagiarismResults.setManaged(LocalSettings.getInstance().getPlagiarismResults().size() != 0);
+                        setMenuDisabled(false);
+                        configureButtons();
                     }, this,
                     LocalSettings.getInstance().getFailedTasks());
         });
@@ -279,11 +258,42 @@ public class MainController implements Initializable {
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 }
-                editTasks.setManaged(!GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty());
+                configureButtons();
             }).start());
             settingsFrame.show();
         });
-        editTasks.setOnAction(event -> new TaskEditorController().getStage().show());
+        editTasks.setOnAction(event -> {
+            new TaskEditorController().getStage().show();
+        });
+    }
+
+    public void setMenuDisabled(boolean disabled) {
+        runTests.setDisable(disabled);
+        runLocalTasks.setDisable(disabled);
+        runFailedTasks.setDisable(disabled);
+        plagiarismResults.setDisable(disabled);
+        editTasks.setDisable(disabled);
+        settings.setDisable(disabled);
+    }
+
+    public void configureButtons() {
+        runLocalTasks.setManaged(
+            LocalSettings.getInstance().getResults().size() != 0 &&
+            !GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() &&
+            GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty)
+        );
+        runFailedTasks.setManaged(
+            LocalSettings.getInstance().getFailedTasks().size() != 0 &&
+            !GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() &&
+            GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty)
+        );
+        plagiarismResults.setManaged(
+            LocalSettings.getInstance().getPlagiarismResults().size() != 0 &&
+            !GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() &&
+            GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty)
+        );
+        editTasks.setManaged(!GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() && GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty));
+        runTests.setManaged(!GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() && GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty));
     }
 
     public static void showEmailHandlerWindow(EmailHandlerData emailHandlerData) {

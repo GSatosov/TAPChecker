@@ -28,7 +28,7 @@
                             <Text text="Results table:"/>
                             <HBox spacing="10">
                                 <TextField fx:id="tableLink" promptText="Enter the link to the table..."/>
-                                <Button fx:id="addLink" text="Save"/>
+                                <Button fx:id="saveLink" text="Save"/>
                                 <Button fx:id="generateTableLink" text="Generate table..."/>
                             </HBox>
                             <Separator/>
@@ -52,7 +52,13 @@
                 <AnchorPane>
                     <ScrollPane fitToWidth="true" AnchorPane.topAnchor="10" AnchorPane.rightAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.bottomAnchor="0" style="-fx-background-color:transparent;">
                         <VBox spacing="10">
-                            <Text text="Write a letter template here for the autoresponder. You can use next masks:&#10;&#9;$emailSubject - subject from email&#10;&#9;$subject - estimated subject from email&#10;&#9;$group - estimated student's group from email&#10;&#9;$name - estimated student's name from email&#10;&#9;$date - date, when email was received&#10;&#9;$currentDate - current date (format dd.MM.yyyy)&#10;&#9;$currentTime - current time (format HH:mm)"/>
+                            <Text text="Write a letter template here for the autoresponder. You can use next masks:&#10;&#9;$emailSubject - subject from email&#10;&#9;$subject - estimated subject from email&#10;&#9;$group - estimated student's group from email&#10;&#9;$name - estimated student's name from email&#10;&#9;$date - date, when email was received (format dd.MM.yyyy HH:mm)&#10;&#9;$currentDate - current date (format dd.MM.yyyy)&#10;&#9;$currentTime - current time (format HH:mm)"/>
+                            <Separator/>
+                            <Text text="Email subject:"/>
+                            <HBox>
+                                <TextField fx:id="emailSubject" HBox.hgrow="ALWAYS" promptText="Write a letter subject here..."/>
+                            </HBox>
+                            <Text text="Email body:"/>
                             <HBox>
                                 <TextArea fx:id="emailTemplate" HBox.hgrow="ALWAYS" promptText="Write a letter template here..."/>
                             </HBox>

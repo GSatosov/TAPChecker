@@ -8,7 +8,7 @@
             prefWidth="350"
             prefHeight="150">
 
-    <VBox spacing="10" AnchorPane.leftAnchor="10" AnchorPane.topAnchor="10" AnchorPane.bottomAnchor="10" AnchorPane.rightAnchor="10" >
+    <VBox spacing="10" AnchorPane.leftAnchor="10" AnchorPane.topAnchor="10" AnchorPane.bottomAnchor="10" AnchorPane.rightAnchor="10">
         <Label text="Email:"/>
         <HBox spacing="10">
             <TextField fx:id="emailField" HBox.hgrow="ALWAYS" promptText="Enter the email..."/>

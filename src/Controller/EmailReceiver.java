@@ -1,16 +1,14 @@
 package Controller;
 
 import Model.*;
-import View.EmailHandlerController;
 import View.MainController;
 import javafx.application.Platform;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
 
 import javax.crypto.NoSuchPaddingException;
 import javax.mail.*;
+import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMessage;
 import java.io.File;
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -70,11 +68,10 @@ public class EmailReceiver {
     }
 
 
-
     /*
     Save all message attachments in data folder
      */
-    private static ArrayList<Task> saveMessageAttachments(Message message) throws IOException, MessagingException {
+    private static ArrayList<Task> saveMessageAttachments(Message message, HashMap<String, ArrayList<Task>> tasksAndSubjects) throws IOException, MessagingException {
         String emailSubject = message.getSubject();
 
         // name, group, subject
@@ -218,8 +215,7 @@ public class EmailReceiver {
 
         CountDownLatch emailHandlerLatch = new CountDownLatch(1);
 
-        EmailHandlerData emailHandlerData = new EmailHandlerData(emailSubject, finalSubject, finalGroup, finalStudentName, emailHandlerLatch);
-
+        EmailHandlerData emailHandlerData = new EmailHandlerData(emailSubject, finalSubject, finalGroup, finalStudentName, emailHandlerLatch, message.getReceivedDate(), message.getFrom());
 
         if (!isCorrectSubject.get() || !isCorrectGroup.get() || !isCorrectStudentName.get()) {
             Platform.runLater(() -> {
@@ -235,7 +231,15 @@ public class EmailReceiver {
             e.printStackTrace();
         }
 
-        if (emailHandlerData.getSkip())
+        if (emailHandlerData.isReply()) {
+            reply(emailHandlerData);
+        }
+
+        if (emailHandlerData.isSpam()) {
+            toSpam(message);
+        }
+
+        if (emailHandlerData.isSkip())
             return new ArrayList<>();
         else {
             String studentNameData = emailHandlerData.getStudentName().toString();
@@ -248,20 +252,40 @@ public class EmailReceiver {
                 for (int i = 0; i < multiPart.getCount(); i++) {
                     MimeBodyPart part = (MimeBodyPart) multiPart.getBodyPart(i);
                     if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
-                        String folder = GlobalSettings.getDataFolder() + "/" + Transliteration.cyr2lat(subjectData) + "/" + Transliteration.cyr2lat(groupData) + "/" + Transliteration.cyr2lat(studentNameData.replaceAll(" ", "_")) + "/" + (new SimpleDateFormat(GlobalSettings.getSourcesDateFormat())).format(message.getReceivedDate());
-                        File dir = new File(folder);
-                        dir.mkdirs();
-                        File f = new File(folder + "/" + part.getFileName());
-                        part.saveFile(f);
-                        Task task = new Task(part.getFileName(), subjectData, f.getAbsolutePath(), message.getReceivedDate());
-                        task.setAuthor(new Student(studentNameData, groupData));
-                        tasks.add(task);
+                        if (tasksAndSubjects.get(emailHandlerData.getSubject().toString()).stream().anyMatch(task -> {
+                            try {
+                                return task.getName().equals(part.getFileName().substring(0, part.getFileName().lastIndexOf(".")));
+                            } catch (MessagingException e) {
+                                e.printStackTrace();
+                            }
+                            return false;
+                        })) {
+                            String folder = GlobalSettings.getDataFolder() + "/" + Transliteration.cyr2lat(subjectData) + "/" + Transliteration.cyr2lat(groupData) + "/" + Transliteration.cyr2lat(studentNameData.replaceAll(" ", "_")) + "/" + (new SimpleDateFormat(GlobalSettings.getSourcesDateFormat())).format(message.getReceivedDate());
+                            File dir = new File(folder);
+                            dir.mkdirs();
+                            File f = new File(folder + "/" + part.getFileName());
+                            part.saveFile(f);
+                            Task task = new Task(part.getFileName(), subjectData, f.getAbsolutePath(), message.getReceivedDate());
+                            task.setAuthor(new Student(studentNameData, groupData));
+                            tasks.add(task);
+                        }
                     }
                 }
             }
             return tasks;
         }
     }
+
+    private static void toSpam(Message message) throws MessagingException {
+        message.setFlag(Flags.Flag.DELETED, true);
+    }
+
+    private static void reply(EmailHandlerData emailHandlerData) throws MessagingException {
+        messagesForReply.add(emailHandlerData);
+    }
+
+    private static ArrayList<EmailHandlerData> messagesForReply;
+    private static CountDownLatch replyMessagesLatch;
 
     /*
     Retrieve messages data from inbox folder
@@ -271,24 +295,62 @@ public class EmailReceiver {
         props.put("mail.store.protocol", "imaps");
         Session session = Session.getInstance(props);
         Store store = session.getStore();
-        store.connect(GlobalSettings.getHost(), GlobalSettings.getEmail(), GlobalSettings.getPassword());
+        store.connect(GlobalSettings.getHostImap(), GlobalSettings.getEmail(), GlobalSettings.getPassword());
         Folder inbox = store.getFolder("INBOX");
         Message[] messages = receiveEmails(inbox);
         Date lastDateEmailChecking = LocalSettings.getInstance().getLastDateEmailChecked();
         Date newDateEmailChecking = new Date();
         downloadedMessagesCount = new CountDownLatch(messages.length);
         localTests = new ConcurrentHashMap<>();
+        messagesForReply = new ArrayList<>();
+        replyMessagesLatch = new CountDownLatch(1);
+        new Thread(Thread.currentThread().getThreadGroup(), () -> {
+            try {
+                replyMessagesLatch.await();
+
+                Properties propsSmtp = new Properties();
+                propsSmtp.put("mail.smtp.auth", "true");
+                propsSmtp.put("mail.smtp.starttls.enable", "true");
+                propsSmtp.put("mail.smtp.host", GlobalSettings.getHostSmtp());
+
+                // Get the Session object.
+                Session smtpSession = Session.getInstance(propsSmtp,
+                        new javax.mail.Authenticator() {
+                            protected PasswordAuthentication getPasswordAuthentication() {
+                                return new PasswordAuthentication(GlobalSettings.getEmail(), GlobalSettings.getPassword());
+                            }
+                        });
+
+                messagesForReply.forEach(emailHandlerData -> {
+                    try {
+                        Message message = new MimeMessage(smtpSession);
+                        message.setFrom(new InternetAddress(GlobalSettings.getEmail()));
+                        message.setRecipients(Message.RecipientType.TO, emailHandlerData.getReceivedFrom());
+                        message.setSubject(emailHandlerData.getReplySubject());
+                        message.setText(emailHandlerData.getReplyText());
+                        Transport.send(message);
+                    } catch (MessagingException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
         HashMap<String, ArrayList<Task>> subjectsAndTasks = LocalSettings.getInstance().getSubjectsAndTasks();
         subjectsAndTasks.keySet().forEach(key -> subjectsAndTasks.get(key).forEach(value -> {
             if (!localTests.containsKey(value))
                 localTests.put(value, value.getTestContents());
         }));
+
+        HashMap<String, ArrayList<Task>> tasksAndSubjects = GoogleDriveManager.getTasksAndSubjects();
+
         Arrays.stream(messages).forEach(message -> {
             try {
                 if (lastDateEmailChecking.compareTo(message.getReceivedDate()) < 0) {
                     (new Thread(Thread.currentThread().getThreadGroup(), () -> {
                         try {
-                            ArrayList<Task> attachments = saveMessageAttachments(message);
+                            ArrayList<Task> attachments = saveMessageAttachments(message, tasksAndSubjects);
                             attachments.forEach(att -> (new Thread(Thread.currentThread().getThreadGroup(), () -> {
                                 if (localTests.containsKey(att)) {
                                     att.setTestContents(localTests.get(att));
@@ -333,6 +395,7 @@ public class EmailReceiver {
                                  */
                                 LocalSettings.getInstance().saveSettings();
                                 inbox.close(false);
+                                replyMessagesLatch.countDown();
                             }
                         } catch (IOException | MessagingException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException e) {
                             e.printStackTrace();

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.scene.text.Text?>
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="View.ReplyController">
+
+    <VBox spacing="10" AnchorPane.leftAnchor="10" AnchorPane.topAnchor="10" AnchorPane.bottomAnchor="10" AnchorPane.rightAnchor="10">
+        <Text text="Email subject:"/>
+        <TextField fx:id="emailSubject" HBox.hgrow="ALWAYS" promptText="Write a letter template here..."/>
+        <Text text="Email body:"/>
+        <TextArea fx:id="emailBody" HBox.hgrow="ALWAYS" promptText="Write a letter template here..."/>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Button fx:id="reply" text="Reply"/>
+            <Button fx:id="cancel" text="Cancel"/>
+        </HBox>
+    </VBox>
+
+</AnchorPane>

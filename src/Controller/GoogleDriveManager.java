@@ -80,7 +80,7 @@ public class GoogleDriveManager {
      * @return an authorized Drive client service
      * @throws IOException
      */
-    private static Drive getDriveService() throws IOException {
+    static Drive getDriveService() throws IOException {
         if (service == null) {
             Credential credential = authorize();
             service = new Drive.Builder(
