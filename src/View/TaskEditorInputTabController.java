@@ -2,6 +2,7 @@ package View;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextArea;
 
@@ -20,9 +21,11 @@ public class TaskEditorInputTabController implements Initializable {
     @FXML
     public TabPane outputs;
 
+    @FXML
+    public CheckBox applyAdditionalTest;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-
     }
 
     boolean isListenerSetted = false;

@@ -204,7 +204,9 @@ public class GoogleDriveManager {
                         aJO.forEach(jAJO -> outputVar.add((String) jAJO));
                         output.add(outputVar);
                     });
-                    testsResult.add(new Test(input, output));
+                    Test test = new Test(input, output);
+                    test.setApplyAdditionalTest(jOnj.getBoolean("applyAdditionalTest"));
+                    testsResult.add(test);
                 });
                 return testsResult;
             }
@@ -321,7 +323,9 @@ public class GoogleDriveManager {
                                 aJO.forEach(jAJO -> outputVar.add((String) jAJO));
                                 output.add(outputVar);
                             });
-                            testsResult.add(new Test(input, output));
+                            Test test = new Test(input, output);
+                            test.setApplyAdditionalTest(jOnj.getBoolean("applyAdditionalTest"));
+                            testsResult.add(test);
                         });
                         task.setTestContents(testsResult);
                         tasks.add(task);
@@ -402,6 +406,7 @@ public class GoogleDriveManager {
                 testOutput.put(outputJson);
             });
             testJSON.put("output", testOutput);
+            testJSON.put("applyAdditionalTest", test.isApplyAdditionalTest());
 
             tests.put(testJSON);
         });

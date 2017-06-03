@@ -119,6 +119,7 @@ public class TaskEditorController implements Initializable {
                             }
                             addTabOutput("+", newValue.intValue());
                         }
+
                     }
                 }
             });
@@ -208,7 +209,9 @@ public class TaskEditorController implements Initializable {
                             TaskEditorOutputTabController taskEditorOutputTabController = (TaskEditorOutputTabController) taskEditorInputTabController.outputs.getTabs().get(j).getUserData();
                             outputTests.add(Arrays.stream(taskEditorOutputTabController.outputArea.getText().split("\n")).collect(Collectors.toCollection(ArrayList::new)));
                         }
-                        tests.add(new Test(inputTest, outputTests));
+                        Test test = new Test(inputTest, outputTests);
+                        test.setApplyAdditionalTest(taskEditorInputTabController.applyAdditionalTest.isSelected());
+                        tests.add(test);
                     }
 
                     currentTask.setTestContents(tests);
@@ -251,6 +254,7 @@ public class TaskEditorController implements Initializable {
                     currentTask.getTestContents().get(i).getInput().forEach(in -> {
                         taskEditorInputTabController.inputArea.setText(taskEditorInputTabController.inputArea.getText() + (!taskEditorInputTabController.inputArea.getText().equals("") ? System.getProperty("line.separator") : "") + in);
                     });
+                    taskEditorInputTabController.applyAdditionalTest.setSelected(currentTask.getTestContents().get(i).isApplyAdditionalTest());
                 }
                 if (taskEditorInputTabController.outputs.getTabs().size() == 0) {
                     taskEditorInputTabController.addOutputsListener(this);
@@ -330,7 +334,9 @@ public class TaskEditorController implements Initializable {
     private Task emptyTask() {
         Task task = new Task();
         ArrayList<Test> tests = new ArrayList<>();
-        tests.add(new Test(new ArrayList<>(), emptyOutputVariants()));
+        Test test = new Test(new ArrayList<>(), emptyOutputVariants());
+        test.setApplyAdditionalTest(true);
+        tests.add(test);
         task.setTestContents(tests);
         return task;
     }

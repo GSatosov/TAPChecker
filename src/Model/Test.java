@@ -12,6 +12,7 @@ import java.util.List;
 public class Test implements Serializable {
     private ArrayList<String> input;
     private ArrayList<ArrayList<String>> outputVariants;
+    private boolean applyAdditionalTest;
 
     public void removeOutputVariant(int i) {
         this.outputVariants.remove(i);
@@ -81,6 +82,14 @@ public class Test implements Serializable {
     public boolean equals(Object obj) {
         Test otherTest = (Test) obj;
         return otherTest.getInput().equals(this.getInput()) && this.getOutputVariants().equals(otherTest.getOutputVariants());
+    }
+
+    public boolean isApplyAdditionalTest() {
+        return applyAdditionalTest;
+    }
+
+    public void setApplyAdditionalTest(boolean applyAdditionalTest) {
+        this.applyAdditionalTest = applyAdditionalTest;
     }
 }
 

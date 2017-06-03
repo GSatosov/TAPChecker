@@ -6,12 +6,17 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.Tab?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.CheckBox?>
 <Tab xmlns="http://javafx.com/javafx"
      xmlns:fx="http://javafx.com/fxml"
      fx:controller="View.TaskEditorInputTabController">
     <AnchorPane>
         <HBox AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.topAnchor="0" spacing="10">
-            <TextArea HBox.hgrow="ALWAYS" fx:id="inputArea" promptText="Enter input here..."/>
+            <VBox spacing="10">
+                <TextArea HBox.hgrow="ALWAYS" fx:id="inputArea" promptText="Enter input here..."/>
+                <CheckBox fx:id="applyAdditionalTest" text="Apply an additional test for this test?" selected="true"/>
+            </VBox>
             <TabPane fx:id="outputs" HBox.hgrow="ALWAYS">
 
             </TabPane>
