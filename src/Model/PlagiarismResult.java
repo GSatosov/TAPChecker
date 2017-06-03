@@ -85,4 +85,9 @@ public class PlagiarismResult implements Serializable {
                 this.taskFromFirstStudent.getAuthor().equals(result.taskFromFirstStudent.getAuthor()) &&
                 this.taskFromSecondStudent.getAuthor().equals(result.taskFromSecondStudent.getAuthor());
     }
+
+    @Override
+    public int hashCode() {
+        return this.taskFromFirstStudent.getName().hashCode() + (this.taskFromFirstStudent.getAuthor().hashCode() + this.taskFromSecondStudent.getAuthor().hashCode()) * 42;
+    }
 }

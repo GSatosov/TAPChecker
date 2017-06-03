@@ -33,4 +33,9 @@ public class Student implements Serializable {
         Student student = (Student) obj;
         return this.name.equals(student.getName()) && this.groupName.equals(student.getGroupName());
     }
+
+    @Override
+    public int hashCode() {
+        return this.name.hashCode() + this.groupName.hashCode() * 42;
+    }
 }

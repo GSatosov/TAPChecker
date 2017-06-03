@@ -84,6 +84,11 @@ public class Test implements Serializable {
         return otherTest.getInput().equals(this.getInput()) && this.getOutputVariants().equals(otherTest.getOutputVariants());
     }
 
+    @Override
+    public int hashCode() {
+        return this.getInput().hashCode() + this.getOutputVariants().hashCode() * 42;
+    }
+
     public boolean hasAnAdditionalTest() {
         return applyAdditionalTest;
     }

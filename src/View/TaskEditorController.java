@@ -226,8 +226,20 @@ public class TaskEditorController implements Initializable {
                     tasksList.getItems().clear();
                     tasksList.getItems().addAll(LocalSettings.getInstance().getSubjectsAndTasks().get(subjectsList.getValue().toString()).stream().sorted(Comparator.comparing(Task::getTaskCode)).map(task -> task.getTaskCode() + ": " + task.getName()).collect(Collectors.toList()));
                     tasksList.getItems().add("New task...");
-                    tasksList.getSelectionModel().selectLast();
+                    tasksList.getSelectionModel().select(currentTask.getTaskCode() + ": " + currentTask.getName());
                 }
+            });
+
+            additionalTest.textProperty().addListener((observable, oldValue, newValue) -> {
+                inputs.getTabs().forEach(tab -> {
+                    TaskEditorInputTabController taskEditorInputTabController = (TaskEditorInputTabController) tab.getUserData();
+                    if (oldValue.equals("") && !newValue.equals("")) {
+                        taskEditorInputTabController.applyAdditionalTest.setSelected(true);
+                    }
+                    else if (newValue.equals("") && !oldValue.equals("")) {
+                        taskEditorInputTabController.applyAdditionalTest.setSelected(false);
+                    }
+                });
             });
         } catch (IOException e) {
             e.printStackTrace();
@@ -254,7 +266,9 @@ public class TaskEditorController implements Initializable {
                     currentTask.getTestContents().get(i).getInput().forEach(in -> {
                         taskEditorInputTabController.inputArea.setText(taskEditorInputTabController.inputArea.getText() + (!taskEditorInputTabController.inputArea.getText().equals("") ? System.getProperty("line.separator") : "") + in);
                     });
-                    taskEditorInputTabController.applyAdditionalTest.setSelected(currentTask.getTestContents().get(i).hasAnAdditionalTest());
+                    taskEditorInputTabController.applyAdditionalTest.setSelected(
+                        !currentTask.getAdditionalTest().equals("") && currentTask.getTestContents().get(i).hasAnAdditionalTest()
+                    );
                 }
                 if (taskEditorInputTabController.outputs.getTabs().size() == 0) {
                     taskEditorInputTabController.addOutputsListener(this);
@@ -317,7 +331,7 @@ public class TaskEditorController implements Initializable {
             tab.setOnClosed(event -> {
                 for (int i = 0; i < taskEditorInputTabController.outputs.getTabs().size() - 1; i++) {
                     taskEditorInputTabController.outputs.getTabs().get(i).setText((i + 1) + "");
-                    taskEditorInputTabController.outputs.getTabs().get(i).setClosable(inputs.getTabs().size() > 2);
+                    taskEditorInputTabController.outputs.getTabs().get(i).setClosable(taskEditorInputTabController.outputs.getTabs().size() > 2);
                 }
             });
             taskEditorInputTabController.outputs.getTabs().add(tab);
@@ -334,9 +348,7 @@ public class TaskEditorController implements Initializable {
     private Task emptyTask() {
         Task task = new Task();
         ArrayList<Test> tests = new ArrayList<>();
-        Test test = new Test(new ArrayList<>(), emptyOutputVariants());
-        test.setApplyAdditionalTest(true);
-        tests.add(test);
+        tests.add(new Test(new ArrayList<>(), emptyOutputVariants()));
         task.setTestContents(tests);
         return task;
     }
