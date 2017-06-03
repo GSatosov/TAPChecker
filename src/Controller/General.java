@@ -51,8 +51,7 @@ public class General {
                 task.setTestContents(localTests.get(task));
                 latch.countDown();
                 System.out.println("Tests for " + task.getSubjectName() + " " + task.getName() + " have been set: " + (new Date().getTime() - startDate.getTime()) + " ms.");
-            }
-            else {
+            } else {
                 ExponentialBackOff.execute(() -> {
                     ArrayList<Test> tests = GoogleDriveManager.getTests(task);
                     localTests.put(task, tests);
@@ -291,9 +290,9 @@ public class General {
         ArrayList<Task> tasks = LocalSettings.getInstance().getResults().stream().filter(result -> result.getMessage().contains("OK")).map(Result::getTask).collect(Collectors.toCollection(ArrayList::new));
         System.out.println("Parsing file system.");
         tasks.forEach(task -> {
-            if (tasksThatShouldBeCheckedOnPlagiarism.contains(task.getName()) && tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).count() > 1) {
+            if (tasksThatShouldBeCheckedOnPlagiarism.contains(task.getName()) && tasks.stream().filter(task::equals).count() > 1) {
                 tasksThatShouldBeCheckedOnPlagiarism.remove(task.getName());
-                tasksForPlagiarismCheck.add(tasks.stream().filter(task1 -> task1.getName().equals(task.getName())).collect(Collectors.toCollection(ArrayList::new)));
+                tasksForPlagiarismCheck.add(tasks.stream().filter(task::equals).collect(Collectors.toCollection(ArrayList::new)));
             }
         });
         PlagiarismChecker checker = new PlagiarismChecker(tasksForPlagiarismCheck, LocalSettings.getInstance().getPlagiarismResults());
@@ -315,7 +314,7 @@ public class General {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("Plagiarism check has been concluded. The results lie in PlagiarismResult.txt file.");
+        System.out.println("Plagiarism check has been concluded.");
     }
 
     private static boolean deleteDirectory(File file) {
