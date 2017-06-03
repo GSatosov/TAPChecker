@@ -117,6 +117,11 @@ class PlagiarismChecker {
                 break;
             rightIndex++;
         }
+        if (rightIndex == remainder.length()) { //For extreme cases
+            sections.sort((o1, o2) -> o2.length() - o1.length());
+            sections.add(remainder);
+            return sections.stream().reduce("", String::concat);
+        }
         sections.add(remainder.substring(0, rightIndex));
         String newRemainder = remainder.substring(rightIndex + 1, remainder.length());
         if (!newRemainder.contains("{")) {
