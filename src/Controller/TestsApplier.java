@@ -246,17 +246,13 @@ class TestsApplier {
     private void removePackageStatementInJavaTasks(String sourcePath) {
         try {
             List<String> lines = Files.readAllLines(Paths.get(sourcePath));
-            lines = lines.stream().filter(line -> !line.trim().startsWith("package")).collect(Collectors.toList());
-            File sourceFile = new File(sourcePath);
-            FileWriter writer = new FileWriter(sourceFile);
-            lines.forEach(line -> {
-                try {
-                    writer.write(line + "\n");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
-            writer.close();
+            if (lines.stream().filter(line -> !line.trim().startsWith("package")).count() != lines.size()) {
+                lines = lines.stream().filter(line -> !line.trim().startsWith("package")).collect(Collectors.toList());
+                File sourceFile = new File(sourcePath);
+                BufferedWriter writer = new BufferedWriter(new FileWriter(sourceFile));
+                Test.logList(writer, lines);
+                writer.close();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -405,6 +401,14 @@ class TestsApplier {
         if (testErrorFile.length() > 0) {
             codeFile.delete();
             testErrorFile.delete();
+            try {
+                outputWriter.write("Got an error while compiling the additional test.");
+                outputWriter.newLine();
+                Test.logList(outputWriter, Files.readAllLines(Paths.get(testErrorFile.getPath())));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            System.out.println("You have an error in your additional test for " + taskName);
             return 2; //Got an error while compiling the test; undesirable outcome.
         }
         ArrayList<String> commands = new ArrayList<>();
