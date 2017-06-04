@@ -196,7 +196,7 @@ class TestsApplier {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                switch (performAnAdditionalTest(task.getAdditionalTest(), additionalTestInput, taskName, test.getOutputVariants())) {
+                switch (performAnAdditionalTest(task.getAdditionalTest(), additionalTestInput, taskName, test.getOutputVariants(), haskellOutputWriter)) {
                     case 0:
                         continue;
                     case 1:
@@ -243,11 +243,11 @@ class TestsApplier {
         compiler = ToolProvider.getSystemJavaCompiler();
     }
 
-    private void removePackageStatementInJavaTasks(Task task) {
+    private void removePackageStatementInJavaTasks(String sourcePath) {
         try {
-            List<String> lines = Files.readAllLines(Paths.get(task.getSourcePath()));
+            List<String> lines = Files.readAllLines(Paths.get(sourcePath));
             lines = lines.stream().filter(line -> !line.trim().startsWith("package")).collect(Collectors.toList());
-            File sourceFile = new File(task.getSourcePath());
+            File sourceFile = new File(sourcePath);
             FileWriter writer = new FileWriter(sourceFile);
             lines.forEach(line -> {
                 try {
@@ -267,7 +267,7 @@ class TestsApplier {
         String taskName = task.getName().split("\\.")[0]; //Sum.java -> Sum
         File outputFile = new File(parentFolder + File.separator + taskName + "Output.txt");
         File errorFile = new File(parentFolder + File.separator + taskName + "Error.txt");
-        removePackageStatementInJavaTasks(task);
+        removePackageStatementInJavaTasks(task.getSourcePath());
         try {
             javaOutputWriter = new BufferedWriter(new FileWriter(outputFile));
             FileOutputStream errorStream = new FileOutputStream(outputFile);
@@ -362,7 +362,7 @@ class TestsApplier {
                     return javaResult("RE " + (i + 1), task, testInputFile, testOutputFile, errorFile); //Runtime Error
                 }
                 if (test.hasAnAdditionalTest() & !task.getAdditionalTest().isEmpty()) {
-                    switch (performAnAdditionalTest(task.getAdditionalTest(), testOutputFile, taskName, test.getOutputVariants())) {
+                    switch (performAnAdditionalTest(task.getAdditionalTest(), testOutputFile, taskName, test.getOutputVariants(), javaOutputWriter)) {
                         case 0:
                             continue;
                         case 1:
@@ -384,15 +384,16 @@ class TestsApplier {
         return javaResult("OK", task, testInputFile, testOutputFile, errorFile);
     }
 
-    private int performAnAdditionalTest(String code, File inputFile, String taskName, ArrayList<ArrayList<String>> outputVariants) {
+    private int performAnAdditionalTest(String code, File inputFile, String taskName, ArrayList<ArrayList<String>> outputVariants, BufferedWriter outputWriter) {
         File codeFile = new File(inputFile.getParent() + File.separator + taskName + "Test.java");
         try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(codeFile));
-            writer.write(code);
-            writer.close();
+            BufferedWriter inputWriter = new BufferedWriter(new FileWriter(codeFile));
+            inputWriter.write(code);
+            inputWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+        removePackageStatementInJavaTasks(codeFile.getPath());
         File testErrorFile = new File(inputFile.getParent() + File.separator + taskName + "AdditionalError.txt");
         try {
             FileOutputStream errorStream = new FileOutputStream(testErrorFile);
@@ -424,9 +425,9 @@ class TestsApplier {
         }
         if (testErrorFile.length() > 0) {
             try {
-                javaOutputWriter.write("Additional test runtime error:");
-                javaOutputWriter.newLine();
-                Test.logList(javaOutputWriter, new ArrayList<>(Files.readAllLines(Paths.get(testErrorFile.getPath()))));
+                outputWriter.write("Additional test runtime error:");
+                outputWriter.newLine();
+                Test.logList(outputWriter, new ArrayList<>(Files.readAllLines(Paths.get(testErrorFile.getPath()))));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -440,7 +441,7 @@ class TestsApplier {
         testErrorFile.delete();
         try {
             ArrayList<String> output = new ArrayList<>(Files.readAllLines(Paths.get(testOutputFile.getPath())));
-            Test.logList(javaOutputWriter, output);
+            Test.logList(outputWriter, output);
             testOutputFile.delete();
             if (outputVariants.contains(output))
                 return 0; //Everything is fine.
