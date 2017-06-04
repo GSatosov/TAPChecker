@@ -26,6 +26,7 @@ class TestsApplier {
     private JavaCompiler compiler;
     private BufferedWriter haskellOutputWriter;
     private BufferedWriter javaOutputWriter;
+    private boolean startedJavaTesting;
 
     private Thread cmdOutput(InputStream stream) {
         haskellOutput = Collections.synchronizedList(new ArrayList<String>());
@@ -241,6 +242,7 @@ class TestsApplier {
 
     void startJavaTesting() {
         compiler = ToolProvider.getSystemJavaCompiler();
+        this.startedJavaTesting = true;
     }
 
     private void removePackageStatementInJavaTasks(String sourcePath) {
@@ -391,6 +393,8 @@ class TestsApplier {
         }
         removePackageStatementInJavaTasks(codeFile.getPath());
         File testErrorFile = new File(inputFile.getParent() + File.separator + taskName + "AdditionalError.txt");
+        if (!startedJavaTesting)
+            startJavaTesting();
         try {
             FileOutputStream errorStream = new FileOutputStream(testErrorFile);
             compiler.run(null, null, errorStream, codeFile.getPath());
