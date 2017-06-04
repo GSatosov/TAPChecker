@@ -241,12 +241,12 @@ public class General {
         if (!haskellTasksQueue.isEmpty()) {
             addFailedTasks(new ArrayList<>(haskellTasksQueue));
             haskellTasksQueue.clear();
-            System.out.println("Some of the Haskell tasks have not underwent testing for some reason. Run local tests later to re-test these tasks.");
+            System.out.println("Some of the Haskell tasks have not underwent testing for some reason. Run failed tasks later to re-test these tasks.");
         }
         if (!javaTasksQueue.isEmpty()) {
             addFailedTasks(new ArrayList<>(javaTasksQueue));
             javaTasksQueue.clear();
-            System.out.println("Some of the Java tasks have not underwent testing for some reason. Run local tests later to re-test these tasks.");
+            System.out.println("Some of the Java tasks have not underwent testing for some reason. Run failed tasks later to re-test these tasks.");
         }
     }
 
@@ -254,8 +254,7 @@ public class General {
         ConcurrentLinkedQueue<Task> failedTasks = LocalSettings.getInstance().getFailedTasks();
         tasks.forEach(task -> {
             if (failedTasks.stream().noneMatch(task1 -> task1.getReceivedDate().getTime() == task.getReceivedDate().getTime()
-                    && task.getName().equals(task1.getName()) && task.getSubjectName().equals(task1.getSubjectName())
-                    && task1.getAuthor().equals(task.getAuthor())))
+                    && task.equals(task1) && task1.getAuthor().equals(task.getAuthor())))
                 failedTasks.add(task);
         });
     }
