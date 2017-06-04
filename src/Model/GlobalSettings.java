@@ -134,7 +134,7 @@ public class GlobalSettings implements Serializable {
     }
 
 
-    private transient static final String applicationName = "Thesis";
+    private transient static final String applicationName = "TAP Checker";
 
     public static String getApplicationName() {
         return applicationName;
