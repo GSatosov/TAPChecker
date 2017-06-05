@@ -323,11 +323,11 @@ class TestsApplier {
                     }
                 });
                 writer.close();
-                Process javaProcess = pb.start();
                 int computationTime = 0;
                 javaOutputWriter.write("Expected:");
                 javaOutputWriter.newLine();
                 test.logOutputVariants(javaOutputWriter);
+                Process javaProcess = pb.start();
                 while (javaProcess.isAlive()) {
                     if (computationTime >= task.getTimeInMS()) {
                         File jpsFile = new File(parentFolder + File.separator + taskName + "Jps.txt");
