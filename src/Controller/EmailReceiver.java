@@ -36,6 +36,9 @@ import java.util.stream.Collectors;
  * - subject 2/
  * ...
  */
+
+
+
 public class EmailReceiver {
 
     private static CountDownLatch downloadedMessagesCount;
@@ -75,7 +78,7 @@ public class EmailReceiver {
         String emailSubject = message.getSubject();
 
         // name, group, subject
-        String [] emailSubjectSplitted = emailSubject.split(",");
+        String[] emailSubjectSplitted = emailSubject.split(",");
         for (int i = 0; i < emailSubjectSplitted.length; i++) emailSubjectSplitted[i] = emailSubjectSplitted[i].trim();
 
         HashMap<String, ArrayList<String>> subjectsAndGroups = GlobalSettings.getInstance().getSubjectsAndGroups();
@@ -96,9 +99,8 @@ public class EmailReceiver {
                     finalSubject.append(comparingSubject);
                     subjectFromEmail = subject;
                     break;
-                }
-                else {
-                    double percentEquality = (1 - (double)DamerauLevenshteinDistance.compare(subject, comparingSubject) / Math.max(subject.length(), comparingSubject.length()));
+                } else {
+                    double percentEquality = (1 - (double) DamerauLevenshteinDistance.compare(subject, comparingSubject) / Math.max(subject.length(), comparingSubject.length()));
                     if (percentEquality > subjectPercentEquality) {
                         finalSubject.setLength(0);
                         finalSubject.append(comparingSubject);
@@ -117,25 +119,25 @@ public class EmailReceiver {
         List<String> groups;
         if (isCorrectSubject.get()) {
             groups = subjectsAndGroups.get(finalSubject.toString());
-        }
-        else {
+        } else {
             groups = new ArrayList<>();
             subjectsAndGroups.values().forEach(groups::addAll);
         }
         for (int i = 0; i < emailSubjectSplitted.length; i++) {
-            String group = emailSubjectSplitted[i].replaceAll(" ", "").replaceAll("А", "A").replaceAll("В", "B").replaceAll("С", "C").replaceAll("Е", "E").replaceAll("Н", "H").replaceAll("К", "K").replaceAll("М", "M").replaceAll("О", "O").replaceAll("Р", "P").replaceAll("Т", "T").replaceAll("Х", "X").replaceAll("У", "Y");;
+            String group = emailSubjectSplitted[i].replaceAll(" ", "").replaceAll("А", "A").replaceAll("В", "B").replaceAll("С", "C").replaceAll("Е", "E").replaceAll("Н", "H").replaceAll("К", "K").replaceAll("М", "M").replaceAll("О", "O").replaceAll("Р", "P").replaceAll("Т", "T").replaceAll("Х", "X").replaceAll("У", "Y");
+            ;
             double groupPercentEquality = 0;
             for (int j = 0; j < groups.size(); j++) {
-                String comparingGroup = groups.get(j).replaceAll(" ", "").replaceAll("А", "A").replaceAll("В", "B").replaceAll("С", "C").replaceAll("Е", "E").replaceAll("Н", "H").replaceAll("К", "K").replaceAll("М", "M").replaceAll("О", "O").replaceAll("Р", "P").replaceAll("Т", "T").replaceAll("Х", "X").replaceAll("У", "Y");;
+                String comparingGroup = groups.get(j).replaceAll(" ", "").replaceAll("А", "A").replaceAll("В", "B").replaceAll("С", "C").replaceAll("Е", "E").replaceAll("Н", "H").replaceAll("К", "K").replaceAll("М", "M").replaceAll("О", "O").replaceAll("Р", "P").replaceAll("Т", "T").replaceAll("Х", "X").replaceAll("У", "Y");
+                ;
                 if (comparingGroup.toLowerCase().equals(group.toLowerCase())) {
                     isCorrectGroup.set(true);
                     finalGroup.setLength(0);
                     finalGroup.append(groups.get(j));
                     groupFromEmail = emailSubjectSplitted[i];
                     break;
-                }
-                else {
-                    double percentEquality = (1 - (double)DamerauLevenshteinDistance.compare(group, comparingGroup) / Math.max(group.length(), comparingGroup.length()));
+                } else {
+                    double percentEquality = (1 - (double) DamerauLevenshteinDistance.compare(group, comparingGroup) / Math.max(group.length(), comparingGroup.length()));
                     if (percentEquality > groupPercentEquality) {
                         finalGroup.setLength(0);
                         finalGroup.append(groups.get(j));
@@ -162,12 +164,13 @@ public class EmailReceiver {
                 String[] namePartsByDash = nameParts[j].split("-");
                 for (int k = 0; k < namePartsByDash.length; k++) {
                     namePartsByDash[k] = namePartsByDash[k].trim();
-                    if (namePartsByDash[k].length() > 0) namePartsByDash[k] = namePartsByDash[k].substring(0, 1).toUpperCase() + ((namePartsByDash[k].length() > 1) ? namePartsByDash[k].substring(1) : "");
+                    if (namePartsByDash[k].length() > 0)
+                        namePartsByDash[k] = namePartsByDash[k].substring(0, 1).toUpperCase() + ((namePartsByDash[k].length() > 1) ? namePartsByDash[k].substring(1) : "");
                 }
                 String namePart = String.join("-", namePartsByDash);
                 nameParts[j] = namePart;
             }
-            String studentName = String.join(" " , nameParts);
+            String studentName = String.join(" ", nameParts);
             for (int j = 0; j < studentNames.size(); j++) {
                 String comparingStudentName = studentNames.get(j);
                 if (comparingStudentName.toLowerCase().equals(studentName.toLowerCase())) {
@@ -176,9 +179,8 @@ public class EmailReceiver {
                     finalStudentName.append(comparingStudentName);
                     studentNameFromEmail = studentName;
                     break;
-                }
-                else {
-                    double percentEquality = (1 - (double)DamerauLevenshteinDistance.compare(studentName, comparingStudentName) / Math.max(studentName.length(), comparingStudentName.length()));
+                } else {
+                    double percentEquality = (1 - (double) DamerauLevenshteinDistance.compare(studentName, comparingStudentName) / Math.max(studentName.length(), comparingStudentName.length()));
                     if (percentEquality > studentNamePercentEquality) {
                         finalStudentName.setLength(0);
                         finalStudentName.append(comparingStudentName);
@@ -209,8 +211,7 @@ public class EmailReceiver {
                 }
                 finalStudentName.setLength(0);
                 finalStudentName.append(String.join(" ", nameParts));
-            }
-            else finalStudentName.setLength(0);
+            } else finalStudentName.setLength(0);
         }
 
         CountDownLatch emailHandlerLatch = new CountDownLatch(1);
@@ -221,8 +222,7 @@ public class EmailReceiver {
             Platform.runLater(() -> {
                 MainController.showEmailHandlerWindow(emailHandlerData);
             });
-        }
-        else {
+        } else {
             emailHandlerLatch.countDown();
         }
         try {

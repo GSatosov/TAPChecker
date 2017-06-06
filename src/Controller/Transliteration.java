@@ -1,8 +1,5 @@
 package Controller;
 
-/**
- * Created by Alexander Baranov on 18.05.2017.
- */
 public class Transliteration {
 
     public static String lat2cyr(String s) {
@@ -12,17 +9,17 @@ public class Transliteration {
             char ch = s.charAt(i);
             boolean lc = Character.isLowerCase(ch);
             ch = Character.toUpperCase(ch);
-            if (ch == 'J') { // first of all the prefix notation
-                i++; // read the next symbol
+            if (ch == 'J') {
+                i++;
                 ch = Character.toUpperCase(s.charAt(i));
                 switch (ch) {
                     case 'O':
                         sb.append(ch('Ё', lc));
                         break;
                     case 'H':
-                        if (i + 1 < s.length() && Character.toUpperCase(s.charAt(i + 1)) == 'H') { // проверка на постфикс (вариант JHH)
+                        if (i + 1 < s.length() && Character.toUpperCase(s.charAt(i + 1)) == 'H') {
                             sb.append(ch('Ъ', lc));
-                            i++; // skip postfix
+                            i++;
                         } else {
                             sb.append(ch('Ь', lc));
                         }
@@ -33,10 +30,13 @@ public class Transliteration {
                     case 'A':
                         sb.append(ch('Я', lc));
                         break;
+                    case 'J':
+                        sb.append(ch('Й', lc));
+                        break;
                     default:
                         throw new IllegalArgumentException("Illegal transliterated symbol '" + ch + "' at position " + i);
                 }
-            } else if (i + 1 < s.length() && Character.toUpperCase(s.charAt(i + 1)) == 'H') {// Постфиксная нотация, требует информации о двух следующих символах. Для потока придется сделать обертку с очередью из трех символов.
+            } else if (i + 1 < s.length() && Character.toUpperCase(s.charAt(i + 1)) == 'H') {
                 switch (ch) {
                     case 'Z':
                         sb.append(ch('Ж', lc));
@@ -48,9 +48,9 @@ public class Transliteration {
                         sb.append(ch('Ч', lc));
                         break;
                     case 'S':
-                        if (i + 2 < s.length() && Character.toUpperCase(s.charAt(i + 2)) == 'H') { // проверка на двойной постфикс
+                        if (i + 2 < s.length() && Character.toUpperCase(s.charAt(i + 2)) == 'H') {
                             sb.append(ch('Щ', lc));
-                            i++; // skip the first postfix
+                            i++;
                         } else {
                             sb.append(ch('Ш', lc));
                         }
@@ -58,14 +58,11 @@ public class Transliteration {
                     case 'E':
                         sb.append(ch('Э', lc));
                         break;
-                    case 'I':
-                        sb.append(ch('Ы', lc));
-                        break;
                     default:
                         throw new IllegalArgumentException("Illegal transliterated symbol '" + ch + "' at position " + i);
                 }
-                i++; // skip postfix
-            } else { // single-letter symbols
+                i++;
+            } else {
                 switch (ch) {
                     case 'A':
                         sb.append(ch('А', lc));
@@ -92,7 +89,7 @@ public class Transliteration {
                         sb.append(ch('И', lc));
                         break;
                     case 'Y':
-                        sb.append(ch('Й', lc));
+                        sb.append(ch('Ы', lc));
                         break;
                     case 'K':
                         sb.append(ch('К', lc));
@@ -135,12 +132,12 @@ public class Transliteration {
                 }
             }
 
-            i++; // next symbol
+            i++;
         }
         return sb.toString();
     }
 
-    public static String cyr2lat(char ch) {
+    private static String cyr2lat(char ch) {
         switch (ch) {
             case 'А':
                 return "A";
@@ -163,7 +160,7 @@ public class Transliteration {
             case 'И':
                 return "I";
             case 'Й':
-                return "Y";
+                return "JJ";
             case 'К':
                 return "K";
             case 'Л':
@@ -199,7 +196,7 @@ public class Transliteration {
             case 'Ъ':
                 return "JHH";
             case 'Ы':
-                return "IH";
+                return "Y";
             case 'Ь':
                 return "JH";
             case 'Э':

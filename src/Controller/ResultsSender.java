@@ -1,6 +1,8 @@
 package Controller;
 
-import Model.*;
+import Model.GlobalSettings;
+import Model.LocalSettings;
+import Model.Result;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.*;
 
@@ -11,9 +13,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * Created by Alexander Baranov on 01.05.2017.
- */
 public class ResultsSender implements Runnable {
 
     @Override
@@ -35,7 +34,7 @@ public class ResultsSender implements Runnable {
                 for (int i = 1; i < responseAllSheets.getSheets().size(); i++) {
                     Sheet sheet = responseAllSheets.getSheets().get(i);
                     BatchUpdateSpreadsheetRequest deleteSheetBody = new BatchUpdateSpreadsheetRequest().setRequests(
-                            Arrays.asList(new Request().setDeleteSheet(new DeleteSheetRequest().setSheetId(sheet.getProperties().getSheetId())))
+                            Collections.singletonList(new Request().setDeleteSheet(new DeleteSheetRequest().setSheetId(sheet.getProperties().getSheetId())))
                     );
                     try {
                         service.spreadsheets().batchUpdate(spreadsheetId, deleteSheetBody).execute();
@@ -56,19 +55,18 @@ public class ResultsSender implements Runnable {
 
                 // grouping results by subjects
                 LocalSettings.getInstance().getResults().stream().collect(Collectors.groupingBy(Result::getSubject)).forEach((subject, subjectResults) -> {
-                    ValueRange response;
                     // get or create sheet for subject
                     BatchUpdateSpreadsheetRequest addSheetBody = new BatchUpdateSpreadsheetRequest().setRequests(
-                            Arrays.asList(new Request().setAddSheet(new AddSheetRequest().setProperties(
+                            Collections.singletonList(new Request().setAddSheet(new AddSheetRequest().setProperties(
                                     new SheetProperties().setTitle(subject)))));
                     try {
-                        BatchUpdateSpreadsheetResponse responseCreate = service.spreadsheets().batchUpdate(spreadsheetId, addSheetBody).execute();
-                        response = service.spreadsheets().values().get(spreadsheetId, subject).execute();
+                        service.spreadsheets().batchUpdate(spreadsheetId, addSheetBody).execute();
+                        service.spreadsheets().values().get(spreadsheetId, subject).execute();
                     } catch (IOException e1) {
                         e1.printStackTrace();
                         Thread.currentThread().interrupt();
                     }
-                    Sheets.Spreadsheets.Get requestSheetId = null;
+                    Sheets.Spreadsheets.Get requestSheetId;
                     try {
                         requestSheetId = service.spreadsheets().get(spreadsheetId);
                         requestSheetId.setRanges(Collections.singletonList(subject));
@@ -184,7 +182,7 @@ public class ResultsSender implements Runnable {
             responseAllSheets.getSheets().forEach(sheet -> {
                 if (LocalSettings.getInstance().getResults().stream().noneMatch(result -> result.getSubject().equals(sheet.getProperties().getTitle()))) {
                     BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest().setRequests(
-                            Arrays.asList(new Request().setDeleteSheet(new DeleteSheetRequest().setSheetId(sheet.getProperties().getSheetId())))
+                            Collections.singletonList(new Request().setDeleteSheet(new DeleteSheetRequest().setSheetId(sheet.getProperties().getSheetId())))
                     );
                     try {
                         service.spreadsheets().batchUpdate(spreadsheetId, body).execute();
@@ -199,17 +197,6 @@ public class ResultsSender implements Runnable {
             e.printStackTrace();
         }
 
-    }
-
-    private List<Result> getFileSystem(ArrayList<Result> results) {
-        List<Result> fileSystem = new ArrayList<>();
-        results.forEach(result -> {
-            Task task = new Task(result.getTask().getName(), result.getSubject(), result.getTask().getSourcePath(), result.getTask().getReceivedDate());
-            task.setAuthor(new Student(result.getStudent().getName(), result.getStudent().getGroupName()));
-            task.setTestFields(result.getTask().getTimeInMS(), result.getTask().shouldBeCheckedForAntiPlagiarism(), result.getTask().getDeadline(), result.getTask().getTaskCode(), result.getTask().hasHardDeadline());
-            fileSystem.add(new Result(result.getMessage(), task));
-        });
-        return fileSystem;
     }
 
 }

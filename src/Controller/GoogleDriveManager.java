@@ -91,19 +91,25 @@ public class GoogleDriveManager {
         return service;
     }
 
-    public static Drive getService() throws IOException {
-        if (service == null) {
-            synchronized (Sheets.class) {
-                if (service == null) {
-                    Credential credential = authorize();
-                    service = new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).setApplicationName(GlobalSettings.getApplicationName()).build();
-                }
-            }
-        }
-        return service;
-    }
-
     private static volatile Drive service;
+
+    private static String mask = "mimeType != 'application/vnd.google-apps.folder' and " +
+            "mimeType != 'application/vnd.google-apps.audio' and " +
+            "mimeType != 'application/vnd.google-apps.drawing' and " +
+            "mimeType != 'application/vnd.google-apps.file' and " +
+            "mimeType != 'application/vnd.google-apps.folder' and " +
+            "mimeType != 'application/vnd.google-apps.form' and " +
+            "mimeType != 'application/vnd.google-apps.fusiontable' and " +
+            "mimeType != 'application/vnd.google-apps.map' and " +
+            "mimeType != 'application/vnd.google-apps.photo' and " +
+            "mimeType != 'application/vnd.google-apps.presentation' and " +
+            "mimeType != 'application/vnd.google-apps.script' and " +
+            "mimeType != 'application/vnd.google-apps.sites' and " +
+            "mimeType != 'application/vnd.google-apps.spreadsheet' and " +
+            "mimeType != 'application/vnd.google-apps.unknown' and " +
+            "mimeType != 'application/vnd.google-apps.video' and " +
+            "mimeType != 'application/vnd.google-apps.drive-sdk' and " +
+            "mimeType != 'application/vnd.google-apps.document' and trashed = false";
 
     public static ByteArrayOutputStream getGlobalSettings() throws IOException {
         Drive service = getDriveService();
@@ -136,7 +142,7 @@ public class GoogleDriveManager {
         fileMetadata.setName(GlobalSettings.getGlobalSettingsFileName());
         java.io.File filePath = new java.io.File(GlobalSettings.getDataFolder() + "/" + GlobalSettings.getGlobalSettingsFileName());
         FileContent mediaContent = new FileContent(Files.probeContentType(filePath.toPath()), filePath);
-        com.google.api.services.drive.model.File file = GoogleDriveManager.getService().files().create(fileMetadata, mediaContent)
+        com.google.api.services.drive.model.File file = GoogleDriveManager.getDriveService().files().create(fileMetadata, mediaContent)
                 .setFields("id")
                 .execute();
     }
@@ -152,24 +158,7 @@ public class GoogleDriveManager {
         if (parentId == null) throw new IOException("There is no subject folder!");
         else {
             result = service.files().list()
-                    .setQ("'" + parentId + "' in parents and " +
-                            "mimeType != 'application/vnd.google-apps.folder' and " +
-                            "mimeType != 'application/vnd.google-apps.audio' and " +
-                            "mimeType != 'application/vnd.google-apps.drawing' and " +
-                            "mimeType != 'application/vnd.google-apps.file' and " +
-                            "mimeType != 'application/vnd.google-apps.folder' and " +
-                            "mimeType != 'application/vnd.google-apps.form' and " +
-                            "mimeType != 'application/vnd.google-apps.fusiontable' and " +
-                            "mimeType != 'application/vnd.google-apps.map' and " +
-                            "mimeType != 'application/vnd.google-apps.photo' and " +
-                            "mimeType != 'application/vnd.google-apps.presentation' and " +
-                            "mimeType != 'application/vnd.google-apps.script' and " +
-                            "mimeType != 'application/vnd.google-apps.sites' and " +
-                            "mimeType != 'application/vnd.google-apps.spreadsheet' and " +
-                            "mimeType != 'application/vnd.google-apps.unknown' and " +
-                            "mimeType != 'application/vnd.google-apps.video' and " +
-                            "mimeType != 'application/vnd.google-apps.drive-sdk' and " +
-                            "mimeType != 'application/vnd.google-apps.document' and trashed = false")
+                    .setQ("'" + parentId + "' in parents and " + mask)
                     .setFields("nextPageToken, files(id, name)")
                     .execute();
             String taskName = task.getName().substring(0, task.getName().lastIndexOf('.'));
@@ -180,35 +169,8 @@ public class GoogleDriveManager {
                 String fileId = oTests.get().getId();
                 OutputStream outputStream = new ByteArrayOutputStream();
                 service.files().get(fileId).executeMediaAndDownloadTo(outputStream);
-                ArrayList<Test> testsResult = new ArrayList<>();
-                JSONObject tests = new JSONObject(outputStream.toString());
-                Date deadline = new SimpleDateFormat("dd.MM.yyyy").parse(tests.getString("deadline"));
-                boolean antiPlagiarism = tests.getBoolean("antiPlagiarism");
-                long time = tests.getLong("maximumOperatingTimeInMS");
-                boolean hasHardDeadline = tests.getBoolean("hasHardDeadline");
-                String taskCode = tests.getString("taskCode");
-                String additionalTest = tests.getString("additionalTest");
-                JSONArray aTests = tests.getJSONArray("tests");
-                task.setTestFields(time, antiPlagiarism, deadline, taskCode, hasHardDeadline);
-                task.setAdditionalTest(additionalTest);
-                aTests.forEach(t -> {
-                    ArrayList<String> input = new ArrayList<>();
-                    ArrayList<ArrayList<String>> output = new ArrayList<>();
-                    JSONObject jOnj = (JSONObject) t;
-                    JSONArray jInput = jOnj.getJSONArray("input");
-                    jInput.forEach(jI -> input.add((String) jI));
-                    JSONArray jOutput = jOnj.getJSONArray("output");
-                    jOutput.forEach(jO -> {
-                        JSONArray aJO = (JSONArray) jO;
-                        ArrayList<String> outputVar = new ArrayList<>();
-                        aJO.forEach(jAJO -> outputVar.add((String) jAJO));
-                        output.add(outputVar);
-                    });
-                    Test test = new Test(input, output);
-                    test.setApplyAdditionalTest(jOnj.getBoolean("applyAdditionalTest"));
-                    testsResult.add(test);
-                });
-                return testsResult;
+                parseJsonToTask(outputStream, task);
+                return task.getTestContents();
             }
         }
     }
@@ -222,24 +184,7 @@ public class GoogleDriveManager {
             try {
                 String subjectName = subjectFile.getName().replaceAll("_", " ");
                 FileList files = service.files().list()
-                        .setQ("'" + subjectFile.getId() + "' in parents and " +
-                                "mimeType != 'application/vnd.google-apps.folder' and " +
-                                "mimeType != 'application/vnd.google-apps.audio' and " +
-                                "mimeType != 'application/vnd.google-apps.drawing' and " +
-                                "mimeType != 'application/vnd.google-apps.file' and " +
-                                "mimeType != 'application/vnd.google-apps.folder' and " +
-                                "mimeType != 'application/vnd.google-apps.form' and " +
-                                "mimeType != 'application/vnd.google-apps.fusiontable' and " +
-                                "mimeType != 'application/vnd.google-apps.map' and " +
-                                "mimeType != 'application/vnd.google-apps.photo' and " +
-                                "mimeType != 'application/vnd.google-apps.presentation' and " +
-                                "mimeType != 'application/vnd.google-apps.script' and " +
-                                "mimeType != 'application/vnd.google-apps.sites' and " +
-                                "mimeType != 'application/vnd.google-apps.spreadsheet' and " +
-                                "mimeType != 'application/vnd.google-apps.unknown' and " +
-                                "mimeType != 'application/vnd.google-apps.video' and " +
-                                "mimeType != 'application/vnd.google-apps.drive-sdk' and " +
-                                "mimeType != 'application/vnd.google-apps.document' and trashed = false")
+                        .setQ("'" + subjectFile.getId() + "' in parents and " + mask)
                         .setFields("nextPageToken, files(id, name)")
                         .execute();
                 ArrayList<String> taskNumbers = new ArrayList<>();
@@ -273,24 +218,7 @@ public class GoogleDriveManager {
             try {
                 String subjectName = subjectFile.getName().replaceAll("_", " ");
                 FileList files = service.files().list()
-                        .setQ("'" + subjectFile.getId() + "' in parents and " +
-                                "mimeType != 'application/vnd.google-apps.folder' and " +
-                                "mimeType != 'application/vnd.google-apps.audio' and " +
-                                "mimeType != 'application/vnd.google-apps.drawing' and " +
-                                "mimeType != 'application/vnd.google-apps.file' and " +
-                                "mimeType != 'application/vnd.google-apps.folder' and " +
-                                "mimeType != 'application/vnd.google-apps.form' and " +
-                                "mimeType != 'application/vnd.google-apps.fusiontable' and " +
-                                "mimeType != 'application/vnd.google-apps.map' and " +
-                                "mimeType != 'application/vnd.google-apps.photo' and " +
-                                "mimeType != 'application/vnd.google-apps.presentation' and " +
-                                "mimeType != 'application/vnd.google-apps.script' and " +
-                                "mimeType != 'application/vnd.google-apps.sites' and " +
-                                "mimeType != 'application/vnd.google-apps.spreadsheet' and " +
-                                "mimeType != 'application/vnd.google-apps.unknown' and " +
-                                "mimeType != 'application/vnd.google-apps.video' and " +
-                                "mimeType != 'application/vnd.google-apps.drive-sdk' and " +
-                                "mimeType != 'application/vnd.google-apps.document' and trashed = false")
+                        .setQ("'" + subjectFile.getId() + "' in parents and " + mask)
                         .setFields("nextPageToken, files(id, name)")
                         .execute();
                 ArrayList<Task> tasks = new ArrayList<>();
@@ -299,35 +227,7 @@ public class GoogleDriveManager {
                     OutputStream outputStream = new ByteArrayOutputStream();
                     try {
                         service.files().get(file.getId()).executeMediaAndDownloadTo(outputStream);
-                        ArrayList<Test> testsResult = new ArrayList<>();
-                        JSONObject tests = new JSONObject(outputStream.toString());
-                        Date deadline = new SimpleDateFormat("dd.MM.yyyy").parse(tests.getString("deadline"));
-                        boolean antiPlagiarism = tests.getBoolean("antiPlagiarism");
-                        long time = tests.getLong("maximumOperatingTimeInMS");
-                        boolean hasHardDeadline = tests.getBoolean("hasHardDeadline");
-                        String taskCode = tests.getString("taskCode");
-                        String additionalTest = tests.getString("additionalTest");
-                        task.setAdditionalTest(additionalTest);
-                        JSONArray aTests = tests.getJSONArray("tests");
-                        task.setTestFields(time, antiPlagiarism, deadline, taskCode, hasHardDeadline);
-                        aTests.forEach(t -> {
-                            ArrayList<String> input = new ArrayList<>();
-                            ArrayList<ArrayList<String>> output = new ArrayList<>();
-                            JSONObject jOnj = (JSONObject) t;
-                            JSONArray jInput = jOnj.getJSONArray("input");
-                            jInput.forEach(jI -> input.add((String) jI));
-                            JSONArray jOutput = jOnj.getJSONArray("output");
-                            jOutput.forEach(jO -> {
-                                JSONArray aJO = (JSONArray) jO;
-                                ArrayList<String> outputVar = new ArrayList<>();
-                                aJO.forEach(jAJO -> outputVar.add((String) jAJO));
-                                output.add(outputVar);
-                            });
-                            Test test = new Test(input, output);
-                            test.setApplyAdditionalTest(jOnj.getBoolean("applyAdditionalTest"));
-                            testsResult.add(test);
-                        });
-                        task.setTestContents(testsResult);
+                        parseJsonToTask(outputStream, task);
                         tasks.add(task);
                     } catch (IOException | ParseException e) {
                         e.printStackTrace();
@@ -418,7 +318,7 @@ public class GoogleDriveManager {
 
             java.io.File filePath = new java.io.File(GlobalSettings.getDataFolder() + "/" + task.getName() + ".txt");
             FileContent mediaContent = new FileContent(Files.probeContentType(filePath.toPath()), filePath);
-            com.google.api.services.drive.model.File file = GoogleDriveManager.getService().files().create(fileMetadata, mediaContent)
+            com.google.api.services.drive.model.File file = GoogleDriveManager.getDriveService().files().create(fileMetadata, mediaContent)
                     .setFields("id")
                     .execute();
 
@@ -427,6 +327,38 @@ public class GoogleDriveManager {
             e.printStackTrace();
         }
 
+    }
+
+    private static void parseJsonToTask(OutputStream stream, Task task) throws ParseException {
+        ArrayList<Test> testsResult = new ArrayList<>();
+        JSONObject tests = new JSONObject(stream.toString());
+        Date deadline = new SimpleDateFormat("dd.MM.yyyy").parse(tests.getString("deadline"));
+        boolean antiPlagiarism = tests.getBoolean("antiPlagiarism");
+        long time = tests.getLong("maximumOperatingTimeInMS");
+        boolean hasHardDeadline = tests.getBoolean("hasHardDeadline");
+        String taskCode = tests.getString("taskCode");
+        String additionalTest = tests.getString("additionalTest");
+        task.setAdditionalTest(additionalTest);
+        JSONArray aTests = tests.getJSONArray("tests");
+        task.setTestFields(time, antiPlagiarism, deadline, taskCode, hasHardDeadline);
+        aTests.forEach(t -> {
+            ArrayList<String> input = new ArrayList<>();
+            ArrayList<ArrayList<String>> output = new ArrayList<>();
+            JSONObject jOnj = (JSONObject) t;
+            JSONArray jInput = jOnj.getJSONArray("input");
+            jInput.forEach(jI -> input.add((String) jI));
+            JSONArray jOutput = jOnj.getJSONArray("output");
+            jOutput.forEach(jO -> {
+                JSONArray aJO = (JSONArray) jO;
+                ArrayList<String> outputVar = new ArrayList<>();
+                aJO.forEach(jAJO -> outputVar.add((String) jAJO));
+                output.add(outputVar);
+            });
+            Test test = new Test(input, output);
+            test.setApplyAdditionalTest(jOnj.getBoolean("applyAdditionalTest"));
+            testsResult.add(test);
+        });
+        task.setTestContents(testsResult);
     }
 
 
