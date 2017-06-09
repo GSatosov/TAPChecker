@@ -19,6 +19,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+import sun.applet.Main;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,13 +27,15 @@ import java.net.URL;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 /**
  * Created by Arseniy Nazarov on 20.04.17.
  */
 public class MainController implements Initializable {
+
+    @FXML
+    public Button runUncheckedTasks;
 
     @FXML
     private TabPane resultsTable;
@@ -137,10 +140,11 @@ public class MainController implements Initializable {
 
     }
 
-    private static TableColumn<Map, ResultsTableCellObject> getColumn(String columnTitle) {
+    private TableColumn<Map, ResultsTableCellObject> getColumn(String columnTitle) {
         TableColumn<Map, ResultsTableCellObject> column = new TableColumn<>(columnTitle);
         column.setCellValueFactory(new MapValueFactory(columnTitle));
         column.setSortable(false);
+        final MainController mainController = this;
         column.setCellFactory(new Callback<TableColumn<Map, ResultsTableCellObject>, TableCell<Map, ResultsTableCellObject>>() {
             @Override
             public TableCell call(TableColumn p) {
@@ -153,14 +157,15 @@ public class MainController implements Initializable {
                             if (item.getItem().startsWith("Group ")) {
                                 setStyle("-fx-font-weight:bold;");
                             } else if (item.getResult() != null && item.getResult().getTask().getReceivedDate().compareTo(item.getResult().getTask().getDeadline()) > 0) {
-                                setStyle("-fx-background-color: " + (item.getResult().getTask().hasHardDeadline() ? "red" : "yellow") + ";");
+                                setStyle("-fx-background-color: " + (item.getResult().getTask().hasHardDeadline() ? "red" : "orange") + ";");
                             } else setStyle("");
 
                             if (item.getResult() != null) {
                                 final ContextMenu contextMenu = new ContextMenu();
                                 MenuItem code = new MenuItem("Open code");
                                 MenuItem log = new MenuItem("Open log");
-                                contextMenu.getItems().addAll(code, log);
+                                final CheckMenuItem recheckTask = new CheckMenuItem("Recheck this task");
+                                contextMenu.getItems().addAll(code, log, recheckTask);
                                 code.setOnAction(event -> {
                                     String command = (System.getProperty("os.name").startsWith("Windows") ? "cmd /C start " : "xdg-open ")
                                             + item.getResult().getTask().getSourcePath();
@@ -179,6 +184,22 @@ public class MainController implements Initializable {
                                     } catch (Exception ex) {
                                         ex.printStackTrace();
                                     }
+                                });
+                                recheckTask.setOnAction(event -> {
+                                    if (recheckTask.isSelected()) {
+                                        LocalSettings.getUncheckedTasks().add(item.getResult().getTask());
+                                        String style = getStyle();
+                                        if (style.contains("-fx-font-weight:normal")) setStyle(style.replaceAll("-fx-font-weight:normal", "-fx-font-weight:bold"));
+                                        else setStyle(style + "-fx-font-weight:bold;");
+
+                                    }
+                                    else {
+                                        LocalSettings.getUncheckedTasks().remove(item.getResult().getTask());
+                                        String style = getStyle();
+                                        if (style.contains("-fx-font-weight:bold")) setStyle(style.replaceAll("-fx-font-weight:bold", "-fx-font-weight:normal"));
+                                        else setStyle(style + "-fx-font-weight:normal;");
+                                    }
+                                    mainController.configureButtons();
                                 });
                                 this.setContextMenu(contextMenu);
                             }
@@ -226,6 +247,14 @@ public class MainController implements Initializable {
                         configureButtons();
                     }, this,
                     LocalSettings.getInstance().getFailedTasks());
+        });
+        runUncheckedTasks.setOnAction(event -> {
+            setMenuDisabled(true);
+            General.runLocalTests(() -> {
+                        setMenuDisabled(false);
+                        configureButtons();
+                    }, this,
+                    LocalSettings.getUncheckedTasks());
         });
         plagiarismResults.setOnAction(event -> {
             if (LocalSettings.getInstance().getPlagiarismResults().size() > 0) {
@@ -280,12 +309,14 @@ public class MainController implements Initializable {
         runTests.setDisable(disabled);
         runLocalTasks.setDisable(disabled);
         runFailedTasks.setDisable(disabled);
+        runUncheckedTasks.setDisable(disabled);
         plagiarismResults.setDisable(disabled);
         editTasks.setDisable(disabled);
         settings.setDisable(disabled);
     }
 
     public void configureButtons() {
+
         runLocalTasks.setManaged(
             LocalSettings.getInstance().getResults().size() != 0 &&
             !GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() &&
@@ -300,6 +331,11 @@ public class MainController implements Initializable {
             LocalSettings.getInstance().getPlagiarismResults().size() != 0 &&
             !GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() &&
             GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty)
+        );
+        runUncheckedTasks.setManaged(
+                LocalSettings.getUncheckedTasks().size() != 0 &&
+                        !GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() &&
+                        GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty)
         );
         editTasks.setManaged(!GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() && GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty));
         runTests.setManaged(!GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() && GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty));

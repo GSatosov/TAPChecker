@@ -1,7 +1,5 @@
 package Model;
 
-import Controller.GoogleDriveManager;
-
 import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.security.InvalidKeyException;
@@ -48,6 +46,14 @@ public class LocalSettings implements Serializable {
             }
         }
         return instance;
+    }
+
+    public static ConcurrentLinkedQueue<Task> getUncheckedTasks() {
+        return uncheckedTasks;
+    }
+
+    public static void setUncheckedTasks(ConcurrentLinkedQueue<Task> uncheckedTasks) {
+        LocalSettings.uncheckedTasks = uncheckedTasks;
     }
 
     public Date getEditedTasksDate() {
@@ -123,6 +129,7 @@ public class LocalSettings implements Serializable {
         this.results = Collections.synchronizedList(results);
     }
 
+    private static transient ConcurrentLinkedQueue<Task> uncheckedTasks = new ConcurrentLinkedQueue<>();
 
     public static void saveSettings() throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
         (new File(GlobalSettings.getDataFolder())).mkdirs();
