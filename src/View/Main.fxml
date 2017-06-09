@@ -27,9 +27,9 @@
             <Button fx:id="editTasks" text="Edit Tasks"/>
             <Button fx:id="settings" text="Settings"/>
         </HBox>
-        <SplitPane fx:id="splitPane" orientation="VERTICAL" VBox.vgrow="ALWAYS" style="-fx-background-color:transparent;" dividerPositions="1">
+        <SplitPane fx:id="splitPane" orientation="VERTICAL" VBox.vgrow="ALWAYS" style="-fx-background-color:transparent;" dividerPositions="1,0">
             <TabPane fx:id="resultsTable" SplitPane.resizableWithParent="TRUE" VBox.vgrow="ALWAYS"/>
-            <ScrollPane SplitPane.resizableWithParent="TRUE" fx:id="logStringScrollPane">
+            <ScrollPane SplitPane.resizableWithParent="FALSE" fx:id="logStringScrollPane">
                 <Text fx:id="logString"/>
             </ScrollPane>
         </SplitPane>
