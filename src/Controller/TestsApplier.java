@@ -3,6 +3,7 @@ package Controller;
 import Model.Result;
 import Model.Task;
 import Model.Test;
+import View.MainController;
 
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
@@ -54,7 +55,7 @@ class TestsApplier {
                 }
                 haskellOutput.add(curLine);
             } catch (IOException e) {
-                System.out.println(e.getMessage());
+                MainController.println(e.getMessage());
             }
         });
     }
@@ -81,15 +82,15 @@ class TestsApplier {
                 if (!haskellOutput.isEmpty() && haskellOutput.contains("Prelude>"))
                     break;
                 if (new Date().getTime() > startDate.getTime() + 4000) { //Four seconds to boot ghci.
-                    System.out.println("Something is wrong with your ghc.");
+                    MainController.println("Something is wrong with your ghc.");
                     return false;
                 }
             }
         } catch (IOException e) {
-            System.out.println("The path to ghci is invalid.");
+            MainController.println("The path to ghci is invalid.");
             return false;
         }
-        System.out.println("Started ghci process.");
+        MainController.println("Started ghci process.");
         return true;
     }
 
@@ -203,7 +204,7 @@ class TestsApplier {
                     case 1:
                         return haskellResult("WA " + (i + 1), task);
                     case 2: {
-                        System.out.println("Your code for additional test in " + task.getName() + ", test №" + i + " is invalid.");
+                        MainController.println("Your code for additional test in " + task.getName() + ", test №" + i + " is invalid.");
                         continue;
                     }
                 }
@@ -237,7 +238,7 @@ class TestsApplier {
         }
         haskellProcess.destroy();
         haskellProcessInput.close();
-        System.out.println("Closed ghc process.");
+        MainController.println("Closed ghc process.");
     }
 
     void startJavaTesting() {
@@ -366,7 +367,7 @@ class TestsApplier {
                         case 1:
                             return javaResult("WA " + (i + 1), task, testInputFile, testOutputFile, errorFile);
                         case 2: {
-                            System.out.println("Your code for additional test in " + task.getName() + ", test №" + i + " is invalid.");
+                            MainController.println("Your code for additional test in " + task.getName() + ", test №" + i + " is invalid.");
                             continue;
                         }
                     }
@@ -412,7 +413,7 @@ class TestsApplier {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            System.out.println("You have an error in your additional test for " + taskName);
+            MainController.println("You have an error in your additional test for " + taskName);
             return 2; //Got an error while compiling the test; undesirable outcome.
         }
         ArrayList<String> commands = new ArrayList<>();

@@ -50,14 +50,14 @@ public class General {
             if (localTests.containsKey(task)) {
                 task.setTestContents(localTests.get(task));
                 latch.countDown();
-                System.out.println("Tests for " + task.getSubjectName() + " " + task.getName() + " have been set: " + (new Date().getTime() - startDate.getTime()) + " ms.");
+                MainController.println("Tests for " + task.getSubjectName() + " " + task.getName() + " have been set: " + (new Date().getTime() - startDate.getTime()) + " ms.");
             } else {
                 ExponentialBackOff.execute(() -> {
                     ArrayList<Test> tests = GoogleDriveManager.getTests(task);
                     localTests.put(task, tests);
                     task.setTestContents(tests);
                     latch.countDown();
-                    System.out.println("Tests for " + task.getSubjectName() + " " + task.getName() + " have been set: " + (new Date().getTime() - startDate.getTime()) + " ms.");
+                    MainController.println("Tests for " + task.getSubjectName() + " " + task.getName() + " have been set: " + (new Date().getTime() - startDate.getTime()) + " ms.");
                     return null;
                 });
             }
@@ -160,8 +160,7 @@ public class General {
                             && !tasksThatShouldBeCheckedOnPlagiarism.contains(task.getName()))
                         tasksThatShouldBeCheckedOnPlagiarism.add(task.getName());
                     results.add(haskellResult);
-                    System.out.print(haskellResult);
-                    System.out.println(" (" + ((new Date()).getTime() - General.getStartDate().getTime()) + ") ms.");
+                    MainController.println(haskellResult.toString() + " (" + ((new Date()).getTime() - General.getStartDate().getTime()) + ") ms.");
                 } else {
                     try {
                         Thread.sleep(100);
@@ -172,7 +171,7 @@ public class General {
             }
             if (startedHaskellTesting)
                 applier.finishHaskellTesting();
-            System.out.println("Haskell task applier closed: " + (new Date().getTime() - startDate.getTime() + " ms."));
+            MainController.println("Haskell task applier closed: " + (new Date().getTime() - startDate.getTime() + " ms."));
             latchForTaskAppliers.countDown();
         });
     }
@@ -194,8 +193,7 @@ public class General {
                             && !tasksThatShouldBeCheckedOnPlagiarism.contains(task.getName()))
                         tasksThatShouldBeCheckedOnPlagiarism.add(task.getName());
                     results.add(javaResult);
-                    System.out.print(javaResult);
-                    System.out.println(" (" + ((new Date()).getTime() - General.getStartDate().getTime()) + ") ms.");
+                    MainController.println(javaResult.toString() + " (" + ((new Date()).getTime() - General.getStartDate().getTime()) + ") ms.");
                 } else {
                     try {
                         Thread.sleep(100);
@@ -204,7 +202,7 @@ public class General {
                     }
                 }
             }
-            System.out.println("Java task applier closed: " + (new Date().getTime() - startDate.getTime() + " ms."));
+            MainController.println("Java task applier closed: " + (new Date().getTime() - startDate.getTime() + " ms."));
             latchForTaskAppliers.countDown();
         });
     }
@@ -224,7 +222,7 @@ public class General {
                         if (!deleteDirectory(dir)) {
                             throw new RuntimeException("Please, delete the directory: " + dir.getAbsolutePath());
                         } else {
-                            System.out.println("Result successfully deleted: " + old);
+                            MainController.println("Result successfully deleted: " + old);
                         }
                     }
                     filteredResults.add(result);
@@ -241,12 +239,12 @@ public class General {
         if (!haskellTasksQueue.isEmpty()) {
             addFailedTasks(new ArrayList<>(haskellTasksQueue));
             haskellTasksQueue.clear();
-            System.out.println("Some of the Haskell tasks have not underwent testing for some reason. Run failed tasks later to re-test these tasks.");
+            MainController.println("Some of the Haskell tasks have not underwent testing for some reason. Run failed tasks later to re-test these tasks.");
         }
         if (!javaTasksQueue.isEmpty()) {
             addFailedTasks(new ArrayList<>(javaTasksQueue));
             javaTasksQueue.clear();
-            System.out.println("Some of the Java tasks have not underwent testing for some reason. Run failed tasks later to re-test these tasks.");
+            MainController.println("Some of the Java tasks have not underwent testing for some reason. Run failed tasks later to re-test these tasks.");
         }
     }
 
@@ -287,7 +285,7 @@ public class General {
     private static void startAntiplagiarismTesting() {
         List<ArrayList<Task>> tasksForPlagiarismCheck = Collections.synchronizedList(new ArrayList<ArrayList<Task>>());
         ArrayList<Task> tasks = LocalSettings.getInstance().getResults().stream().filter(result -> result.getMessage().contains("OK")).map(Result::getTask).collect(Collectors.toCollection(ArrayList::new));
-        System.out.println("Parsing file system.");
+        MainController.println("Parsing file system.");
         tasks.forEach(task -> {
             if (tasksThatShouldBeCheckedOnPlagiarism.contains(task.getName()) && tasks.stream().filter(task::equals).count() > 1) {
                 tasksThatShouldBeCheckedOnPlagiarism.remove(task.getName());
@@ -313,7 +311,7 @@ public class General {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("Plagiarism check has been concluded.");
+        MainController.println("Plagiarism check has been concluded.");
     }
 
     private static boolean deleteDirectory(File file) {

@@ -1,6 +1,7 @@
 package Controller;
 
 import Model.ExponentialBackOffFunction;
+import View.MainController;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.net.SocketTimeoutException;
@@ -34,7 +35,7 @@ final class ExponentialBackOff {
 
     private static void handleFailure(int attempt, Exception e) {
         if (e.getCause() != null && !EXPECTED_COMMUNICATION_ERRORS.contains(e.getCause().getClass())) {
-            System.out.println("Exponential BackOff: not handled exception!");
+            MainController.println("Exponential BackOff: not handled exception!");
             throw new RuntimeException(e);
         }
         doWait(attempt);

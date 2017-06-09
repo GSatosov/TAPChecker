@@ -61,7 +61,7 @@ public class LoginController implements Initializable {
                 String email = emailField.getText() + mailServer.getValue();
                 String password = pwField.getText();
                 if (!EmailReceiver.validate(email, password)) {
-                    System.out.println("Failed: " + email + ", " + password);
+                    MainController.println("Failed: " + email + ", " + password);
                     login.setDisable(false);
                     loginIndicator.setVisible(false);
                     return;
@@ -69,7 +69,7 @@ public class LoginController implements Initializable {
                 try {
                     GoogleDriveManager.authorize();
                 } catch (IOException e) {
-                    System.out.println("Failed: Google credentials required.");
+                    MainController.println("Failed: Google credentials required.");
                     login.setDisable(false);
                     loginIndicator.setVisible(false);
                     return;

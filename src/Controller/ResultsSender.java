@@ -3,6 +3,7 @@ package Controller;
 import Model.GlobalSettings;
 import Model.LocalSettings;
 import Model.Result;
+import View.MainController;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.*;
 
@@ -18,7 +19,7 @@ public class ResultsSender implements Runnable {
     @Override
     public void run() {
         if (LocalSettings.getInstance().getResults().size() == 0) return;
-        System.out.println("Running thread for results sender...");
+        MainController.println("Running thread for results sender...");
         try {
             final Sheets service = GoogleSheetsManager.getService();
             String spreadsheetId;

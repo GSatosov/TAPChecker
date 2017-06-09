@@ -7,12 +7,17 @@
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <AnchorPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="View.MainController"
             prefHeight="480" prefWidth="640">
 
-    <VBox AnchorPane.topAnchor="10" AnchorPane.rightAnchor="10" AnchorPane.leftAnchor="10" AnchorPane.bottomAnchor="10" spacing="10">
+    <VBox AnchorPane.topAnchor="10" AnchorPane.rightAnchor="10" AnchorPane.leftAnchor="10" AnchorPane.bottomAnchor="10"
+          spacing="10">
         <HBox spacing="10">
             <Button fx:id="runTests" text="Check mail"/>
             <Button fx:id="runLocalTasks" text="Run local tasks"/>
@@ -22,6 +27,11 @@
             <Button fx:id="editTasks" text="Edit Tasks"/>
             <Button fx:id="settings" text="Settings"/>
         </HBox>
-        <TabPane fx:id="resultsTable" VBox.vgrow="ALWAYS" />
+        <SplitPane fx:id="splitPane" orientation="VERTICAL" VBox.vgrow="ALWAYS" style="-fx-background-color:transparent;" dividerPositions="1">
+            <TabPane fx:id="resultsTable" SplitPane.resizableWithParent="TRUE" VBox.vgrow="ALWAYS"/>
+            <ScrollPane SplitPane.resizableWithParent="TRUE" fx:id="logStringScrollPane">
+                <Text fx:id="logString"/>
+            </ScrollPane>
+        </SplitPane>
     </VBox>
 </AnchorPane>

@@ -6,6 +6,7 @@ import Model.EmailHandlerData;
 import Model.GlobalSettings;
 import Model.LocalSettings;
 import Model.Result;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -16,6 +17,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.cell.MapValueFactory;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
@@ -38,6 +40,15 @@ public class MainController implements Initializable {
     public Button runUncheckedTasks;
 
     @FXML
+    public Text logString;
+
+    @FXML
+    public ScrollPane logStringScrollPane;
+
+    @FXML
+    public SplitPane splitPane;
+
+    @FXML
     private TabPane resultsTable;
     @FXML
     private Button runLocalTasks;
@@ -58,6 +69,11 @@ public class MainController implements Initializable {
     private Stage plagiarismStage;
 
     private static Stage emailHandler;
+
+    private static MainController mainController;
+
+    public MainController() {
+    }
 
     static Stage getSettingsFrame() {
         return settingsFrame;
@@ -216,8 +232,37 @@ public class MainController implements Initializable {
         return column;
     }
 
+    public static void println(String s) {
+        System.out.println(s);
+        if (mainController != null) {
+            String text = mainController.logString.getText();
+            Platform.runLater(() -> {
+                mainController.logString.setText(text + (text.equals("") ? "" : "\n") + s);
+                mainController.logStringScrollPane.setVvalue(1);
+            });
+        }
+    }
+
+    public static void print(String s) {
+        System.out.print(s);
+        if (mainController != null) {
+            String text = mainController.logString.getText();
+            Platform.runLater(() -> {
+                mainController.logString.setText(text + s);
+                mainController.logStringScrollPane.setVvalue(1);
+            });
+        }
+    }
+
+    public static void clearLog() {
+        if (mainController != null) {
+            mainController.logString.setText("");
+        }
+    }
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        mainController = this;
         new File(GlobalSettings.getDataFolder()).mkdirs();
 
         configureButtons();

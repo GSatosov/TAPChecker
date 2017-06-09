@@ -2,6 +2,7 @@ package Controller;
 
 import Model.PlagiarismResult;
 import Model.Task;
+import View.MainController;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,7 +26,7 @@ class PlagiarismChecker {
 
     ArrayList<PlagiarismResult> start() {
         ArrayList<PlagiarismResult> results = new ArrayList<>();
-        System.out.println("Starting plagiarism check.");
+        MainController.println("Starting plagiarism check.");
         CountDownLatch latch = new CountDownLatch(taskList.size());
         taskList.forEach(list -> new Thread(() -> {
             results.addAll(handleListOfTasks(list));
@@ -52,7 +53,7 @@ class PlagiarismChecker {
                     }
             }
         }
-        System.out.println(tasks.get(0).getName() + " has been checked for plagiarism");
+        MainController.println(tasks.get(0).getName() + " has been checked for plagiarism");
         return results;
     }
 

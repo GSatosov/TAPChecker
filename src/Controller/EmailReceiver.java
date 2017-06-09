@@ -54,19 +54,19 @@ public class EmailReceiver {
     }
 
     public static boolean validate(String email, String password) {
-        System.out.println("Credentials validation: Start...");
+        MainController.println("Credentials validation: Start...");
         Properties props = new Properties();
         props.put("mail.store.protocol", "imaps");
         Session session = Session.getInstance(props);
         try {
             Store store = session.getStore();
-            System.out.println("Credentials validation: Trying to connect...");
+            MainController.println("Credentials validation: Trying to connect...");
             store.connect(GlobalSettings.getHostByEmail(email), email, password);
         } catch (MessagingException e) {
-            System.out.println("Credentials validation: Failed!");
+            MainController.println("Credentials validation: Failed!");
             return false;
         }
-        System.out.println("Credentials validation: Ok!");
+        MainController.println("Credentials validation: Ok!");
         return true;
     }
 
@@ -365,13 +365,13 @@ public class EmailReceiver {
                                     } else {
                                         General.getJavaTasksQueue().add(att);
                                     }
-                                    System.out.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " ms).");
+                                    MainController.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " ms).");
                                 } else {
                                     ExponentialBackOff.execute(() -> {
                                         ArrayList<Test> cTests = GoogleDriveManager.getTests(att);
                                         localTests.put(att, cTests);
                                         att.setTestContents(cTests);
-                                        System.out.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " ms).");
+                                        MainController.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " ms).");
                                         if (att.getName().endsWith(".hs")) {
                                             General.getHaskellTasksQueue().add(att);
                                         } else {
