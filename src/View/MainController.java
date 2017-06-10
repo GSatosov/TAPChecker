@@ -362,28 +362,37 @@ public class MainController implements Initializable {
 
     public void configureButtons() {
 
-        runLocalTasks.setManaged(
-            LocalSettings.getInstance().getResults().size() != 0 &&
-            !GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() &&
-            GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty)
-        );
-        runFailedTasks.setManaged(
-            LocalSettings.getInstance().getFailedTasks().size() != 0 &&
-            !GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() &&
-            GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty)
-        );
-        plagiarismResults.setManaged(
-            LocalSettings.getInstance().getPlagiarismResults().size() != 0 &&
-            !GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() &&
-            GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty)
-        );
-        runUncheckedTasks.setManaged(
-                LocalSettings.getUncheckedTasks().size() != 0 &&
-                        !GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() &&
-                        GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty)
-        );
-        editTasks.setManaged(!GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() && GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty));
-        runTests.setManaged(!GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() && GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty));
+        boolean runTestsBool = !GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() && GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty);
+        runTests.setManaged(runTestsBool);
+        runTests.setVisible(runTestsBool);
+
+        boolean runLocalTasksBool = LocalSettings.getInstance().getResults().size() != 0 &&
+                !GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() &&
+                GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty);
+        runLocalTasks.setManaged(runLocalTasksBool);
+        runLocalTasks.setVisible(runLocalTasksBool);
+
+        boolean runFailedTasksBool = LocalSettings.getInstance().getFailedTasks().size() != 0 &&
+                !GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() &&
+                GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty);
+        runFailedTasks.setManaged(runFailedTasksBool);
+        runFailedTasks.setVisible(runFailedTasksBool);
+
+        boolean runUncheckedTasksBool = LocalSettings.getUncheckedTasks().size() != 0 &&
+                !GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() &&
+                GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty);
+        runUncheckedTasks.setManaged(runUncheckedTasksBool);
+        runUncheckedTasks.setVisible(runUncheckedTasksBool);
+
+        boolean plagiarismResultsBool = LocalSettings.getInstance().getPlagiarismResults().size() != 0 &&
+                !GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() &&
+                GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty);
+        plagiarismResults.setManaged(plagiarismResultsBool);
+        plagiarismResults.setVisible(plagiarismResultsBool);
+
+        boolean editTasksBool = !GlobalSettings.getInstance().getSubjectsAndGroups().isEmpty() && GlobalSettings.getInstance().getSubjectsAndGroups().values().stream().noneMatch(ArrayList::isEmpty);
+        editTasks.setManaged(editTasksBool);
+        editTasks.setVisible(editTasksBool);
     }
 
     public static void showEmailHandlerWindow(EmailHandlerData emailHandlerData) {

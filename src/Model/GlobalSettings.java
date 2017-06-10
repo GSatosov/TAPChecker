@@ -45,7 +45,7 @@ public class GlobalSettings implements Serializable {
     Serializable variables
      */
 
-    private String resultsTableURL = "https://docs.google.com/spreadsheets/d/1cIg4hbegIKJfiy7-CM0lzXqRss8AgyxYlWFGT3hxZE8/edit#gid=0";
+    private String resultsTableURL = "";
 
     public String getResultsTableURL() {
         return resultsTableURL;

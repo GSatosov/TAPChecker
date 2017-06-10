@@ -90,13 +90,16 @@ public class TaskEditorController implements Initializable {
 
             inputs.getSelectionModel().selectedIndexProperty().addListener((observable, oldValue, newValue) -> {
                 if (newValue.intValue() == -1) return;
+                TaskEditorInputTabController taskEditorInputTabController = (TaskEditorInputTabController) inputs.getTabs().get(newValue.intValue()).getUserData();
                 if (newValue.intValue() ==  inputs.getTabs().size() - 1 && inputs.getTabs().get(newValue.intValue()).getText().equals("+")) {
                     addTabInput("+").setClosable(false);
                     inputs.getTabs().get(newValue.intValue()).setText((newValue.intValue() + 1) + "");
                     inputs.getSelectionModel().select(newValue.intValue());
+                    taskEditorInputTabController.applyAdditionalTest.setSelected(
+                            !currentTask.getAdditionalTest().equals("") && (currentTask.getTestContents().size() <= newValue.intValue() || currentTask.getTestContents().get(newValue.intValue()).hasAnAdditionalTest())
+                    );
                 }
                 else {
-                    TaskEditorInputTabController taskEditorInputTabController = (TaskEditorInputTabController) inputs.getTabs().get(newValue.intValue()).getUserData();
                     if (taskEditorInputTabController.inputArea.getText().equals("")) {
                         if (taskEditorInputTabController.outputs.getTabs().size() == 0) {
                             taskEditorInputTabController.addOutputsListener(this);
@@ -124,13 +127,15 @@ public class TaskEditorController implements Initializable {
                 }
             });
 
-            subjectsList.getItems().addAll(subjectsAndTasks.keySet().stream().sorted().collect(Collectors.toCollection(ArrayList::new)));
+            subjectsList.getItems().addAll(GlobalSettings.getInstance().getSubjectsAndGroups().keySet().stream().sorted().collect(Collectors.toCollection(ArrayList::new)));
             subjectsList.getSelectionModel().selectFirst();
-            tasksList.getItems().addAll(subjectsAndTasks.get(subjectsList.getValue().toString()).stream().sorted(Comparator.comparing(Task::getTaskCode)).map(task -> task.getTaskCode() + ": " + task.getName()).collect(Collectors.toList()));
+            if (LocalSettings.getInstance().getSubjectsAndTasks().containsKey(subjectsList.getValue().toString()))
+                tasksList.getItems().addAll(LocalSettings.getInstance().getSubjectsAndTasks().get(subjectsList.getValue().toString()).stream().sorted(Comparator.comparing(Task::getTaskCode)).map(task -> task.getTaskCode() + ": " + task.getName()).collect(Collectors.toList()));
 
             subjectsList.setOnAction(event1 -> {
                 tasksList.getItems().clear();
-                tasksList.getItems().addAll(subjectsAndTasks.get(subjectsList.getValue().toString()).stream().sorted(Comparator.comparing(Task::getTaskCode)).map(task -> task.getTaskCode() + ": " + task.getName()).collect(Collectors.toList()));
+                if (LocalSettings.getInstance().getSubjectsAndTasks().containsKey(subjectsList.getValue().toString()))
+                    tasksList.getItems().addAll(LocalSettings.getInstance().getSubjectsAndTasks().get(subjectsList.getValue().toString()).stream().sorted(Comparator.comparing(Task::getTaskCode)).map(task -> task.getTaskCode() + ": " + task.getName()).collect(Collectors.toList()));
                 tasksList.getItems().add("New task...");
                 fillFieldsWithTaskInformation(emptyTask());
                 tasksList.getSelectionModel().selectLast();

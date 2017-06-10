@@ -10,6 +10,7 @@ import com.google.api.services.sheets.v4.model.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,12 +51,17 @@ public class GoogleSheetsManager {
         service.spreadsheets().batchUpdate(spreadsheet.getSpreadsheetId(), new BatchUpdateSpreadsheetRequest().setRequests(requests)).execute();
 
         Drive driveService = GoogleDriveManager.getDriveService();
-        FileList getFolders = driveService.files().list().setQ("mimeType = 'application/vnd.google-apps.folder' and trashed = false").execute();
+
+        String rootId = GoogleDriveManager.getRootFolder();
+
+        FileList getFolders = driveService.files().list().setQ("'" + rootId + "' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false").execute();
+
         Optional<File> resultsFolderOpt = getFolders.getFiles().stream().filter(file -> file.getName().equals("Результаты")).findFirst();
         File resultsFolder;
         if (!resultsFolderOpt.isPresent()) {
             File fileMetadata = new File();
             fileMetadata.setName("Результаты");
+            fileMetadata.setParents(Collections.singletonList(rootId));
             fileMetadata.setMimeType("application/vnd.google-apps.folder");
 
             resultsFolder = driveService.files().create(fileMetadata)

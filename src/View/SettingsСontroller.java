@@ -79,14 +79,16 @@ public class SettingsСontroller implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         subjectList.getItems().addAll(GlobalSettings.getInstance().getSubjectsAndGroups().keySet());
-        subjectList.setValue(subjectList.getItems().get(0));
-        groupList.getItems().addAll(GlobalSettings.getInstance().getSubjectsAndGroups().get(subjectList.getItems().get(0)));
-        groupList.setValue(groupList.getItems().get(0));
+        if (subjectList.getItems().size() > 0) {
+            subjectList.setValue(subjectList.getItems().get(0));
+            groupList.getItems().addAll(GlobalSettings.getInstance().getSubjectsAndGroups().get(subjectList.getItems().get(0)));
+        }
+        if (groupList.getItems().size() > 0) groupList.setValue(groupList.getItems().get(0));
 
         subjectList.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             groupList.getItems().clear();
             groupList.getItems().addAll(GlobalSettings.getInstance().getSubjectsAndGroups().get(newValue));
-            groupList.setValue(groupList.getItems().get(0));
+            if (groupList.getItems().size() > 0) groupList.setValue(groupList.getItems().get(0));
         });
 
         tableLink.setText(GlobalSettings.getInstance().getResultsTableURL());
@@ -187,6 +189,7 @@ public class SettingsСontroller implements Initializable {
         generateTableLink.setOnAction(event -> {
             try {
                 tableLink.setText(GoogleSheetsManager.createSpreadsheet());
+                GlobalSettings.getInstance().setResultsTableURL(tableLink.getText());
             } catch (IOException e) {
                 e.printStackTrace();
             }

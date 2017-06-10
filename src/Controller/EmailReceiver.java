@@ -252,7 +252,7 @@ public class EmailReceiver {
                 for (int i = 0; i < multiPart.getCount(); i++) {
                     MimeBodyPart part = (MimeBodyPart) multiPart.getBodyPart(i);
                     if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())) {
-                        if (tasksAndSubjects.get(emailHandlerData.getSubject().toString()).stream().anyMatch(task -> {
+                        if (tasksAndSubjects.containsKey(emailHandlerData.getSubject().toString()) && tasksAndSubjects.get(emailHandlerData.getSubject().toString()).stream().anyMatch(task -> {
                             try {
                                 return task.getName().equals(part.getFileName().substring(0, part.getFileName().lastIndexOf(".")));
                             } catch (MessagingException e) {

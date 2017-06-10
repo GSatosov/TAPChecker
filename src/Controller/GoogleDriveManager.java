@@ -113,8 +113,9 @@ public class GoogleDriveManager {
 
     public static ByteArrayOutputStream getGlobalSettings() throws IOException {
         Drive service = getDriveService();
+        String rootId = getRootFolder();
         Optional<File> result = service.files().list()
-                .setQ("name contains '" + GlobalSettings.getGlobalSettingsFileName() + "' and trashed = false")
+                .setQ("'" + rootId + "' in parents and name contains '" + GlobalSettings.getGlobalSettingsFileName() + "' and trashed = false")
                 .execute().getFiles().stream().findFirst();
         if (result.isPresent()) {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -127,8 +128,9 @@ public class GoogleDriveManager {
 
     public static void saveGlobalSettings() throws IOException {
         Drive service = getDriveService();
+        String rootId = getRootFolder();
         FileList result = service.files().list()
-                .setQ("name contains '" + GlobalSettings.getGlobalSettingsFileName() + "' and trashed = false")
+                .setQ("'" + rootId + "' in parents and name contains '" + GlobalSettings.getGlobalSettingsFileName() + "' and trashed = false")
                 .execute();
         result.getFiles().forEach(file -> {
             try {
@@ -140,6 +142,7 @@ public class GoogleDriveManager {
 
         com.google.api.services.drive.model.File fileMetadata = new com.google.api.services.drive.model.File();
         fileMetadata.setName(GlobalSettings.getGlobalSettingsFileName());
+        fileMetadata.setParents(Collections.singletonList(rootId));
         java.io.File filePath = new java.io.File(GlobalSettings.getDataFolder() + "/" + GlobalSettings.getGlobalSettingsFileName());
         FileContent mediaContent = new FileContent(Files.probeContentType(filePath.toPath()), filePath);
         com.google.api.services.drive.model.File file = GoogleDriveManager.getDriveService().files().create(fileMetadata, mediaContent)
@@ -149,8 +152,9 @@ public class GoogleDriveManager {
 
     static ArrayList<Test> getTests(Task task) throws IOException, ParseException {
         Drive service = getDriveService();
+        String rootId = getRootFolder();
         FileList result = service.files().list()
-                .setQ("mimeType = 'application/vnd.google-apps.folder'")
+                .setQ("'" + rootId + "' in parents and mimeType = 'application/vnd.google-apps.folder'")
                 .execute();
         String taskSubject = task.getSubjectName();
         Optional<File> parentFile = result.getFiles().stream().filter(file -> file.getName().equals(taskSubject)).findFirst();
@@ -179,7 +183,8 @@ public class GoogleDriveManager {
         HashMap<String, ArrayList<String>> taskNumbersForSubjects = new HashMap<>();
         Set<String> subjects = GlobalSettings.getInstance().getSubjectsAndGroups().keySet();
         Drive service = getDriveService();
-        FileList getFolders = service.files().list().setQ("mimeType = 'application/vnd.google-apps.folder'").execute();
+        String rootId = getRootFolder();
+        FileList getFolders = service.files().list().setQ("'" + rootId + "' in parents and mimeType = 'application/vnd.google-apps.folder'").execute();
         getFolders.getFiles().stream().filter(file -> subjects.contains(file.getName().replaceAll("_", " "))).forEach(subjectFile -> {
             try {
                 String subjectName = subjectFile.getName().replaceAll("_", " ");
@@ -213,7 +218,8 @@ public class GoogleDriveManager {
         HashMap<String, ArrayList<Task>> tasksAndSubjects = new HashMap<>();
         Set<String> subjects = GlobalSettings.getInstance().getSubjectsAndGroups().keySet();
         Drive service = getDriveService();
-        FileList getFolders = service.files().list().setQ("mimeType = 'application/vnd.google-apps.folder'").execute();
+        String rootId = getRootFolder();
+        FileList getFolders = service.files().list().setQ("'" + rootId + "' in parents and mimeType = 'application/vnd.google-apps.folder'").execute();
         getFolders.getFiles().stream().filter(file -> subjects.contains(file.getName().replaceAll("_", " "))).forEach(subjectFile -> {
             try {
                 String subjectName = subjectFile.getName().replaceAll("_", " ");
@@ -246,7 +252,9 @@ public class GoogleDriveManager {
     public static String deleteTask(Task task) throws IOException {
         Drive service = getDriveService();
 
-        FileList getFolders = service.files().list().setQ("mimeType = 'application/vnd.google-apps.folder'").execute();
+        String rootId = getRootFolder();
+
+        FileList getFolders = service.files().list().setQ("'" + rootId + "' in parents and mimeType = 'application/vnd.google-apps.folder'").execute();
         Optional<File> folder = getFolders.getFiles().stream().filter(file -> task.getSubjectName().equals(file.getName().replaceAll("_", " "))).findFirst();
         String folderId = "";
         if (folder.isPresent()) {
@@ -254,6 +262,7 @@ public class GoogleDriveManager {
         } else {
             File fileMetadata = new File();
             fileMetadata.setName(task.getSubjectName().replaceAll(" ", "_"));
+            fileMetadata.setParents(Collections.singletonList(rootId));
             fileMetadata.setMimeType("application/vnd.google-apps.folder");
 
             File folderFile = service.files().create(fileMetadata)
@@ -281,7 +290,11 @@ public class GoogleDriveManager {
         String folderId = deleteTask(task);
 
         com.google.api.services.drive.model.File fileMetadata = new com.google.api.services.drive.model.File();
-        fileMetadata.setParents(Collections.singletonList(folderId));
+        ArrayList<String> parents = new ArrayList<>();
+        String rootId = getRootFolder();
+        parents.add(rootId);
+        parents.add(folderId);
+        fileMetadata.setParents(parents);
         fileMetadata.setName(task.getName() + ".txt");
 
         JSONObject taskJSON = new JSONObject();
@@ -359,6 +372,28 @@ public class GoogleDriveManager {
             testsResult.add(test);
         });
         task.setTestContents(testsResult);
+    }
+
+    public static String getRootFolder() {
+        try {
+            Drive service = getDriveService();
+            FileList getRoot = service.files().list().setQ("name contains '" + GlobalSettings.getApplicationName() + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false").execute();
+            if (getRoot.getFiles().size() == 0) {
+                File fileMetadata = new File();
+                fileMetadata.setName(GlobalSettings.getApplicationName());
+                fileMetadata.setMimeType("application/vnd.google-apps.folder");
+                File root = service.files().create(fileMetadata)
+                        .setFields("id")
+                        .execute();
+                return root.getId();
+            }
+            else {
+                return getRoot.getFiles().get(0).getId();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
 
 
