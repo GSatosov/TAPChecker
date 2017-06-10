@@ -73,7 +73,7 @@ public class MainFrame extends Application {
         mainController = (MainController)loaderMain.getController();
 
         setLoginScene(new Scene(new FXMLLoader(getClass().getResource("Login.fxml")).load()));
-        setMainScene(new Scene(rootMain, 640, 480));
+        setMainScene(new Scene(rootMain));
 
         if (((GlobalSettings.getInstance().getEmail().isEmpty())&(GlobalSettings.getInstance().getPassword().isEmpty())) ||
                 (!EmailReceiver.validate(GlobalSettings.getInstance().getEmail(), GlobalSettings.getInstance().getPassword()))) {
