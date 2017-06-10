@@ -78,7 +78,7 @@ public class EmailReceiver {
         String emailSubject = message.getSubject();
 
         // name, group, subject
-        String[] emailSubjectSplitted = emailSubject.split(",");
+        String[] emailSubjectSplitted = emailSubject.replaceAll("Re: ", "").split(",");
         for (int i = 0; i < emailSubjectSplitted.length; i++) emailSubjectSplitted[i] = emailSubjectSplitted[i].trim();
 
         HashMap<String, ArrayList<String>> subjectsAndGroups = GlobalSettings.getInstance().getSubjectsAndGroups();
@@ -381,31 +381,30 @@ public class EmailReceiver {
                                     });
                                 }
                             })).start());
-                            downloadedMessagesCount.countDown();
-                            if (downloadedMessagesCount.getCount() == 0) {
-                                // TODO Delete that block before deploy
-                                {
-                                    // Left this way for testing purposes.
-                                    LocalSettings.getInstance().setLastDateEmailChecked(new Date(0L));
-                                    //LocalSettings.getInstance().getResults().clear();
-                                }
-                                /*
-                                TODO uncomment that before deploy
-                                LocalSettings.getInstance().setLastDateEmailChecked(newDateEmailChecking);
-                                 */
-                                LocalSettings.getInstance().saveSettings();
-                                inbox.close(false);
-                                replyMessagesLatch.countDown();
-                            }
-                        } catch (IOException | MessagingException | NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException e) {
+                        } catch (IOException | MessagingException e) {
                             e.printStackTrace();
                         }
                     })).start();
                 }
+                downloadedMessagesCount.countDown();
+                if (downloadedMessagesCount.getCount() == 0) {
+                    LocalSettings.getInstance().setLastDateEmailChecked(newDateEmailChecking);
+                    LocalSettings.saveSettings();
+                    inbox.close(false);
+                    replyMessagesLatch.countDown();
+                }
             } catch (MessagingException e) {
                 throw new RuntimeException(e);
+            } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | IOException e) {
+                e.printStackTrace();
             }
         });
+        if (messages.length == 0) {
+            LocalSettings.getInstance().setLastDateEmailChecked(newDateEmailChecking);
+            LocalSettings.saveSettings();
+            inbox.close(false);
+            replyMessagesLatch.countDown();
+        }
     }
 
 }
