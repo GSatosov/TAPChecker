@@ -366,6 +366,17 @@ public class EmailReceiver {
                                         General.getJavaTasksQueue().add(att);
                                     }
                                     MainController.println("Task " + att.getName() + " added (" + ((new Date()).getTime() - General.getStartDate().getTime()) + " ms).");
+                                    downloadedMessagesCount.countDown();
+                                    if (downloadedMessagesCount.getCount() == 0) {
+                                        try {
+                                            LocalSettings.getInstance().setLastDateEmailChecked(newDateEmailChecking);
+                                            LocalSettings.saveSettings();
+                                            inbox.close(false);
+                                            replyMessagesLatch.countDown();
+                                        } catch (InvalidKeyException | NoSuchAlgorithmException | IOException | NoSuchPaddingException | MessagingException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
                                 } else {
                                     ExponentialBackOff.execute(() -> {
                                         ArrayList<Test> cTests = GoogleDriveManager.getTests(att);
@@ -377,6 +388,17 @@ public class EmailReceiver {
                                         } else {
                                             General.getJavaTasksQueue().add(att);
                                         }
+                                        downloadedMessagesCount.countDown();
+                                        if (downloadedMessagesCount.getCount() == 0) {
+                                            try {
+                                                LocalSettings.getInstance().setLastDateEmailChecked(newDateEmailChecking);
+                                                LocalSettings.saveSettings();
+                                                inbox.close(false);
+                                                replyMessagesLatch.countDown();
+                                            } catch (InvalidKeyException | NoSuchAlgorithmException | IOException | NoSuchPaddingException | MessagingException e) {
+                                                e.printStackTrace();
+                                            }
+                                        }
                                         return null;
                                     });
                                 }
@@ -386,17 +408,21 @@ public class EmailReceiver {
                         }
                     })).start();
                 }
-                downloadedMessagesCount.countDown();
-                if (downloadedMessagesCount.getCount() == 0) {
-                    LocalSettings.getInstance().setLastDateEmailChecked(newDateEmailChecking);
-                    LocalSettings.saveSettings();
-                    inbox.close(false);
-                    replyMessagesLatch.countDown();
+                else {
+                    downloadedMessagesCount.countDown();
+                    if (downloadedMessagesCount.getCount() == 0) {
+                        try {
+                            LocalSettings.getInstance().setLastDateEmailChecked(newDateEmailChecking);
+                            LocalSettings.saveSettings();
+                            inbox.close(false);
+                            replyMessagesLatch.countDown();
+                        } catch (InvalidKeyException | NoSuchAlgorithmException | IOException | NoSuchPaddingException | MessagingException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
             } catch (MessagingException e) {
                 throw new RuntimeException(e);
-            } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException | IOException e) {
-                e.printStackTrace();
             }
         });
         if (messages.length == 0) {
