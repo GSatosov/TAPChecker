@@ -96,7 +96,7 @@ public class GlobalSettings implements Serializable {
     }
 
 
-    private transient static String email = ""; //kubenskiythesis@gmail.com
+    private transient static String email = "";
 
     public static String getEmail() {
         return email;
@@ -107,7 +107,7 @@ public class GlobalSettings implements Serializable {
     }
 
 
-    private transient static String password = ""; //sansanich
+    private transient static String password = "";
 
     public static String getPassword() {
         return password;
