@@ -168,7 +168,7 @@ class TestsApplier {
                 if (computationTime >= task.getTimeInMS()) {
                     haskellProcessInput.close();
                     finishHaskellTesting();
-                    Test.logList(haskellOutputWriter, this.haskellOutput);
+                    General.logList(haskellOutputWriter, this.haskellOutput);
                     startHaskellTesting(); //Restart ghci if we encountered infinite input/ long computation.
                     return haskellResult("TL " + (i + 1), task); //Took too long to compute.
                 }
@@ -180,7 +180,7 @@ class TestsApplier {
                 computationTime += 10;
             }
             if (this.haskellOutput.size() > 1 && this.haskellOutput.get(1).startsWith("<interactive>")) {
-                Test.logList(haskellOutputWriter, this.haskellOutput);
+                General.logList(haskellOutputWriter, this.haskellOutput);
                 return haskellResult("RE " + (i + 1), task);
             }
             String response = this.haskellOutput.get(0).split(" ", 2)[1]; // *>TaskName> Output
@@ -253,7 +253,7 @@ class TestsApplier {
                 lines = lines.stream().filter(line -> !line.trim().startsWith("package")).collect(Collectors.toList());
                 File sourceFile = new File(sourcePath);
                 BufferedWriter writer = new BufferedWriter(new FileWriter(sourceFile));
-                Test.logList(writer, lines);
+                General.logList(writer, lines);
                 writer.close();
             }
         } catch (IOException e) {
@@ -357,7 +357,7 @@ class TestsApplier {
                 javaOutputWriter.write("Got:");
                 javaOutputWriter.newLine();
                 if (errorFile.length() != 0) {
-                    Test.logList(javaOutputWriter, new ArrayList<>(Files.readAllLines(Paths.get(errorFile.getPath()))));
+                    General.logList(javaOutputWriter, new ArrayList<>(Files.readAllLines(Paths.get(errorFile.getPath()))));
                     return javaResult("RE " + (i + 1), task, testInputFile, testOutputFile, errorFile); //Runtime Error
                 }
                 if (test.hasAnAdditionalTest() & !task.getAdditionalTest().isEmpty()) {
@@ -373,7 +373,7 @@ class TestsApplier {
                     }
                 }
                 ArrayList<String> testOutput = new ArrayList<>(Files.readAllLines(Paths.get(testOutputFile.getPath())));
-                Test.logList(javaOutputWriter, testOutput);
+                General.logList(javaOutputWriter, testOutput);
                 if (!test.getOutputVariants().contains(testOutput))
                     return javaResult("WA " + (i + 1), task, testInputFile, testOutputFile, errorFile);
             } catch (IOException | InterruptedException e) {
@@ -409,7 +409,7 @@ class TestsApplier {
             try {
                 outputWriter.write("An error while compiling the additional test.");
                 outputWriter.newLine();
-                Test.logList(outputWriter, Files.readAllLines(Paths.get(testErrorFile.getPath())));
+                General.logList(outputWriter, Files.readAllLines(Paths.get(testErrorFile.getPath())));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -433,25 +433,24 @@ class TestsApplier {
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
+        new File(inputFile.getParent() + File.separator + taskName + "Test.class").delete();
         if (testErrorFile.length() > 0) {
             try {
                 outputWriter.write("Additional test runtime error:");
                 outputWriter.newLine();
-                Test.logList(outputWriter, new ArrayList<>(Files.readAllLines(Paths.get(testErrorFile.getPath()))));
+                General.logList(outputWriter, new ArrayList<>(Files.readAllLines(Paths.get(testErrorFile.getPath()))));
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            new File(inputFile.getParent() + File.separator + taskName + "Test.class").delete();
             codeFile.delete();
             testErrorFile.delete();
             return 1; //RE in additional test.
         }
-        new File(inputFile.getParent() + File.separator + taskName + "Test.class").delete();
         codeFile.delete();
         testErrorFile.delete();
         try {
             ArrayList<String> output = new ArrayList<>(Files.readAllLines(Paths.get(testOutputFile.getPath())));
-            Test.logList(outputWriter, output);
+            General.logList(outputWriter, output);
             testOutputFile.delete();
             if (outputVariants.contains(output))
                 return 0; //Everything is fine.

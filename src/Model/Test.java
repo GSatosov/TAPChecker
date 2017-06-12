@@ -1,5 +1,7 @@
 package Model;
 
+import Controller.General;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Serializable;
@@ -14,25 +16,8 @@ public class Test implements Serializable {
     private ArrayList<ArrayList<String>> outputVariants;
     private boolean applyAdditionalTest;
 
-    public void removeOutputVariant(int i) {
-        this.outputVariants.remove(i);
-    }
-
-    public void setOutputVariants(ArrayList<ArrayList<String>> outputVariants) {
-        this.outputVariants = outputVariants;
-    }
-
-
     public void setInput(ArrayList<String> input) {
         this.input = input;
-    }
-
-    public void setOutputVariant(ArrayList<String> outputVariant, int outputVariantIndex) {
-        this.outputVariants.set(outputVariantIndex, outputVariant);
-    }
-
-    public void addOutputVariant(ArrayList<String> outputVariant) {
-        this.outputVariants.add(outputVariant);
     }
 
     public ArrayList<String> getInput() {
@@ -50,7 +35,7 @@ public class Test implements Serializable {
 
     public void logOutputVariants(BufferedWriter writer) {
         this.outputVariants.subList(0, outputVariants.size() - 1).forEach(outputVariant -> {
-            logList(writer, outputVariant);
+            General.logList(writer, outputVariant);
             if (this.outputVariants.size() > 1)
                 try {
                     writer.write("OR,");
@@ -59,18 +44,7 @@ public class Test implements Serializable {
                     e.printStackTrace();
                 }
         });
-        logList(writer, this.outputVariants.get(outputVariants.size() - 1));
-    }
-
-    public static void logList(BufferedWriter writer, List<String> list) {
-        list.forEach(line -> {
-            try {
-                writer.write(line);
-                writer.newLine();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
+        General.logList(writer, this.outputVariants.get(outputVariants.size() - 1));
     }
 
     @Override

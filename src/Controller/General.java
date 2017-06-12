@@ -330,4 +330,15 @@ public class General {
         }
         return flag && file.delete();
     }
+
+    public static void logList(BufferedWriter writer, List<String> list) {
+        list.forEach(line -> {
+            try {
+                writer.write(line);
+                writer.newLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+    }
 }
