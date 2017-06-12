@@ -61,6 +61,7 @@ public class General {
                     return null;
                 });
             }
+            task.setAdditionalTest(LocalSettings.getInstance().getSubjectsAndTasks().get(task.getSubjectName()).stream().filter(task1 -> task1.getName().equals(task.getName().split("\\.")[0])).findFirst().get().getAdditionalTest()); //To be fixed.
         }).start());
         try {
             latch.await();

@@ -204,7 +204,7 @@ class TestsApplier {
                     case 1:
                         return haskellResult("WA " + (i + 1), task);
                     case 2: {
-                        MainController.println("Your code for additional test in " + task.getName() + ", test №" + i + " is invalid.");
+                        MainController.println("Your code for additional test in " + task.getName() + ", test №" + (i + 1) + " is invalid.");
                         continue;
                     }
                 }
@@ -367,7 +367,7 @@ class TestsApplier {
                         case 1:
                             return javaResult("WA " + (i + 1), task, testInputFile, testOutputFile, errorFile);
                         case 2: {
-                            MainController.println("Your code for additional test in " + task.getName() + ", test №" + i + " is invalid.");
+                            MainController.println("Your code for additional test in " + task.getName() + ", test №" + (i + 1) + " is invalid.");
                             continue;
                         }
                     }
@@ -385,15 +385,16 @@ class TestsApplier {
 
     private int performAnAdditionalTest(String code, File inputFile, String taskName, ArrayList<ArrayList<String>> outputVariants, BufferedWriter outputWriter) {
         File codeFile = new File(inputFile.getParent() + File.separator + taskName + "Test.java");
+        File testErrorFile = new File(inputFile.getParent() + File.separator + taskName + "AdditionalTestError.txt");
         try {
             BufferedWriter inputWriter = new BufferedWriter(new FileWriter(codeFile));
             inputWriter.write(code);
             inputWriter.close();
+            testErrorFile.createNewFile();
         } catch (IOException e) {
             e.printStackTrace();
         }
         removePackageStatementInJavaTasks(codeFile.getPath());
-        File testErrorFile = new File(inputFile.getParent() + File.separator + taskName + "AdditionalError.txt");
         if (!startedJavaTesting)
             startJavaTesting();
         try {
@@ -405,14 +406,14 @@ class TestsApplier {
         }
         if (testErrorFile.length() > 0) {
             codeFile.delete();
-            testErrorFile.delete();
             try {
-                outputWriter.write("Got an error while compiling the additional test.");
+                outputWriter.write("An error while compiling the additional test.");
                 outputWriter.newLine();
                 Test.logList(outputWriter, Files.readAllLines(Paths.get(testErrorFile.getPath())));
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            testErrorFile.delete();
             MainController.println("You have an error in your additional test for " + taskName);
             return 2; //Got an error while compiling the test; undesirable outcome.
         }
