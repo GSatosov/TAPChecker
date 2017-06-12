@@ -69,15 +69,6 @@ public class GlobalSettings implements Serializable {
         return subjectsAndGroups;
     }
 
-    // TODO Delete that block before deploy
-    {
-        ArrayList<String> java = new ArrayList<>(Arrays.asList("A3400", "A3401", "A3402", "A3403"));
-        ArrayList<String> haskell = new ArrayList<>(Arrays.asList("A3300", "A3301", "A3400", "A3401", "A3402", "A3403"));
-        getSubjectsAndGroups().put("Java", java);
-        getSubjectsAndGroups().put("Функциональное программирование", haskell);
-    }
-
-
     /*
     Transient variables
      */
@@ -105,7 +96,7 @@ public class GlobalSettings implements Serializable {
     }
 
 
-    private transient static String email = "kubenskiythesis@gmail.com"; //kubenskiythesis@gmail.com
+    private transient static String email = ""; //kubenskiythesis@gmail.com
 
     public static String getEmail() {
         return email;
@@ -116,7 +107,7 @@ public class GlobalSettings implements Serializable {
     }
 
 
-    private transient static String password = "sansanich"; //sansanich
+    private transient static String password = ""; //sansanich
 
     public static String getPassword() {
         return password;

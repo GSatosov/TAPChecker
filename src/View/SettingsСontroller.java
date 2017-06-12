@@ -7,9 +7,11 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -129,61 +131,69 @@ public class SettingsСontroller implements Initializable {
         });
 
         addSubject.setOnAction((ActionEvent event) -> {
-            Stage confirm = new Stage();
-            confirm.setTitle("Add new subject");
-            confirm.initModality(Modality.WINDOW_MODAL);
-
-            TextField newSubject = new TextField();
-            Button addNewSubject = new Button("Add");
-
-            addNewSubject.disableProperty().bind(Bindings.isEmpty(newSubject.textProperty()));
-
-            addNewSubject.setOnAction(e -> {
-                GlobalSettings.getInstance().getSubjectsAndGroups().put(newSubject.getText(), new ArrayList<>());
-                subjectList.getItems().add(newSubject.getText());
-                confirm.close();
-            });
-
-            HBox box = new HBox(newSubject, addNewSubject);
-            box.setAlignment(Pos.CENTER);
-            box.setPadding(new Insets(15));
-            box.setSpacing(10);
-
-            confirm.setScene(new Scene(box));
-            confirm.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
-                if (e.getCode() == KeyCode.ENTER)
-                    addNewSubject.fire();
-            });
-            confirm.show();
+            try {
+                Stage addItemStage = new Stage();
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("AddItem.fxml"));
+                Parent root = fxmlLoader.load();
+                AddItemController addItemController = fxmlLoader.getController();
+                addItemStage.setScene(new Scene(root));
+                addItemStage.initModality(Modality.WINDOW_MODAL);
+                addItemStage.initOwner(addSubject.getScene().getWindow());
+                addItemStage.setTitle("Add subject");
+                addItemController.addItemField.setPromptText("Enter the subject here...");
+                addItemController.addButton.setOnAction(e -> {
+                    GlobalSettings.getInstance().getSubjectsAndGroups().put(addItemController.addItemField.getText(), new ArrayList<>());
+                    subjectList.getItems().add(addItemController.addItemField.getText());
+                    addItemStage.close();
+                });
+                addItemStage.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
+                    if (e.getCode() == KeyCode.ENTER)
+                        addItemController.addButton.fire();
+                    else if (e.getCode() == KeyCode.ESCAPE)
+                        addItemController.cancelButton.fire();
+                });
+                addItemController.cancelButton.setOnAction(e -> {
+                    addItemStage.close();
+                });
+                addItemController.addButton.disableProperty().bind(Bindings.isEmpty(addItemController.addItemField.textProperty()));
+                addItemStage.setResizable(false);
+                addItemStage.show();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         });
 
         addGroup.setOnAction(event -> {
-            Stage confirm = new Stage();
-            confirm.setTitle("Add new group");
-            confirm.initModality(Modality.WINDOW_MODAL);
-
-            TextField newGroup = new TextField();
-            Button addNewGroup = new Button("Add");
-
-            addNewGroup.disableProperty().bind(Bindings.isEmpty(newGroup.textProperty()));
-
-            addNewGroup.setOnAction(e -> {
-                GlobalSettings.getInstance().getSubjectsAndGroups().get(subjectList.getValue()).add(newGroup.getText());
-                groupList.getItems().add(newGroup.getText());
-                confirm.close();
-            });
-
-            HBox box = new HBox(newGroup, addNewGroup);
-            box.setAlignment(Pos.CENTER);
-            box.setPadding(new Insets(15));
-            box.setSpacing(10);
-
-            confirm.setScene(new Scene(box));
-            confirm.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
-                if (e.getCode() == KeyCode.ENTER)
-                    addNewGroup.fire();
-            });
-            confirm.show();
+            try {
+                Stage addItemStage = new Stage();
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("AddItem.fxml"));
+                Parent root = fxmlLoader.load();
+                AddItemController addItemController = fxmlLoader.getController();
+                addItemStage.setScene(new Scene(root));
+                addItemStage.initModality(Modality.WINDOW_MODAL);
+                addItemStage.initOwner(addSubject.getScene().getWindow());
+                addItemStage.setTitle("Add group");
+                addItemController.addItemField.setPromptText("Enter the group here...");
+                addItemController.addButton.setOnAction(e -> {
+                    GlobalSettings.getInstance().getSubjectsAndGroups().get(subjectList.getValue()).add(addItemController.addItemField.getText());
+                    groupList.getItems().add(addItemController.addItemField.getText());
+                    addItemStage.close();
+                });
+                addItemStage.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
+                    if (e.getCode() == KeyCode.ENTER)
+                        addItemController.addButton.fire();
+                    else if (e.getCode() == KeyCode.ESCAPE)
+                        addItemController.cancelButton.fire();
+                });
+                addItemController.cancelButton.setOnAction(e -> {
+                    addItemStage.close();
+                });
+                addItemController.addButton.disableProperty().bind(Bindings.isEmpty(addItemController.addItemField.textProperty()));
+                addItemStage.setResizable(false);
+                addItemStage.show();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         });
 
         generateTableLink.setOnAction(event -> {

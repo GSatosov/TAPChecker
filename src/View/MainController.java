@@ -16,6 +16,8 @@ import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.cell.MapValueFactory;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
@@ -307,6 +309,10 @@ public class MainController implements Initializable {
                     plagiarismStage = new Stage();
                     plagiarismStage.setScene(new Scene(new FXMLLoader(getClass().getResource("PlagiarismTable.fxml")).load(), 800, 480));
                     plagiarismStage.setTitle("Plagiarism results");
+                    plagiarismStage.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
+                        if (e.getCode() == KeyCode.ESCAPE)
+                            plagiarismStage.close();
+                    });
                     plagiarismStage.show();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -334,6 +340,10 @@ public class MainController implements Initializable {
                 }
                 configureButtons();
             }).start());
+            settingsFrame.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
+                if (e.getCode() == KeyCode.ESCAPE)
+                    settingsFrame.close();
+            });
             settingsFrame.show();
         });
         editTasks.setOnAction(event -> {
