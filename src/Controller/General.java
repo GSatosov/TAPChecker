@@ -61,10 +61,11 @@ public class General {
                     return null;
                 });
             }
-            if (task.getName().contains("."))
-                task.setAdditionalTest(LocalSettings.getInstance().getSubjectsAndTasks().get(task.getSubjectName().replaceAll("_", " ")).stream().filter(task1 -> task1.getName().equals(task.getName().split("\\.")[0])).findFirst().get().getAdditionalTest());
-            else
-                task.setAdditionalTest(LocalSettings.getInstance().getSubjectsAndTasks().get(task.getSubjectName().replaceAll("_", " ")).stream().filter(task1 -> task1.getName().equals(task.getName())).findFirst().get().getAdditionalTest());
+            if (LocalSettings.getInstance().getSubjectsAndTasks().size() != 0)
+                if (task.getName().contains("."))
+                    task.setAdditionalTest(LocalSettings.getInstance().getSubjectsAndTasks().get(task.getSubjectName().replaceAll("_", " ")).stream().filter(task1 -> task1.getName().equals(task.getName().split("\\.")[0])).findFirst().get().getAdditionalTest());
+                else
+                    task.setAdditionalTest(LocalSettings.getInstance().getSubjectsAndTasks().get(task.getSubjectName().replaceAll("_", " ")).stream().filter(task1 -> task1.getName().equals(task.getName())).findFirst().get().getAdditionalTest());
         }).start());
         try {
             latch.await();
